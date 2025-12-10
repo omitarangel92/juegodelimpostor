@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego del Impostor 🕵️</title>
     <link rel="stylesheet" href="style.css">
-</head>
+    </head>
 <body>
 
     <div id="vista-inicio" class="vista activa">
@@ -41,53 +41,63 @@
         <div id="configuracion-host" class="config-host">
             <h2>⚙️ Configuración del Juego</h2>
             <form id="form-configuracion">
-                <label for="selector-tema">Tema de las Palabras:</label>
-                <select id="selector-tema"></select> <label for="input-tiempo-ronda">Tiempo de Ronda (segundos):</label>
-                <input type="number" id="input-tiempo-ronda" value="60" min="0" max="180">
-
+                
+                <label>Selecciona las categorías que deseas incluir:</label>
+                <div id="categorias-container" class="categorias-container"></div>
+                
                 <label class="checkbox-label">
                     <input type="checkbox" id="checkbox-agente-doble">
                     Incluir Agente Doble (Rol extra)
                 </label>
             </form>
+            <p id="aviso-categoria" class="aviso-min-jugadores">Selecciona al menos 1 categoría.</p>
 
             <button id="btn-iniciar-juego" class="btn-principal" disabled>
-                ▶️ Iniciar Juego
+                ▶️ Asignar Roles y Palabra
             </button>
             <p id="min-jugadores-aviso" class="aviso-min-jugadores">Se requieren 3 jugadores para iniciar.</p>
         </div>
+
         <button onclick="abandonarSala()" class="btn-danger">🚪 Abandonar Sala</button>
+    </div>
+    
+    <div id="vista-revelacion" class="vista">
+        <h1 id="rol-revelacion-display">Preparando tu misión...</h1>
+        <p class="instrucciones-juego">
+            <span id="palabra-revelacion-display" class="palabra-secreta">[PALABRA O INSTRUCCIÓN]</span>
+        </p>
+        <p id="tema-revelacion-display" class="tema-display">Tema: <span id="tema-valor-revelacion"></span></p>
+
+        <p class="aviso-ronda">Memoriza tu información. Solo el Host puede iniciar la discusión.</p>
+
+        <button id="btn-iniciar-discusion" class="btn-principal" style="display: none;">
+            ▶️ Iniciar Discusión
+        </button>
+        
+        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-juego" class="vista">
-        <h1 id="rol-display">Tu Rol: ¡Tripulante!</h1>
+        <h1 id="rol-juego-display">Tu Rol: ¡Tripulante!</h1>
         <p class="instrucciones-juego">
             <span id="palabra-secreta-display" class="palabra-secreta">[PALABRA SECRETA]</span>
         </p>
         <p id="tema-display" class="tema-display">Tema: <span id="tema-valor"></span></p>
 
-        <div class="informacion-ronda">
-            <h2>Ronda <span id="ronda-actual-display">1</span></h2>
-            <div class="temporizador-container">
-                ⏳ Tiempo Restante: <span id="tiempo-restante">60</span>s
-            </div>
-        </div>
-
-        <div class="jugadores-activos">
-            <h3>Jugadores (<span id="jugadores-activos-contador">0</span>)</h3>
-            <ul id="lista-jugadores-juego" class="lista-jugadores">
-                </ul>
-        </div>
+        <h2>Jugadores Activos</h2>
+        <ul id="lista-jugadores-juego" class="lista-jugadores">
+            </ul>
         
-        <button id="btn-forzar-votacion" class="btn-secundario btn-small-host" style="display: none;">
-            🗳️ Ir a Votación Ahora (Host)
+        <button id="btn-forzar-votacion" class="btn-principal btn-grande" style="display: none;">
+            🗳️ Forzar Votación (Host)
         </button>
         
+        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-votacion" class="vista">
         <h1>🗳️ FASE DE ELIMINACIÓN</h1>
-        <p class="aviso-ronda">Ronda <span id="ronda-votacion-display">1</span>: ¿Quién es el impostor?</p>
+        <p class="aviso-ronda">¿Quién es el impostor?</p>
         
         <div id="opciones-votacion" class="opciones-votacion">
             </div>
@@ -101,7 +111,6 @@
 
     <div id="vista-resultado" class="vista">
         <h1>✅ Resultados de la Votación</h1>
-        <p id="resultado-ronda-display" class="resultado-ronda">Ronda 1 finalizada.</p>
         <div id="detalles-votacion-container" class="detalles-votacion-container">
             </div>
 
@@ -109,12 +118,16 @@
             [RESULTADO]
         </p>
         
-        <button id="btn-siguiente-ronda" class="btn-principal" style="display: none;">
-            ➡️ Siguiente Ronda
-        </button>
-        <button id="btn-ver-ganador" class="btn-principal" style="display: none;">
-            🏆 Ver Ganador
-        </button>
+        <div id="acciones-finales-host" style="display: none;">
+            <button id="btn-reiniciar-partida" class="btn-secundario btn-grande">
+                🔄 Reiniciar Partida (Misma Sala)
+            </button>
+            <button id="btn-finalizar-juego" class="btn-danger btn-grande">
+                🚪 Finalizar Juego (Cerrar Sala)
+            </button>
+        </div>
+
+        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-final" class="vista">
@@ -124,7 +137,7 @@
             </ul>
         
         <button onclick="window.location.reload()" class="btn-principal">
-            Volver a Jugar
+            Volver a la Pantalla de Inicio
         </button>
     </div>
 
