@@ -4,10 +4,10 @@
 // 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
 // =================================================================
 
-// NOTA DE SEGURIDAD: Esta clave está expuesta públicamente, es CRÍTICO
-// que configures reglas de seguridad ESTRICTAS en Firebase.
+// NOTA DE SEGURIDAD: Esta clave está expuesta públicamente.
+// Es CRÍTICO que configures reglas de seguridad ESTRICTAS en Firebase.
 const firebaseConfig = {
-    // Reemplaza con tus CREDENCIALES
+    // Estas credenciales fueron detectadas en tu repositorio
     apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0", 
     authDomain: "juego-impostor-firebase.firebaseapp.com",
     databaseURL: "https://juego-impostor-firebase-default-rtdb.firebaseio.com",
@@ -18,7 +18,7 @@ const firebaseConfig = {
 };
 
 // =================================================================
-// 2. DATOS DEL JUEGO (MOVIDOS DEL SERVER.JS)
+// 2. DATOS DEL JUEGO
 // =================================================================
 const PALABRAS_POR_TEMA = {
     'Animales 🐾': ['Perro', 'Gato', 'Elefante', 'León', 'Tigre', 'Cebra', 'Oso', 'Delfín'],
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // 4. VARIABLES GLOBALES
     let nombreJugador = ''; 
     let codigoSalaActual = '';
-    // ID única para este navegador (permanece igual a lo largo de la sesión)
+    // ID única para este navegador
     let miId = Date.now().toString(36) + Math.random().toString(36).substring(2); 
     
     let jugadoresActuales = []; 
@@ -129,8 +129,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     let miPalabraSecreta = ''; 
     let miTemaActual = ''; 
     let miVotoSeleccionadoId = 'none';
-    let temporizadorInterval = null; // Para manejar el temporizador de la ronda
-    let listenerSala = null; // Para almacenar el listener de la sala
+    let temporizadorInterval = null; 
+    let listenerSala = null; 
 
     // =================================================================
     // 5. FUNCIONES DE UI Y LÓGICA AUXILIAR
@@ -355,60 +355,72 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // 7. MANEJADORES DE EVENTOS DEL DOM
     // =================================================================
 
-    // CORRECCIÓN CLAVE: El listener del formulario de inicio que da error
+    // Listener del formulario de inicio
     document.getElementById('form-inicio').addEventListener('submit', (e) => {
         e.preventDefault();
-        // El input-nombre debe ser accesible aquí
         nombreJugador = document.getElementById('input-nombre').value.trim();
         if (!nombreJugador) return alert('Por favor, ingresa tu nombre.');
         
-        // Si el nombre es válido, mostramos la siguiente vista.
         document.getElementById('nombre-jugador-display').textContent = nombreJugador;
         cambiarVista('vista-seleccion');
     });
 
     // ----------------------------------------------------
     // *** CREAR SALA CON FIREBASE (CLIENTE HOST) ***
+    // CORRECCIÓN: Añadido try/catch para debug de errores de Firebase
     // ----------------------------------------------------
     document.getElementById('btn-crear-sala').addEventListener('click', async () => {
-        // 1. Generar código único y verificar la no existencia (CRÍTICO)
-        let codigo;
-        let snapshot;
-        do {
-            codigo = generarCodigoSala();
-            snapshot = await db.ref('salas/' + codigo).once('value');
-        } while (snapshot.exists());
-
-        // 2. Crear el objeto de jugador local con flag de Host
-        const jugadorHost = { 
-            id: miId, 
-            nombre: nombreJugador, 
-            esHost: true, 
-            rol: 'Tripulante', 
-            eliminado: false 
-        };
-
-        // 3. Crear el objeto de sala
-        const nuevaSala = {
-            codigo: codigo,
-            hostId: miId, // El ID del Host para referencia
-            jugadores: {
-                [miId]: jugadorHost
-            },
-            estado: 'esperando',
-            rondaActual: 0,
-            rondaEstado: 'esperando',
-            configuracion: configuracionActual,
-            votos: {}, 
-            temporizadorFinTimestamp: null 
-        };
         
-        // 4. Escribir la sala en Firebase
-        await db.ref('salas/' + codigo).set(nuevaSala);
-        
-        // 5. Configurar el escuchador y pasar a la vista
-        configurarEscuchadorSala(codigo);
-        document.getElementById('codigo-lobby-display').textContent = codigo;
+        let codigo = generarCodigoSala(); // Generar el código
+
+        try { 
+            // 1. Verificar si el código ya existe (aunque es poco probable)
+            let snapshot = await db.ref('salas/' + codigo).once('value');
+            if (snapshot.exists()) {
+                // Si existe, generar uno nuevo y re-chequear (simple reintento)
+                codigo = generarCodigoSala();
+                snapshot = await db.ref('salas/' + codigo).once('value');
+                if (snapshot.exists()) {
+                    throw new Error('No se pudo generar un código único después de dos intentos.');
+                }
+            }
+
+            // 2. Crear el objeto de jugador local con flag de Host
+            const jugadorHost = { 
+                id: miId, 
+                nombre: nombreJugador, 
+                esHost: true, 
+                rol: 'Tripulante', 
+                eliminado: false 
+            };
+
+            // 3. Crear el objeto de sala
+            const nuevaSala = {
+                codigo: codigo,
+                hostId: miId, 
+                jugadores: {
+                    [miId]: jugadorHost
+                },
+                estado: 'esperando',
+                rondaActual: 0,
+                rondaEstado: 'esperando',
+                configuracion: configuracionActual,
+                votos: {}, 
+                temporizadorFinTimestamp: null 
+            };
+            
+            // 4. Escribir la sala en Firebase
+            await db.ref('salas/' + codigo).set(nuevaSala);
+            
+            // 5. Configurar el escuchador y pasar a la vista (el listener cambia la vista)
+            document.getElementById('codigo-lobby-display').textContent = codigo;
+            configurarEscuchadorSala(codigo);
+
+        } catch (error) {
+            // Este alert se disparará si falla la escritura (ej. Reglas de Seguridad)
+            console.error("Error al crear la sala en Firebase:", error);
+            alert(`🔴 ERROR AL CREAR SALA: Fallo al escribir en DB. Esto es probablemente un error de REGLAS DE SEGURIDAD. Verifica tus reglas de Firebase. Detalle: ${error.message}`);
+        }
     });
 
     // ----------------------------------------------------
@@ -420,32 +432,39 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (!codigo) return;
         
         const salaRef = db.ref('salas/' + codigo);
-        const snapshot = await salaRef.once('value');
-        const sala = snapshot.val();
 
-        if (!snapshot.exists()) {
-            return alert('ERROR: La sala con el código ' + codigo + ' no existe.');
+        try {
+            const snapshot = await salaRef.once('value');
+            const sala = snapshot.val();
+
+            if (!snapshot.exists()) {
+                return alert('ERROR: La sala con el código ' + codigo + ' no existe.');
+            }
+
+            if (sala.estado !== 'esperando') {
+                return alert('ERROR: El juego ya inició o la sala está cerrada.');
+            }
+            
+            const numJugadores = Object.keys(sala.jugadores || {}).length;
+            if (numJugadores >= MAX_JUGADORES) {
+                 return alert('ERROR: La sala está llena. ¡Máximo ' + MAX_JUGADORES + ' jugadores!');
+            }
+
+            // 1. Crear el objeto de jugador
+            const nuevoJugador = { id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante', eliminado: false };
+            
+            // 2. Agregar el jugador a la sala
+            const jugadoresRef = db.ref('salas/' + codigo + '/jugadores/' + miId);
+            await jugadoresRef.set(nuevoJugador);
+
+            // 3. Configurar el escuchador y pasar a la vista
+            configurarEscuchadorSala(codigo);
+            document.getElementById('codigo-lobby-display').textContent = codigo;
+
+        } catch (error) {
+            console.error("Error al unirse a la sala en Firebase:", error);
+            alert(`🔴 ERROR AL UNIRSE: Fallo de red o de permisos. Detalle: ${error.message}`);
         }
-
-        if (sala.estado !== 'esperando') {
-            return alert('ERROR: El juego ya inició o la sala está cerrada.');
-        }
-        
-        const numJugadores = Object.keys(sala.jugadores || {}).length;
-        if (numJugadores >= MAX_JUGADORES) {
-             return alert('ERROR: La sala está llena. ¡Máximo ' + MAX_JUGADORES + ' jugadores!');
-        }
-
-        // 1. Crear el objeto de jugador
-        const nuevoJugador = { id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante', eliminado: false };
-        
-        // 2. Agregar el jugador a la sala
-        const jugadoresRef = db.ref('salas/' + codigo + '/jugadores/' + miId);
-        await jugadoresRef.set(nuevoJugador);
-
-        // 3. Configurar el escuchador y pasar a la vista
-        configurarEscuchadorSala(codigo);
-        document.getElementById('codigo-lobby-display').textContent = codigo;
     });
     
     // ----------------------------------------------------
@@ -463,17 +482,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
             const jugadoresRef = db.ref('salas/' + codigoSalaActual + '/jugadores/' + miId);
             await jugadoresRef.remove();
             
-            // Si era el Host y no quedan más jugadores, eliminar la sala
+            // Lógica de transferencia de Host si soy el Host
             const snapshot = await salaRef.once('value');
             if (snapshot.exists()) {
                  const sala = snapshot.val();
                  if (sala.hostId === miId) {
                       const jugadoresRestantes = Object.keys(sala.jugadores || {}).length;
-                      // Si soy el Host y solo quedo yo (o ya me fui)
                       if (jugadoresRestantes <= 1) { 
                           await salaRef.remove();
                       } else {
-                          // Si quedan jugadores, transferir el host al primero que quede
+                          // Transferir el host
                           const primerJugadorId = Object.keys(sala.jugadores).find(id => id !== miId);
                           if (primerJugadorId) {
                               await salaRef.update({ hostId: primerJugadorId });
@@ -550,7 +568,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
                  rol: jugador.rol,
                  palabraSecreta: palabraInfo,
                  tema: temaInfo,
-                 // Estos datos son privados para el cliente que los recibe (en el listener)
             };
         });
         
@@ -558,13 +575,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const tiempoFin = Date.now() + configuracionActual.tiempoRondaSegundos * 1000;
 
         await salaRef.update({
-            jugadores: jugadoresParaFirebase, // Reescribir jugadores con roles
+            jugadores: jugadoresParaFirebase, 
             estado: 'enJuego',
             rondaActual: 1,
             rondaEstado: 'discutiendo',
-            'configuracion/palabra': palabraElegida, // Guardar la palabra elegida en la config
+            'configuracion/palabra': palabraElegida, 
             votos: {},
-            temporizadorFinTimestamp: tiempoFin // Iniciar temporizador
+            temporizadorFinTimestamp: tiempoFin 
         });
     });
 
@@ -572,7 +589,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // *** CONTROL DE TEMPORIZADOR (SOLO HOST) ***
     // ----------------------------------------------------
     function iniciarTemporizadorHost(sala) {
-        // Solo el Host debe correr el intervalo para actualizar a los demás
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         if (!esHost || !sala.temporizadorFinTimestamp) return;
 
@@ -581,19 +597,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
         temporizadorInterval = setInterval(async () => {
             const tiempoRestante = Math.max(0, Math.floor((sala.temporizadorFinTimestamp - Date.now()) / 1000));
             
-            // Actualizar la UI del temporizador (solo para que sea más fluido para el Host)
             const tiempoDisplay = document.getElementById('tiempo-restante');
             if (tiempoDisplay) tiempoDisplay.textContent = tiempoRestante; 
             
             if (tiempoRestante <= 0) {
                 limpiarTemporizador();
                 
-                // NOTA: El Host actualiza el estado en Firebase, y el Listener (todos) reaccionan.
+                // Host actualiza el estado, y el Listener reacciona.
                 await db.ref('salas/' + codigoSalaActual).update({
                     rondaEstado: 'votando' 
                 });
             }
-        }, 500); // 500ms para precisión decente
+        }, 500); 
     }
 
     // ----------------------------------------------------
@@ -603,7 +618,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function manejarInicioRonda(sala) {
         cambiarVista('vista-juego');
         
-        // Actualizar UI con datos de mi rol
         const rolDisplay = document.getElementById('rol-display');
         if (rolDisplay) rolDisplay.textContent = `Tu Rol: ¡${miRolActual}!`;
         
@@ -632,12 +646,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
         }
 
-        // Mostrar u ocultar botón de forzar votación (Host)
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         const btnForzar = document.getElementById('btn-forzar-votacion');
         if (btnForzar) btnForzar.style.display = esHost ? 'block' : 'none';
         
-        // Sincronizar temporizador (solo para clientes, el host lo maneja en el listener)
         if (!esHost && sala.temporizadorFinTimestamp) {
             limpiarTemporizador(); 
             temporizadorInterval = setInterval(() => {
@@ -655,7 +667,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
          const misDatos = jugadoresActuales.find(j => j.id === miId);
          if (!misDatos?.esHost || !codigoSalaActual) return;
          
-         // El host actualiza el estado, y todos los clientes lo reciben
          await db.ref('salas/' + codigoSalaActual).update({ rondaEstado: 'votando' });
     });
     
@@ -810,7 +821,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
          const jugadorEliminadoDisplay = document.getElementById('jugador-eliminado-display');
          if (jugadorEliminadoDisplay) jugadorEliminadoDisplay.textContent = mensaje;
 
-         // Renderizar el conteo de votos (TO-DO)
+         // Renderizar el conteo de votos
          const detallesVotos = document.getElementById('detalles-votacion-container');
          if (detallesVotos) {
              detallesVotos.innerHTML = '<h4>Conteo de Votos:</h4>';
@@ -830,8 +841,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
          if (finJuego) {
              if (btnVerGanador) btnVerGanador.style.display = esHost ? 'block' : 'none';
              if (btnSiguienteRonda) btnSiguienteRonda.style.display = 'none';
-             
-             // Si no es Host, el botón de ver ganador no aparece, se queda esperando el cambio de estado
          } else {
              if (btnSiguienteRonda) btnSiguienteRonda.style.display = esHost ? 'block' : 'none';
              if (btnVerGanador) btnVerGanador.style.display = 'none';
@@ -850,17 +859,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
          await db.ref('salas/' + codigoSalaActual).update({
              rondaActual: firebase.database.ServerValue.increment(1),
              rondaEstado: 'discutiendo',
-             votos: {}, // Limpiar votos para la nueva ronda
+             votos: {}, 
              temporizadorFinTimestamp: tiempoFin
          });
-         miVotoSeleccionadoId = 'none'; // Resetear mi voto
+         miVotoSeleccionadoId = 'none'; 
     });
 
     document.getElementById('btn-ver-ganador').addEventListener('click', async () => {
          const misDatos = jugadoresActuales.find(j => j.id === miId);
          if (!misDatos?.esHost || !codigoSalaActual) return;
          
-         // El host simplemente cambia el estado a 'finalizado', y todos lo reciben
          await db.ref('salas/' + codigoSalaActual).update({
              estado: 'finalizado'
          });
@@ -908,4 +916,4 @@ document.addEventListener('DOMContentLoaded', (event) => {
          }
     }
     
-}); 
+}); // CIERRE DEL DOMContentLoaded

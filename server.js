@@ -1,4 +1,4 @@
-// server.js (Simplificado para usar solo Express y servir archivos estáticos)
+// server.js (Versión para Firebase/Express en Render)
 
 const express = require('express');
 const http = require('http');
