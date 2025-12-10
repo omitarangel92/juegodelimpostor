@@ -501,3 +501,50 @@ input[type="text"], input[type="number"], select {
 .caja-rol {
     animation: fadeIn 0.8s ease-out;
 }
+
+/* --- ESTILOS PARA LA REVELACIÓN DE ROL --- */
+#vista-revelacion-rol {
+    /* Asegurar que la nueva vista se muestre correctamente */
+    display: none; /* Por defecto se oculta, se muestra con .activa */
+    height: 90vh; 
+    justify-content: center;
+    align-items: center;
+}
+
+.caja-rol {
+    background-color: var(--color-card);
+    padding: 40px;
+    border-radius: var(--radius);
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+.caja-rol h2 {
+    color: var(--color-secondary);
+    font-size: 1.5em;
+    margin-bottom: 10px;
+}
+
+#revelacion-titulo {
+    font-size: 3em !important;
+    font-family: var(--font-heading);
+    margin-top: 0;
+    margin-bottom: 20px;
+    transition: color 0.5s;
+    font-weight: 900;
+}
+
+.aviso-palabra {
+    font-size: 1.2em;
+    margin-bottom: 5px;
+}
+
+.mensaje-espera {
+    padding: 15px;
+    background-color: #242735;
+    border-radius: var(--radius);
+    color: var(--color-secondary);
+    margin: 20px 0;
+}
