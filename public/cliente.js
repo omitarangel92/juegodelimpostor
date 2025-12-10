@@ -1,4 +1,4 @@
-// public/cliente.js (MIGRADO A FIREBASE REALTIME DATABASE y LÓGICA DE FLUJO FINAL)
+// public/cliente.js (FLUJO FINAL DE JUEGO CORREGIDO)
 
 // =================================================================
 // 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
@@ -451,6 +451,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         return null; // El juego continúa
     }
     
+    // Función central para la VISTA FINAL
     function manejarFinDeJuego(sala) {
          cambiarVista('vista-final');
          
@@ -476,6 +477,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
              `;
              listaRoles.appendChild(li);
          });
+         
+         // **NUEVO:** Mostrar botones de control final del HOST en la VISTA-FINAL
+         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+         const accionesFinalesFinal = document.getElementById('acciones-finales-final-host');
+         
+         if (accionesFinalesFinal) {
+             accionesFinalesFinal.style.display = esHost ? 'flex' : 'none';
+         }
     }
 
 
@@ -776,16 +785,26 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
          if (esHost) {
              accionesFinalesHost.style.display = 'flex';
-             // MOSTRAR BOTONES SEGÚN EL ESTADO DE FIN DE JUEGO
-             document.getElementById('btn-reiniciar-partida').style.display = ganador ? 'block' : 'none';
-             document.getElementById('btn-finalizar-juego').style.display = ganador ? 'block' : 'none';
-             document.getElementById('btn-continuar-discusion').style.display = ganador ? 'none' : 'block';
              
+             // Lógica CLAVE: Botones en VISTA-RESULTADO (inmediatamente después de la votación)
              if (ganador) {
-                 // Si hay ganador, agregar mensaje de fin de juego al resultado
+                 // Si hay ganador, agregar mensaje y solo mostrar los botones de control final
                  document.getElementById('jugador-eliminado-display').textContent += `\n ¡El juego terminó! Ganan los ${ganador}.`;
-                 // Host puede forzar la transición a la vista final para mostrar todos los roles
+
+                 document.getElementById('btn-continuar-discusion').style.display = 'none';
+                 document.getElementById('btn-reiniciar-partida').style.display = 'block';
+                 document.getElementById('btn-finalizar-juego').style.display = 'block';
+                 
+                 // El host fuerza la transición a vista final
                  db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
+
+             } else {
+                 // Si NO hay ganador, se permite Continuar Discusión
+                 document.getElementById('btn-continuar-discusion').style.display = 'block';
+                 document.getElementById('btn-reiniciar-partida').style.display = 'none';
+                 document.getElementById('btn-finalizar-juego').style.display = 'none';
+                 
+                 document.getElementById('jugador-eliminado-display').textContent += `\n Esperando al Host para continuar la discusión...`;
              }
 
          } else {
@@ -801,6 +820,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // ----------------------------------------------------
     document.getElementById('btn-reiniciar-partida').addEventListener('click', async () => {
          const misDatos = jugadoresActuales.find(j => j.id === miId);
+         // Se revisa si el código de sala es válido (prevención de errores)
          if (!misDatos?.esHost || !codigoSalaActual) return;
          
          if (confirm('⚠️ ¿Estás seguro de que quieres REINICIAR la partida? Todos los jugadores volverán al lobby para elegir una nueva categoría.')) {
@@ -832,13 +852,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // ----------------------------------------------------
     document.getElementById('btn-finalizar-juego').addEventListener('click', async () => {
          const misDatos = jugadoresActuales.find(j => j.id === miId);
+         // Se revisa si el código de sala es válido (prevención de errores)
          if (!misDatos?.esHost || !codigoSalaActual) return;
          
          if (confirm('⚠️ ¿Estás seguro de que quieres FINALIZAR el juego y CERRAR la sala? Esto eliminará la sala de forma permanente y expulsará a todos los jugadores.')) {
-             // 1. Activa la vista final para todos (para que puedan ver los roles finales antes de que la sala se borre)
+             // 1. Asegurarse de que todos pasen a la vista final antes de borrar (opcional, para estética)
              await db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
              
-             // 2. Esperar un momento (simulación de tiempo para ver la vista final) y luego borrar la sala
+             // 2. Esperar un momento y luego borrar la sala (el listener hará el window.location.reload)
              setTimeout(async () => {
                  await db.ref('salas/' + codigoSalaActual).remove();
              }, 1000); 

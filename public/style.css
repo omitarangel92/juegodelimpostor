@@ -273,13 +273,24 @@ input[type="text"], input[type="number"], select {
     padding: 10px;
     border: 2px solid var(--color-red);
     border-radius: 8px;
-    margin-bottom: 25px; /* Ajuste para separar del contenedor de botones */
+    margin-bottom: 25px; 
 }
 
-/* Estilo para los botones de Reiniciar/Finalizar del Host */
+/* Estilo para los botones de Reiniciar/Finalizar del Host en VISTA-RESULTADO */
 #acciones-finales-host {
     display: flex;
-    flex-wrap: wrap; /* Permitir que se ajusten en móviles */
+    flex-wrap: wrap; 
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    width: 100%;
+    max-width: 500px;
+}
+
+/* Estilo para los botones de Reiniciar/Finalizar del Host en VISTA-FINAL */
+#acciones-finales-final-host {
+    display: flex;
+    flex-wrap: wrap; 
     gap: 15px;
     justify-content: center;
     margin-top: 30px;
