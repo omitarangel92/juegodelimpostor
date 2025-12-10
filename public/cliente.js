@@ -1,4 +1,4 @@
-// public/cliente.js (MIGRADO A FIREBASE REALTIME DATABASE y LÓGICA DE FLUJO CORREGIDA)
+// public/cliente.js (CÓDIGO COMPLETO Y CORREGIDO)
 
 // =================================================================
 // 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
@@ -7,7 +7,7 @@
 // NOTA DE SEGURIDAD: Esta clave está expuesta públicamente, es CRÍTICO
 // que configures reglas de seguridad ESTRICTAS en Firebase.
 const firebaseConfig = {
-    // Reemplaza con tus CREDENCIALES
+    // Reemplaza con tus CREDENCIALES REALES de Firebase
     apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0", 
     authDomain: "juego-impostor-firebase.firebaseapp.com",
     databaseURL: "https://juego-impostor-firebase-default-rtdb.firebaseio.com",
@@ -18,7 +18,7 @@ const firebaseConfig = {
 };
 
 // =================================================================
-// 2. DATOS DEL JUEGO (MOVIDOS DEL SERVER.JS)
+// 2. DATOS DEL JUEGO
 // =================================================================
 const PALABRAS_POR_TEMA = {
     'Animales 🐾': ['Perro', 'Gato', 'Elefante', 'León', 'Tigre', 'Cebra', 'Oso', 'Delfín'],
@@ -62,22 +62,21 @@ function asignarRoles(jugadores, configuracion) {
     const numJugadores = jugadores.length;
     let numImpostores = 0;
     
+    // Lógica para determinar el número de impostores
     if (numJugadores >= 3 && numJugadores <= 5) {
         numImpostores = 1;
     } else if (numJugadores >= 6 && numJugadores <= 10) {
         numImpostores = 2;
     } 
     
-    // Resetear roles y eliminar flag de 'eliminado' (para el caso de re-jugar)
+    // Resetear roles y limpiar estado de juego (para jugadores que ya estaban en la sala)
     jugadores.forEach(j => {
         j.rol = 'Tripulante';
         j.eliminado = false;
-        j.voto = null; // Limpiar voto
+        j.voto = null; 
     });
 
-    let agentesAsignados = 0;
-    
-    // Asignar Agente Doble
+    // 1. Asignar Agente Doble
     if (configuracion.incluirAgenteDoble && numJugadores >= 4) {
         const tripulantesPotenciales = jugadores.filter(j => j.rol === 'Tripulante');
         if (tripulantesPotenciales.length > 0) {
@@ -86,11 +85,10 @@ function asignarRoles(jugadores, configuracion) {
             
             const indexEnSala = jugadores.findIndex(j => j.id === agenteDoble.id);
             jugadores[indexEnSala].rol = 'Agente Doble';
-            agentesAsignados = 1;
         }
     }
     
-    // Asignar Impostores
+    // 2. Asignar Impostores
     const candidatosAImpostor = jugadores.filter(j => j.rol === 'Tripulante'); 
 
     let impostoresAsignados = 0;
@@ -121,25 +119,23 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // 4. VARIABLES GLOBALES
     let nombreJugador = ''; 
     let codigoSalaActual = '';
-    // ID única para este navegador (permanece igual a lo largo de la sesión)
+    // Generar un ID único para este cliente
     let miId = Date.now().toString(36) + Math.random().toString(36).substring(2); 
     
     let jugadoresActuales = []; 
-    // SE ELIMINA tiempoRondaSegundos
     let configuracionActual = { tema: TEMAS_DISPONIBLES[0], incluirAgenteDoble: false }; 
     let miRolActual = ''; 
     let miPalabraSecreta = ''; 
     let miTemaActual = ''; 
-    let miVotoSeleccionadoId = 'none';
+    let miVotoSeleccionadoId = 'none'; // Para evitar doble voto en la misma ronda
     
-    // SE ELIMINA temporizadorInterval
     let listenerSala = null; // Para almacenar el listener de la sala
 
     // =================================================================
     // 5. FUNCIONES DE UI Y LÓGICA AUXILIAR
     // =================================================================
 
-    // FUNCIÓN DE NAVEGACIÓN (Necesaria para los onclick del HTML)
+    // FUNCIÓN DE NAVEGACIÓN
     window.cambiarVista = function(vistaId) {
         document.querySelectorAll('.vista').forEach(vista => {
             vista.classList.remove('activa');
@@ -152,7 +148,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             return;
         }
         
-        // Lógica específica al cambiar de vista
         if (vistaId === 'vista-lobby') {
             actualizarBotonInicioJuego();
             renderConfiguracion(); 
@@ -160,20 +155,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
     
     function actualizarListaJugadores(jugadores) {
-        jugadoresActuales = jugadores;
+        // Asegurarse de que jugadoresActuales se actualiza
+        jugadoresActuales = jugadores.map(j => ({ ...j })); // Copia profunda
+        
         const listaHost = document.getElementById('lista-jugadores-host');
         const listaJuego = document.getElementById('lista-jugadores-juego');
         const listaVotos = document.getElementById('opciones-votacion');
         
-        listaHost.innerHTML = '';
-        listaJuego.innerHTML = '';
+        if (listaHost) listaHost.innerHTML = '';
+        if (listaJuego) listaJuego.innerHTML = '';
         
-        // Preparar lista de votos (opción de "nadie" primero)
-        listaVotos.innerHTML = `
-            <button class="btn-votar" data-voto-id="none" style="background-color: #888;">
-                ⚠️ Nadie (Abstenerse)
-            </button>
-        `;
+        // Preparar lista de votos
+        if (listaVotos) {
+             listaVotos.innerHTML = `
+                <button class="btn-votar" data-voto-id="none" style="background-color: #888;">
+                    ⚠️ Nadie (Abstenerse)
+                </button>
+            `;
+        }
 
         let contadorActivos = 0;
 
@@ -183,29 +182,33 @@ document.addEventListener('DOMContentLoaded', (event) => {
             const esEliminado = j.eliminado;
 
             // 1. Lista del Lobby (Host)
-            const elementoLobby = document.createElement('li');
-            elementoLobby.textContent = j.nombre + (esHost ? ' (HOST)' : '') + (esMiJugador ? ' (Tú)' : '');
+            if (listaHost) {
+                const elementoLobby = document.createElement('li');
+                elementoLobby.textContent = j.nombre + (esHost ? ' (HOST)' : '') + (esMiJugador ? ' (Tú)' : '');
 
-            // Si soy el Host y no es mi jugador, agrego botón de expulsar
-            if (jugadores.find(p => p.id === miId)?.esHost && !esMiJugador && !esEliminado) {
-                const btnExpulsar = document.createElement('button');
-                btnExpulsar.textContent = 'Expulsar';
-                btnExpulsar.classList.add('btn-danger', 'btn-small');
-                btnExpulsar.onclick = () => expulsarJugador(j.id);
-                elementoLobby.appendChild(btnExpulsar);
+                // Si soy el Host y no es mi jugador, agrego botón de expulsar
+                if (jugadores.find(p => p.id === miId)?.esHost && !esMiJugador && !esEliminado) {
+                    const btnExpulsar = document.createElement('button');
+                    btnExpulsar.textContent = 'Expulsar';
+                    btnExpulsar.classList.add('btn-danger', 'btn-small');
+                    btnExpulsar.onclick = () => expulsarJugador(j.id);
+                    elementoLobby.appendChild(btnExpulsar);
+                }
+                listaHost.appendChild(elementoLobby);
             }
-            listaHost.appendChild(elementoLobby);
 
 
             // 2. Lista de Juego (Solo activos)
             if (!esEliminado) {
                 contadorActivos++;
-                const elementoJuego = document.createElement('li');
-                elementoJuego.textContent = j.nombre + (esMiJugador ? ' (Tú)' : '');
-                listaJuego.appendChild(elementoJuego);
+                if (listaJuego) {
+                    const elementoJuego = document.createElement('li');
+                    elementoJuego.textContent = j.nombre + (esMiJugador ? ' (Tú)' : '');
+                    listaJuego.appendChild(elementoJuego);
+                }
                 
                 // 3. Opciones de Votación (Solo activos, excluyéndome a mí mismo)
-                if (!esMiJugador) {
+                if (!esMiJugador && listaVotos) {
                     const btnVoto = document.createElement('button');
                     btnVoto.textContent = j.nombre;
                     btnVoto.classList.add('btn-votar');
@@ -216,20 +219,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
         });
 
-        document.getElementById('contador-jugadores').textContent = jugadores.length;
-        document.getElementById('jugadores-activos-contador').textContent = contadorActivos;
+        const contadorDisplay = document.getElementById('contador-jugadores');
+        if (contadorDisplay) contadorDisplay.textContent = jugadores.length;
+        const activosDisplay = document.getElementById('jugadores-activos-contador');
+        if (activosDisplay) activosDisplay.textContent = contadorActivos;
+        
         actualizarBotonInicioJuego();
     }
     
     
     function actualizarBotonInicioJuego() {
-        const btnIniciar = document.getElementById('btn-iniciar-revelacion'); // ID actualizado
+        const btnIniciar = document.getElementById('btn-iniciar-revelacion'); 
         const avisoMin = document.getElementById('aviso-min-jugadores');
         
         if (!btnIniciar || !avisoMin) return;
 
         const numJugadores = jugadoresActuales.length;
-        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        // La propiedad esHost ahora está en los datos del jugador
+        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost; 
         
         if (esHost) {
             if (numJugadores >= MIN_JUGADORES && numJugadores <= MAX_JUGADORES) {
@@ -242,49 +249,56 @@ document.addEventListener('DOMContentLoaded', (event) => {
             btnIniciar.style.display = 'block'; // Asegurar que sea visible para el Host
         } else {
             btnIniciar.style.display = 'none'; // Esconder para no-Hosts
+            avisoMin.style.display = 'none'; // Esconder aviso también
         }
     }
 
     // =================================================================
-    // 6. LÓGICA DE FIREBASE (El reemplazo de Socket.IO)
+    // 6. LÓGICA DE FIREBASE (Listener y Flujo)
     // =================================================================
     function configurarEscuchadorSala(codigoSala) {
         // Detener escuchador anterior si existe
         if (listenerSala) {
             db.ref('salas/' + codigoSalaActual).off('value', listenerSala);
         }
-        codigoSalaActual = codigoSala; // Asegurar que el código actual esté configurado
+        codigoSalaActual = codigoSala; 
         const salaRef = db.ref('salas/' + codigoSala);
 
-        // Define la función de escucha (el "socket.on" que se ejecuta en todos)
+        // Define la función de escucha (la "suscripción" a los cambios en la sala)
         listenerSala = salaRef.on('value', (snapshot) => {
             if (!snapshot.exists()) {
-                // Esto podría ocurrir si el Host borró la sala o fuiste expulsado y la sala se limpió
                 alert('La sala ha sido eliminada, has sido expulsado o no existe.');
                 window.location.reload();
                 return;
             }
-            const sala = snapshot.val(); // Reconstruir el objeto de la sala
+            const sala = snapshot.val(); 
             
-            // 1. Reconstruir lista de jugadores
+            // 1. Reconstruir lista de jugadores y mi info
             const jugadores = Object.values(sala.jugadores || {});
             actualizarListaJugadores(jugadores);
 
-            // 2. Actualizar mi información local
             const misDatos = sala.jugadores[miId];
             if (misDatos) {
+                // Actualizar info local
                 miRolActual = misDatos.rol || '';
                 miPalabraSecreta = misDatos.palabraSecreta || '';
                 miTemaActual = misDatos.tema || '';
+            } else {
+                 // Si mis datos desaparecen, significa que fui expulsado o la sala se cerró
+                 if (sala.estado !== 'finalizado') {
+                      alert('Has sido desconectado o expulsado de la sala.');
+                      window.location.reload();
+                      return;
+                 }
             }
             
-            // 3. Manejar el flujo del juego
+            // 2. Manejar el flujo del juego basado en el estado
             if (sala.estado === 'esperando') {
                 cambiarVista('vista-lobby');
-            } else if (sala.estado === 'revelacion') { // <--- NUEVO ESTADO DE REVELACIÓN
+            } else if (sala.estado === 'revelacion') { 
                 manejarRevelacionRol(sala);
             } else if (sala.estado === 'enJuego') {
-                manejarJuego(sala); // Flujo simplificado (Discusión / Votación)
+                manejarJuego(sala); 
             } else if (sala.estado === 'resultado') {
                 manejarResultadoRonda(sala);
             } else if (sala.estado === 'finalizado') {
@@ -293,17 +307,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     }
 
-    // Función para expulsar jugador (simplificada)
+    // Funciones de mantenimiento de sala (expulsar y abandonar)
     window.expulsarJugador = async function(jugadorId) {
         if (!jugadoresActuales.find(j => j.id === miId)?.esHost || !codigoSalaActual) return;
         
         if (confirm(`¿Estás seguro de que quieres expulsar a ${jugadoresActuales.find(j => j.id === jugadorId).nombre}?`)) {
-            // Eliminar el jugador de la base de datos
             await db.ref(`salas/${codigoSalaActual}/jugadores/${jugadorId}`).remove();
         }
     }
     
-    // Función para abandonar la sala
     window.abandonarSala = async function() {
         if (!codigoSalaActual) return window.location.reload(); 
         
@@ -312,30 +324,32 @@ document.addEventListener('DOMContentLoaded', (event) => {
         // 1. Desactivar listener
         db.ref('salas/' + codigoSalaActual).off('value', listenerSala);
 
-        // 2. Eliminar al jugador de la sala
+        // 2. Eliminar al jugador
         await db.ref(`salas/${codigoSalaActual}/jugadores/${miId}`).remove();
         
-        // 3. Si soy el host y quedan jugadores, transferir host
+        // 3. Lógica de transferencia de Host si es necesario
         if (misDatos?.esHost && jugadoresActuales.length > 1) {
-            const siguienteHost = jugadoresActuales.find(j => j.id !== miId && !j.eliminado);
+            // Buscar al primer jugador activo y no host
+            const siguienteHost = jugadoresActuales.find(j => j.id !== miId && !j.eliminado); 
             if (siguienteHost) {
                 await db.ref(`salas/${codigoSalaActual}/hostId`).set(siguienteHost.id);
                 await db.ref(`salas/${codigoSalaActual}/jugadores/${siguienteHost.id}/esHost`).set(true);
             } else {
-                 // Si no queda nadie más, borro la sala
+                // Si no hay más jugadores, eliminar la sala
                 await db.ref('salas/' + codigoSalaActual).remove();
             }
         } else if (misDatos?.esHost && jugadoresActuales.length <= 1) {
-            // Si soy el único o el último, borro la sala
+            // Si el Host es el último, eliminar la sala
             await db.ref('salas/' + codigoSalaActual).remove();
         }
 
-        // 4. Recargar la página para volver a inicio
         window.location.reload();
     }
     
     function renderConfiguracion() {
         const selectTema = document.getElementById('select-tema');
+        if (!selectTema) return;
+        
         selectTema.innerHTML = '';
         TEMAS_DISPONIBLES.forEach(tema => {
             const option = document.createElement('option');
@@ -343,35 +357,33 @@ document.addEventListener('DOMContentLoaded', (event) => {
             option.textContent = tema;
             selectTema.appendChild(option);
         });
-        // Asegurar que la configuración actual se refleje en los selectores
         selectTema.value = configuracionActual.tema;
-        document.getElementById('checkbox-agente-doble').checked = configuracionActual.incluirAgenteDoble;
+        
+        const checkboxAgente = document.getElementById('checkbox-agente-doble');
+        if (checkboxAgente) checkboxAgente.checked = configuracionActual.incluirAgenteDoble;
     }
 
     // =================================================================
-    // 7. HANDLERS DE FORMULARIOS Y BOTONES PRINCIPALES
+    // 7. HANDLERS DE FORMULARIOS Y FLUJO DEL JUEGO
     // =================================================================
     
-    // ----------------------------------------------------
-    // *** CORRECCIÓN CRÍTICA: HANDLER DE INICIO DE NOMBRE *** // ----------------------------------------------------
+    // *** 7.1. HANDLER DE INICIO DE NOMBRE ***
     document.getElementById('form-inicio').addEventListener('submit', (e) => {
-        e.preventDefault(); // <-- IMPEDIR RECARGA DE PÁGINA
+        e.preventDefault(); // <-- CORRECCIÓN: Evitar recarga de página
         nombreJugador = document.getElementById('input-nombre').value.trim();
         
         if (nombreJugador) {
             document.getElementById('nombre-jugador-display').textContent = nombreJugador;
-            cambiarVista('vista-seleccion'); // Mover a la vista de selección de sala
+            cambiarVista('vista-seleccion'); 
         }
     });
     
-    // ----------------------------------------------------
-    // *** CREAR SALA CON FIREBASE (CLIENTE HOST) *** // ----------------------------------------------------
+    // *** 7.2. CREAR SALA (HOST) ***
     document.getElementById('btn-crear-sala').addEventListener('click', async () => {
         let codigo; 
         let snapshot; 
         do { 
             codigo = generarCodigoSala(); 
-            // Verificar si el código ya existe
             snapshot = await db.ref('salas/' + codigo).once('value'); 
         } while (snapshot.exists()); 
 
@@ -385,9 +397,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
         const nuevaSala = {
             codigo: codigo,
-            hostId: miId, // El ID del Host para referencia
+            hostId: miId, 
             jugadores: { [miId]: jugadorHost },
-            estado: 'esperando', // Estado inicial: Lobby
+            estado: 'esperando', 
             configuracion: configuracionActual, 
             votos: {},
             rondaActual: 1
@@ -398,11 +410,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
         configurarEscuchadorSala(codigo);
         document.getElementById('codigo-lobby-display').textContent = codigo;
-        // El listener ahora se encarga de cambiar a 'vista-lobby'
     });
 
-    // ----------------------------------------------------
-    // *** UNIRSE A SALA CON FIREBASE (CLIENTE INVITADO) *** // ----------------------------------------------------
+    // *** 7.3. UNIRSE A SALA ***
     document.getElementById('form-unirse-sala').addEventListener('submit', async (e) => {
         e.preventDefault();
         const inputCodigo = document.getElementById('input-codigo');
@@ -439,7 +449,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                  tema: null 
             };
             
-            // Si el jugador ya está en la sala (recarga), no hace falta re-agregar
+            // Si el jugador ya está en la sala (ej. recarga)
             if (sala.jugadores && sala.jugadores[miId]) {
                  configurarEscuchadorSala(codigo);
                  document.getElementById('codigo-lobby-display').textContent = codigo;
@@ -458,8 +468,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     });
 
-    // ----------------------------------------------------
-    // *** GUARDAR CONFIGURACIÓN (Host) *** // ----------------------------------------------------
+    // *** 7.4. GUARDAR CONFIGURACIÓN (Host) ***
     document.getElementById('form-configuracion').addEventListener('change', async () => {
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         if (!esHost || !codigoSalaActual) return;
@@ -469,19 +478,17 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         configuracionActual = { tema, incluirAgenteDoble }; 
         
-        // Actualizar Firebase
         await db.ref('salas/' + codigoSalaActual + '/configuracion').update(configuracionActual);
     });
 
 
-    // ----------------------------------------------------
-    // *** LOBBY -> REVELACIÓN (HOST) *** // ----------------------------------------------------
+    // *** 7.5. LOBBY -> REVELACIÓN (HOST) ***
     document.getElementById('btn-iniciar-revelacion').addEventListener('click', async () => {
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         if (!esHost || !codigoSalaActual) return;
 
         if (jugadoresActuales.length < MIN_JUGADORES) {
-            return alert(`Necesitas al menos ${MIN_JUGADORES} jugadores para empezar.`);
+            return; 
         }
 
         const salaRef = db.ref('salas/' + codigoSalaActual);
@@ -494,7 +501,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const palabras = PALABRAS_POR_TEMA[temaElegido];
         const randomIndex1 = Math.floor(Math.random() * palabras.length);
         let randomIndex2;
-        do { // Asegurar que no sea la misma palabra
+        do { 
             randomIndex2 = Math.floor(Math.random() * palabras.length);
         } while (randomIndex2 === randomIndex1);
 
@@ -518,7 +525,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         // 4. Actualizar la sala en Firebase
         await salaRef.update({
             jugadores: jugadoresParaFirebase, 
-            estado: 'revelacion', // <--- NUEVO ESTADO: Revelación de Rol
+            estado: 'revelacion', 
             'configuracion/palabraTripulante': palabraTripulante, 
             'configuracion/palabraImpostor': palabraImpostor,
             'configuracion/temaElegido': temaElegido,
@@ -527,9 +534,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 
-    // ----------------------------------------------------
-    // *** MANEJAR REVELACIÓN DE ROL (TODOS LOS CLIENTES) ***
-    // ----------------------------------------------------
+    // *** 7.6. MANEJAR REVELACIÓN DE ROL (TODOS LOS CLIENTES) ***
     function manejarRevelacionRol(sala) {
         cambiarVista('vista-revelacion-rol');
         
@@ -543,39 +548,35 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const rolDisplay = document.getElementById('revelacion-titulo');
         const palabraDisplay = document.getElementById('revelacion-palabra');
         const temaDisplay = document.getElementById('revelacion-tema');
-        const listaJugadoresDisplay = document.getElementById('revelacion-lista-jugadores');
         const botonHost = document.getElementById('btn-iniciar-discusion');
         const avisoEspera = document.getElementById('aviso-espera-discusion');
 
-        // 1. Mostrar Rol y Palabra
-        rolDisplay.textContent = miRolActual;
-        palabraDisplay.textContent = miPalabraSecreta;
-        temaDisplay.textContent = 'Tema: ' + miTemaActual;
+        if (rolDisplay) rolDisplay.textContent = miRolActual;
+        if (palabraDisplay) palabraDisplay.textContent = miPalabraSecreta;
+        if (temaDisplay) temaDisplay.textContent = 'Tema: ' + miTemaActual;
 
+        // Estilos de color
         let color = 'var(--color-primary)';
         if (miRolActual === 'Impostor') color = 'var(--color-red)';
         if (miRolActual === 'Agente Doble') color = 'var(--color-orange)';
         if (miRolActual === 'Tripulante') color = 'var(--color-green)';
-        rolDisplay.style.color = color;
+        if (rolDisplay) rolDisplay.style.color = color;
         
-        // 2. Mostrar botón solo al Host
+        // Mostrar botón solo al Host
         if (misDatos.esHost) {
-            botonHost.style.display = 'block';
-            avisoEspera.style.display = 'none';
+            if (botonHost) botonHost.style.display = 'block';
+            if (avisoEspera) avisoEspera.style.display = 'none';
         } else {
-            botonHost.style.display = 'none';
-            avisoEspera.style.display = 'block';
+            if (botonHost) botonHost.style.display = 'none';
+            if (avisoEspera) avisoEspera.style.display = 'block';
         }
     }
     
-    // ----------------------------------------------------
-    // *** REVELACIÓN -> DISCUSIÓN (HOST) ***
-    // ----------------------------------------------------
+    // *** 7.7. REVELACIÓN -> DISCUSIÓN (HOST) ***
     document.getElementById('btn-iniciar-discusion').addEventListener('click', async () => {
         const misDatos = jugadoresActuales.find(j => j.id === miId);
         if (!misDatos?.esHost || !codigoSalaActual) return;
         
-        // El host actualiza el estado a 'enJuego' y rondaEstado a 'discutiendo'
         await db.ref('salas/' + codigoSalaActual).update({ 
             estado: 'enJuego',
             rondaEstado: 'discutiendo',
@@ -584,61 +585,65 @@ document.addEventListener('DOMContentLoaded', (event) => {
     });
 
 
-    // ----------------------------------------------------
-    // *** MANEJAR EL JUEGO (SALA DE CONVERSACIÓN / DISCUSIÓN) ***
-    // ----------------------------------------------------
+    // *** 7.8. MANEJAR EL JUEGO (DISCUSIÓN Y VOTACIÓN) ***
     function manejarJuego(sala) {
         const misDatos = sala.jugadores[miId];
         const esHost = misDatos?.esHost;
         
-        // 1. Actualizar UI de Roles/Palabras/Temas
-        document.getElementById('mi-rol-juego').textContent = misDatos.rol;
-        document.getElementById('mi-palabra-juego').textContent = misDatos.palabraSecreta;
-        document.getElementById('mi-tema-juego').textContent = misDatos.tema;
+        if (document.getElementById('mi-rol-juego')) document.getElementById('mi-rol-juego').textContent = misDatos.rol;
+        if (document.getElementById('mi-palabra-juego')) document.getElementById('mi-palabra-juego').textContent = misDatos.palabraSecreta;
+        if (document.getElementById('mi-tema-juego')) document.getElementById('mi-tema-juego').textContent = misDatos.tema;
         
-        // 2. Manejar sub-estados
         if (sala.rondaEstado === 'discutiendo') {
             cambiarVista('vista-juego');
+            miVotoSeleccionadoId = 'none'; // CORRECCIÓN: Resetear el estado de voto local al iniciar la discusión.
             
-            // Mostrar botón de Votación solo al Host
             const btnForzarVotacion = document.getElementById('btn-forzar-votacion');
             if (btnForzarVotacion) {
                 btnForzarVotacion.style.display = esHost ? 'block' : 'none';
-                btnForzarVotacion.textContent = '🔴 INICIAR VOTACIÓN (HOST)'; // Asegurar el texto
             }
             
         } else if (sala.rondaEstado === 'votando') {
             manejarInicioVotacion(sala); 
         }
         
-        // 3. Chequear fin de juego y transferir host si es necesario
         if (chequearFinDeJuego(jugadoresActuales)) {
-             db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
+             // Si el juego terminó, forzar el estado 'finalizado'
+             if (esHost) {
+                db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
+             }
         }
     }
     
-    // ----------------------------------------------------
-    // *** DISCUSIÓN -> VOTACIÓN (HOST) *** // ----------------------------------------------------
+    // *** 7.9. DISCUSIÓN -> VOTACIÓN (HOST) ***
     document.getElementById('btn-forzar-votacion').addEventListener('click', async () => {
         const misDatos = jugadoresActuales.find(j => j.id === miId);
         if (!misDatos?.esHost || !codigoSalaActual) return; 
         
-        // El host actualiza el estado a votando
         await db.ref('salas/' + codigoSalaActual).update({ rondaEstado: 'votando' });
     });
     
-    // ----------------------------------------------------
-    // *** INICIO DE VOTACIÓN (TODOS LOS CLIENTES) *** // ----------------------------------------------------
+    // *** 7.10. INICIO DE VOTACIÓN (TODOS LOS CLIENTES) ***
     function manejarInicioVotacion(sala) {
         cambiarVista('vista-votacion');
         
-        // El resto de la lógica de votación...
         const rondaVotacionDisplay = document.getElementById('ronda-votacion-display');
         if (rondaVotacionDisplay) rondaVotacionDisplay.textContent = sala.rondaActual; 
         
         const votoConfirmadoDisplay = document.getElementById('voto-confirmado-display');
-        if (votoConfirmadoDisplay) votoConfirmadoDisplay.textContent = 'Esperando tu voto...';
         
+        // Revisa si ya voté en esta ronda (a través del estado local)
+        if (miVotoSeleccionadoId !== 'none') {
+            const votado = jugadoresActuales.find(j => j.id === miVotoSeleccionadoId);
+            votoConfirmadoDisplay.textContent = 
+                (miVotoSeleccionadoId === 'none') ? '⚠️ Abstención confirmada.' : '✅ Voto por ' + votado.nombre + ' confirmado.';
+            document.querySelectorAll('.btn-votar').forEach(btn => btn.disabled = true);
+        } else {
+            votoConfirmadoDisplay.textContent = 'Esperando tu voto...';
+            // Reactivar botones
+            document.querySelectorAll('.btn-votar').forEach(btn => btn.disabled = false);
+        }
+
         const votantesActivos = jugadoresActuales.filter(j => !j.eliminado).length;
         const votosEmitidos = Object.keys(sala.votos || {}).length;
 
@@ -647,64 +652,58 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         // Si todos votaron, el Host pasa al resultado
         if (votosEmitidos >= votantesActivos) {
-            miVotoSeleccionadoId = 'none'; // Limpiar para que pueda votar en la siguiente ronda
             if (jugadoresActuales.find(j => j.id === miId)?.esHost) {
-                // El host actualiza el estado a 'resultado'
                 db.ref('salas/' + codigoSalaActual).update({ estado: 'resultado' });
             }
         }
     }
     
-    // ----------------------------------------------------
-    // *** VOTAR (TODOS LOS CLIENTES) *** // ----------------------------------------------------
+    // *** 7.11. VOTAR (TODOS LOS CLIENTES) ***
     window.votarJugador = async function(votadoId) {
-        if (!codigoSalaActual || miVotoSeleccionadoId !== 'none') return; 
+        // Permitir votar solo si el estado local es 'none'
+        if (miVotoSeleccionadoId !== 'none' || !codigoSalaActual) return; 
 
-        // Actualizar el voto local para evitar doble voto en la UI
+        // 1. Mostrar confirmación en la UI
         miVotoSeleccionadoId = votadoId; 
         const votado = jugadoresActuales.find(j => j.id === votadoId);
         
         document.getElementById('voto-confirmado-display').textContent = 
             (votadoId === 'none') ? '⚠️ Abstención confirmada.' : '✅ Voto por ' + votado.nombre + ' confirmado.';
         
-        // Deshabilitar todos los botones de votación
+        // 2. Deshabilitar botones
         document.querySelectorAll('.btn-votar').forEach(btn => btn.disabled = true);
         
-        // Actualizar el voto en Firebase
+        // 3. Actualizar el voto en Firebase
         await db.ref('salas/' + codigoSalaActual + '/votos/' + miId).set(votadoId);
+        
+        // Nota: El cambio en votos activará manejarInicioVotacion, donde el Host detectará si todos votaron.
     };
 
-    // ----------------------------------------------------
-    // *** MANEJAR RESULTADO DE RONDA (TODOS LOS CLIENTES) ***
-    // ----------------------------------------------------
+    // *** 7.12. MANEJAR RESULTADO DE RONDA (TODOS LOS CLIENTES) ***
     function manejarResultadoRonda(sala) {
         cambiarVista('vista-resultado');
         
-        // 1. Mostrar la ronda
         document.getElementById('resultado-ronda-display').textContent = `Resultados de la Ronda ${sala.rondaActual}`;
 
-        // 2. Contar votos
         const votosRecibidos = sala.votos || {};
         const conteoVotos = {};
         let jugadoresActivos = jugadoresActuales.filter(j => !j.eliminado);
         let jugadorEliminado = null;
 
-        // Inicializar conteo
         jugadoresActivos.forEach(j => conteoVotos[j.id] = 0);
-        conteoVotos['none'] = 0; // Para abstenciones
+        conteoVotos['none'] = 0; // Contabilizar abstenciones/votos inválidos
 
-        // Contar votos
         Object.values(votosRecibidos).forEach(votoId => {
             if (conteoVotos[votoId] !== undefined) {
                 conteoVotos[votoId]++;
+            } else if (votoId === 'none') {
+                conteoVotos['none']++;
             }
         });
 
-        // 3. Determinar eliminado
         let maxVotos = 0;
         let candidatosAEliminar = [];
         
-        // Encontrar el jugador con más votos (excluyendo "none")
         Object.keys(conteoVotos).forEach(id => {
             if (id !== 'none' && conteoVotos[id] > maxVotos) {
                 maxVotos = conteoVotos[id];
@@ -717,7 +716,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const resultadoDisplay = document.getElementById('jugador-eliminado-display');
         let detallesVotacionHTML = '';
         
-        // Renderizar detalles de votación (mostrar quién votó por quién)
+        // Generar lista de quién votó por quién
         jugadoresActivos.forEach(j => {
             const votoDelJugador = votosRecibidos[j.id];
             const votadoNombre = jugadoresActuales.find(p => p.id === votoDelJugador)?.nombre || 'Abstención';
@@ -726,78 +725,65 @@ document.addEventListener('DOMContentLoaded', (event) => {
         document.getElementById('detalles-votacion-container').innerHTML = detallesVotacionHTML;
 
 
-        if (candidatosAEliminar.length === 1) {
-            // Empate: No se elimina a nadie.
-            if (maxVotos > 0) {
-                jugadorEliminado = jugadoresActuales.find(j => j.id === candidatosAEliminar[0]);
-                resultadoDisplay.textContent = `¡${jugadorEliminado.nombre} ha sido eliminado con ${maxVotos} votos! Era ${jugadorEliminado.rol}.`;
-            } else {
-                 resultadoDisplay.textContent = `Nadie fue eliminado en esta ronda (No hubo mayoría de votos).`;
+        if (candidatosAEliminar.length === 1 && maxVotos > 0) {
+            jugadorEliminado = jugadoresActuales.find(j => j.id === candidatosAEliminar[0]);
+            resultadoDisplay.textContent = `¡${jugadorEliminado.nombre} ha sido eliminado con ${maxVotos} votos! Era ${jugadorEliminado.rol}.`;
+            // Aplicar eliminación (solo Host)
+            if (jugadoresActuales.find(j => j.id === miId)?.esHost) {
+                const jugadorRef = db.ref(`salas/${codigoSalaActual}/jugadores/${jugadorEliminado.id}/eliminado`);
+                jugadorRef.set(true); 
             }
+
         } else if (candidatosAEliminar.length > 1) {
-            // Empate: No se elimina a nadie.
              resultadoDisplay.textContent = `¡Hubo un empate con ${maxVotos} votos! Nadie es eliminado en esta ronda.`;
              jugadorEliminado = null;
         } else {
-             resultadoDisplay.textContent = `Nadie fue eliminado en esta ronda (No hubo votos).`;
+             resultadoDisplay.textContent = `Nadie fue eliminado en esta ronda (No hubo mayoría de votos).`;
         }
+        
+        // Comprobar si el juego termina después de la eliminación/empate
+        const ganador = chequearFinDeJuego(jugadoresActuales);
 
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         const btnSiguiente = document.getElementById('btn-siguiente-ronda');
         const btnVerGanador = document.getElementById('btn-ver-ganador');
 
-        // 4. Aplicar eliminación en Firebase si hay un eliminado
-        if (jugadorEliminado) {
-             const jugadorRef = db.ref(`salas/${codigoSalaActual}/jugadores/${jugadorEliminado.id}/eliminado`);
-             jugadorRef.set(true); // Marcar como eliminado
-        }
-        
-        // 5. Determinar si el juego termina
-        const ganador = chequearFinDeJuego(jugadoresActuales);
-
         if (ganador) {
-            if (esHost) btnVerGanador.style.display = 'block';
-            btnSiguiente.style.display = 'none';
+            if (esHost) btnVerGanador.style.display = 'block'; else btnVerGanador.style.display = 'none';
+            if (btnSiguiente) btnSiguiente.style.display = 'none';
         } else {
-            if (esHost) btnSiguiente.style.display = 'block';
-            btnVerGanador.style.display = 'none';
+            if (esHost) btnSiguiente.style.display = 'block'; else btnSiguiente.style.display = 'none';
+            if (btnVerGanador) btnVerGanador.style.display = 'none';
         }
     }
 
-    // ----------------------------------------------------
-    // *** CHEQUEAR FIN DE JUEGO ***
-    // ----------------------------------------------------
+    // *** 7.13. CHEQUEAR FIN DE JUEGO ***
     function chequearFinDeJuego(jugadores) {
-        // ... (la lógica de fin de juego se mantiene igual) ...
         const jugadoresActivos = jugadores.filter(j => !j.eliminado);
 
         const impostoresActivos = jugadoresActivos.filter(j => j.rol === 'Impostor').length;
         const tripulantesActivos = jugadoresActivos.filter(j => j.rol === 'Tripulante' || j.rol === 'Agente Doble').length;
         
         if (impostoresActivos === 0) {
-            return 'Tripulantes'; // Ganan los tripulantes (incluyendo el agente doble)
+            return 'Tripulantes'; // Ganan los tripulantes si eliminan a todos los impostores
         } else if (impostoresActivos >= tripulantesActivos) {
-            return 'Impostores'; // Ganan los impostores
+            return 'Impostores'; // Ganan los impostores si son igual o más que los tripulantes
         }
         return null; // El juego continúa
     }
     
-    // ----------------------------------------------------
-    // *** RESULTADO -> DISCUSIÓN / FIN (HOST) *** // ----------------------------------------------------
+    // *** 7.14. RESULTADO -> DISCUSIÓN / FIN (HOST) ***
     document.getElementById('btn-siguiente-ronda').addEventListener('click', async () => {
         const misDatos = jugadoresActuales.find(j => j.id === miId);
         if (!misDatos?.esHost || !codigoSalaActual) return;
-
-        // Limpiar el voto local y actualizar el estado
-        miVotoSeleccionadoId = 'none';
         
-        const nuevaRonda = (jugadoresActuales[0].rondaActual || 1) + 1; // Debería tomar rondaActual de la sala
+        const nuevaRonda = (jugadoresActuales[0].rondaActual || 1) + 1;
 
         await db.ref('salas/' + codigoSalaActual).update({
             estado: 'enJuego', 
-            rondaEstado: 'discutiendo', // Volver a la discusión
+            rondaEstado: 'discutiendo', 
             rondaActual: nuevaRonda, 
-            votos: {} // Limpiar votos de la ronda anterior
+            votos: {} // Limpiar votos para la nueva ronda
         });
     });
 
@@ -808,9 +794,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
          await db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
     });
     
-    // ----------------------------------------------------
-    // *** MANEJAR FIN DE JUEGO (TODOS LOS CLIENTES) ***
-    // ----------------------------------------------------
+    // *** 7.15. MANEJAR FIN DE JUEGO (TODOS LOS CLIENTES) ***
     function manejarFinDeJuego(sala) {
          cambiarVista('vista-final');
          const ganador = chequearFinDeJuego(jugadoresActuales);
@@ -823,9 +807,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
              listaRolesFinal.innerHTML = '';
              jugadoresActuales.forEach(j => {
                  const elemento = document.createElement('li');
-                 const rolDetalle = (j.rol === 'Tripulante' || j.rol === 'Agente Doble') ? j.palabraSecreta : '---';
+                 // Mostrar la palabra secreta que le fue asignada a cada jugador
+                 const palabraMostrada = j.palabraSecreta; 
                  const estado = j.eliminado ? '(Eliminado)' : '(Activo)';
-                 elemento.textContent = `${j.nombre} - Rol: ${j.rol} (${rolDetalle}) ${estado}`;
+                 elemento.textContent = `${j.nombre} - Rol: ${j.rol} (${palabraMostrada}) ${estado}`;
                  listaRolesFinal.appendChild(elemento);
              });
          }
@@ -836,12 +821,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
               setTimeout(() => {
                    db.ref('salas/' + codigoSalaActual).remove()
                        .catch(error => console.error("Error al limpiar la sala:", error));
-              }, 120000); // 2 minutos
+              }, 120000); // 2 minutos para que todos vean el resultado
          }
     }
     
-    // ----------------------------------------------------
     // *** INICIO DE LA APP (EVENTOS DE PRIMERA CARGA) ***
-    // ----------------------------------------------------
-    renderConfiguracion(); // Cargar la lista de temas al iniciar
+    renderConfiguracion(); 
 });

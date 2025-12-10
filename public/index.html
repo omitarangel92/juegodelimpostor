@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego del Impostor 🕵️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -80,17 +81,15 @@
 
             <hr>
 
-            <h2>Jugadores en la Sala:</h2>
-            <ul id="revelacion-lista-jugadores" class="lista-jugadores">
-                </ul>
+            <p id="aviso-espera-discusion" class="mensaje-espera">
+                Esperando a que el HOST inicie la discusión...
+            </p>
             
             <button id="btn-iniciar-discusion" class="btn-confirm btn-grande" style="display: none;">
                 📢 INICIAR DISCUSIÓN (HOST)
             </button>
-            <p id="aviso-espera-discusion" class="mensaje-espera">
-                Esperando a que el HOST inicie la discusión...
-            </p>
         </div>
+        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
     
     <div id="vista-juego" class="vista">
@@ -149,6 +148,8 @@
         <button id="btn-ver-ganador" class="btn-principal" style="display: none;">
             🏆 Ver Ganador
         </button>
+        
+        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-final" class="vista">
