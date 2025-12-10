@@ -1,80 +1,142 @@
-// public/cliente.js (CÓDIGO COMPLETO Y CORREGIDO - FIREBASE REALTIME DATABASE)
+// public/cliente.js (MIGRADO A FIREBASE REALTIME DATABASE)
 
+// =================================================================
+// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
+// =================================================================
+
+// NOTA DE SEGURIDAD: Esta clave está expuesta públicamente, es CRÍTICO
+// que configures reglas de seguridad ESTRICTAS en Firebase.
+const firebaseConfig = {
+    // Reemplaza con tus CREDENCIALES
+    apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0", 
+    authDomain: "juego-impostor-firebase.firebaseapp.com",
+    databaseURL: "https://juego-impostor-firebase-default-rtdb.firebaseio.com",
+    projectId: "juego-impostor-firebase",
+    storageBucket: "juego-impostor-firebase.firebasestorage.app",
+    messagingSenderId: "337084843090",
+    appId: "1:337084843090:web:41b0ebafd8a21f1420cb8b"
+};
+
+// =================================================================
+// 2. DATOS DEL JUEGO (MOVIDOS DEL SERVER.JS)
+// =================================================================
+const PALABRAS_POR_TEMA = {
+    'Animales 🐾': ['Perro', 'Gato', 'Elefante', 'León', 'Tigre', 'Cebra', 'Oso', 'Delfín'],
+    'Comida 🍔': ['Pizza', 'Taco', 'Hamburguesa', 'Ensalada', 'Sushi', 'Pasta', 'Helado', 'Manzana'],
+    'Países 🌎': ['España', 'México', 'Colombia', 'Japón', 'Francia', 'Canadá', 'Brasil', 'Alemania'],
+    'Profesiones 💼': ['Médico', 'Maestro', 'Ingeniero', 'Cocinero', 'Policía', 'Bombero', 'Abogado', 'Piloto'],
+    'Objetos Cotidianos 💡': ['Teléfono', 'Taza', 'Llaves', 'Reloj', 'Libro', 'Silla', 'Mesa', 'Ventana'],
+    'Películas 🎬': ['Titanic', 'Avatar', 'Gladiador', 'Matrix', 'El Padrino', 'Toy Story', 'Parásitos', 'Origen'],
+    'Partes de la Casa 🏠': ['Cocina', 'Baño', 'Dormitorio', 'Garaje', 'Ventana', 'Chimenea', 'Terraza', 'Jardín'],
+    'Juguetes 🧸': ['Muñeca', 'Carro', 'Bloques', 'Cuerda', 'Pelota', 'Patineta', 'Robot', 'Lego'],
+    'Licores 🍸': ['Ron', 'Vodka', 'Tequila', 'Cerveza', 'Vino', 'Whisky', 'Ginebra', 'Champán'],
+    'Dulces 🍬': ['Chocolate', 'Caramelo', 'Gomita', 'Chicle', 'Galleta', 'Pastel', 'Mazapán', 'Turrón'],
+    'Deportes ⚽': ['Fútbol', 'Baloncesto', 'Tenis', 'Natación', 'Golf', 'Boxeo', 'Voleibol', 'Ciclismo'],
+    'Instrumentos 🎸': ['Guitarra', 'Piano', 'Batería', 'Flauta', 'Violín', 'Trompeta', 'Arpa', 'Saxofón'],
+    'Marcas ™️': ['Apple', 'Nike', 'Coca-Cola', 'Adidas', 'Google', 'Amazon', 'Sony', 'Samsung'],
+    'Ciudades 🏙️': ['París', 'Londres', 'Roma', 'Nueva York', 'Dubái', 'Tokio', 'Berlín', 'Sídney'],
+    'Frutas 🍎': ['Banana', 'Fresa', 'Uva', 'Naranja', 'Mango', 'Pera', 'Piña', 'Melón'],
+    'Cuerpo Humano 🧠': ['Corazón', 'Cerebro', 'Hueso', 'Músculo', 'Dedo', 'Ojo', 'Nariz', 'Piel'],
+    'Superhéroes 🦸': ['Batman', 'Superman', 'Spiderman', 'Iron Man', 'Hulk', 'Wonder Woman', 'Thor', 'Flash'],
+    'Moda 👗': ['Zapatos', 'Camisa', 'Pantalón', 'Vestido', 'Sombrero', 'Bufanda', 'Chaqueta', 'Reloj'],
+    'Plantas 🌿': ['Rosa', 'Cactus', 'Helecho', 'Árbol', 'Girasol', 'Orquídea', 'Bambú', 'Margarita'],
+    'Tecnología 💻': ['Laptop', 'Móvil', 'Router', 'Teclado', 'Mouse', 'Monitor', 'Cámara', 'Dron'],
+    'Picante 🔥': ['Lencería', 'Gemidos', 'Cama', 'Beso', 'Noche', 'Latido', 'Pasión', 'Prohibido']
+};
+const TEMAS_DISPONIBLES = Object.keys(PALABRAS_POR_TEMA);
+const MIN_JUGADORES = 3; 
+const MAX_JUGADORES = 10;
+
+// Función para generar un código de sala de 4 letras
+function generarCodigoSala() {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (let i = 0; i < 4; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
+
+// Lógica de Asignación de Roles (Ahora en el cliente Host)
+function asignarRoles(jugadores, configuracion) {
+    const numJugadores = jugadores.length;
+    let numImpostores = 0;
+    
+    if (numJugadores >= 3 && numJugadores <= 5) {
+        numImpostores = 1;
+    } else if (numJugadores >= 6 && numJugadores <= 10) {
+        numImpostores = 2;
+    } 
+    
+    // Resetear roles y eliminar flag de 'eliminado' (para el caso de re-jugar)
+    jugadores.forEach(j => {
+        j.rol = 'Tripulante';
+        j.eliminado = false;
+    });
+
+    let agentesAsignados = 0;
+    
+    // Asignar Agente Doble
+    if (configuracion.incluirAgenteDoble && numJugadores >= 4) {
+        const tripulantesPotenciales = jugadores.filter(j => j.rol === 'Tripulante');
+        if (tripulantesPotenciales.length > 0) {
+            const indiceAleatorio = Math.floor(Math.random() * tripulantesPotenciales.length);
+            const agenteDoble = tripulantesPotenciales[indiceAleatorio];
+            
+            const indexEnSala = jugadores.findIndex(j => j.id === agenteDoble.id);
+            jugadores[indexEnSala].rol = 'Agente Doble';
+            agentesAsignados = 1;
+        }
+    }
+    
+    // Asignar Impostores
+    const candidatosAImpostor = jugadores.filter(j => j.rol === 'Tripulante'); 
+
+    let impostoresAsignados = 0;
+    while (impostoresAsignados < numImpostores && candidatosAImpostor.length > 0) {
+        const randomIndex = Math.floor(Math.random() * candidatosAImpostor.length);
+        
+        const impostorSeleccionado = candidatosAImpostor.splice(randomIndex, 1)[0]; 
+        
+        const indexEnSala = jugadores.findIndex(j => j.id === impostorSeleccionado.id);
+        if (jugadores[indexEnSala].rol === 'Tripulante') {
+            jugadores[indexEnSala].rol = 'Impostor';
+            impostoresAsignados++;
+        }
+    }
+
+    return jugadores;
+}
+
+// =================================================================
+// 3. INICIO DE LA APLICACIÓN (DESPUÉS DEL DOM)
+// =================================================================
 document.addEventListener('DOMContentLoaded', (event) => {
 
-    // =================================================================
-    // 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
-    // =================================================================
-    const firebaseConfig = {
-        // TUS CREDENCIALES (Asegúrate que sean las correctas)
-        apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0", 
-        authDomain: "juego-impostor-firebase.firebaseapp.com",
-        databaseURL: "https://juego-impostor-firebase-default-rtdb.firebaseio.com",
-        projectId: "juego-impostor-firebase",
-        storageBucket: "juego-impostor-firebase.firebasestorage.app",
-        messagingSenderId: "337084843090",
-        appId: "1:337084843090:web:41b0ebafd8a21f1420cb8b"
-    };
-
-    // Inicializar Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    // Inicialización de Firebase
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    // Generar un ID único para este cliente (simula el socket.id)
-    const miId = firebase.database().ref().push().key;
 
-    // =================================================================
-    // 2. DATOS DEL JUEGO Y VARIABLES GLOBALES
-    // =================================================================
-    const PALABRAS_POR_TEMA = {
-        'Animales 🐾': ['Perro', 'Gato', 'Elefante', 'León', 'Tigre', 'Cebra', 'Oso', 'Delfín'],
-        'Comida 🍔': ['Pizza', 'Taco', 'Hamburguesa', 'Ensalada', 'Sushi', 'Pasta', 'Helado', 'Manzana'],
-        'Países 🌎': ['España', 'México', 'Colombia', 'Japón', 'Francia', 'Canadá', 'Brasil', 'Alemania'],
-        'Profesiones 💼': ['Médico', 'Maestro', 'Ingeniero', 'Cocinero', 'Policía', 'Bombero', 'Abogado', 'Piloto'],
-        'Objetos Cotidianos 💡': ['Teléfono', 'Taza', 'Llaves', 'Reloj', 'Libro', 'Silla', 'Mesa', 'Ventana'],
-        'Picante 🔥': ['Lencería', 'Gemidos', 'Cama', 'Beso', 'Noche', 'Latido', 'Pasión', 'Prohibido']
-    };
-    const TEMAS_DISPONIBLES = Object.keys(PALABRAS_POR_TEMA);
-    const MIN_JUGADORES = 3; 
-    const MAX_JUGADORES = 10;
-
+    // 4. VARIABLES GLOBALES
     let nombreJugador = ''; 
     let codigoSalaActual = '';
-    let jugadoresActuales = {}; // Objeto de jugadores {id: jugador_obj}
+    // ID única para este navegador (permanece igual a lo largo de la sesión)
+    let miId = Date.now().toString(36) + Math.random().toString(36).substring(2); 
+    
+    let jugadoresActuales = []; 
+    let configuracionActual = { tema: TEMAS_DISPONIBLES[0], tiempoRondaSegundos: 60, incluirAgenteDoble: false }; 
     let miRolActual = ''; 
     let miPalabraSecreta = ''; 
     let miTemaActual = ''; 
     let miVotoSeleccionadoId = 'none';
-    
-    // Configuración Inicial por defecto (usada al crear sala)
-    let configuracionActual = { 
-        temasSeleccionados: [TEMAS_DISPONIBLES[0]],
-        incluirAgenteDoble: false 
-    }; 
-    
-    // Referencia activa a la sala para el listener
-    let salaRef = null; 
+    let temporizadorInterval = null; // Para manejar el temporizador de la ronda
+    let listenerSala = null; // Para almacenar el listener de la sala
 
     // =================================================================
-    // 3. FUNCIONES AUXILIARES DE FIREBASE
-    // =================================================================
-    
-    function generarCodigoSala() {
-        let result = '';
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        for (let i = 0; i < 4; i++) {
-            result += characters.charAt(Math.floor(Math.random() * characters.length));
-        }
-        return result;
-    }
-
-    // =================================================================
-    // 4. FUNCIONES DE UI Y LÓGICA AUXILIAR
+    // 5. FUNCIONES DE UI Y LÓGICA AUXILIAR
     // =================================================================
 
-    // Función para navegación de vistas
+    // FUNCIÓN DE NAVEGACIÓN (Necesaria para los onclick del HTML)
     window.cambiarVista = function(vistaId) {
         document.querySelectorAll('.vista').forEach(vista => {
             vista.classList.remove('activa');
@@ -82,683 +144,768 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const nuevaVista = document.getElementById(vistaId);
         if (nuevaVista) {
             nuevaVista.classList.add('activa');
-        } 
+        } else {
+            console.error('Error: La vista ' + vistaId + ' no existe en el HTML.');
+            return;
+        }
         
+        // Lógica específica al cambiar de vista
         if (vistaId === 'vista-lobby') {
-            renderConfiguracion(); 
             actualizarBotonInicioJuego();
+            renderConfiguracion(); 
         }
     }
     
-    // Función para actualizar la lista de jugadores en el lobby/juego
     function actualizarListaJugadores(jugadores) {
-        jugadoresActuales = jugadores || {};
+        jugadoresActuales = jugadores;
         const listaHost = document.getElementById('lista-jugadores-host');
         const listaJuego = document.getElementById('lista-jugadores-juego');
-        const opcionesVotacion = document.getElementById('opciones-votacion');
+        const listaVotos = document.getElementById('opciones-votacion');
         
-        if (listaHost) listaHost.innerHTML = '';
-        if (listaJuego) listaJuego.innerHTML = '';
+        listaHost.innerHTML = '';
+        listaJuego.innerHTML = '';
         
-        // Reiniciar opciones de votación
-        if (opcionesVotacion) {
-            opcionesVotacion.innerHTML = `
-                <div class="card-jugador-voto" data-voto-id="none">
-                    <span class="nombre-jugador-voto">⚠️ Nadie</span>
-                </div>
-            `;
-        }
+        // Preparar lista de votos (opción de "nadie" primero)
+        listaVotos.innerHTML = `
+            <button class="btn-votar" data-voto-id="none" style="background-color: #888;">
+                ⚠️ Nadie (Abstenerse)
+            </button>
+        `;
 
-        const jugadoresArray = Object.values(jugadoresActuales);
-        const miJugador = jugadoresArray.find(j => j.id === miId);
-        const esHost = miJugador?.esHost;
-        const jugadoresActivos = jugadoresArray.filter(j => !j.eliminado);
+        let contadorActivos = 0;
 
-        document.getElementById('contador-jugadores').textContent = `${jugadoresArray.length}/${MAX_JUGADORES}`;
-
-        jugadoresArray.forEach(j => {
-            const esHostJugador = j.esHost; 
+        jugadores.forEach(j => {
+            const esHost = j.hostId === j.id; 
             const esMiJugador = j.id === miId;
             const esEliminado = j.eliminado;
-            
-            // 1. Lista del Lobby
-            if (listaHost) {
-                const elementoLobby = document.createElement('li');
-                elementoLobby.textContent = j.nombre + (esHostJugador ? ' (HOST)' : '') + (esMiJugador ? ' (Tú)' : '');
 
-                if (esHost && !esMiJugador && !esEliminado) {
-                    const btnExpulsar = document.createElement('button');
-                    btnExpulsar.textContent = 'Expulsar';
-                    btnExpulsar.classList.add('btn-expulsar');
-                    btnExpulsar.onclick = () => expulsarJugador(j.id);
-                    elementoLobby.appendChild(btnExpulsar);
-                }
-                listaHost.appendChild(elementoLobby);
+            // 1. Lista del Lobby (Host)
+            const elementoLobby = document.createElement('li');
+            elementoLobby.textContent = j.nombre + (esHost ? ' (HOST)' : '') + (esMiJugador ? ' (Tú)' : '');
+
+            // Si soy el Host y no es mi jugador, agrego botón de expulsar
+            if (jugadores.find(p => p.id === miId)?.esHost && !esMiJugador && !esEliminado) {
+                const btnExpulsar = document.createElement('button');
+                btnExpulsar.textContent = 'Expulsar';
+                btnExpulsar.classList.add('btn-danger', 'btn-small');
+                btnExpulsar.onclick = () => expulsarJugador(j.id);
+                elementoLobby.appendChild(btnExpulsar);
             }
+            listaHost.appendChild(elementoLobby);
+
 
             // 2. Lista de Juego (Solo activos)
-            if (!esEliminado && listaJuego) {
+            if (!esEliminado) {
+                contadorActivos++;
                 const elementoJuego = document.createElement('li');
                 elementoJuego.textContent = j.nombre + (esMiJugador ? ' (Tú)' : '');
                 listaJuego.appendChild(elementoJuego);
                 
                 // 3. Opciones de Votación (Solo activos, excluyéndome a mí mismo)
-                if (!esMiJugador && opcionesVotacion) {
-                    const cardVoto = document.createElement('div');
-                    cardVoto.classList.add('card-jugador-voto');
-                    cardVoto.setAttribute('data-voto-id', j.id);
-                    cardVoto.innerHTML = `<span class="nombre-jugador-voto">${j.nombre}</span>`;
-                    cardVoto.onclick = () => votarJugador(j.id);
-                    opcionesVotacion.appendChild(cardVoto);
+                if (!esMiJugador) {
+                    const btnVoto = document.createElement('button');
+                    btnVoto.textContent = j.nombre;
+                    btnVoto.classList.add('btn-votar');
+                    btnVoto.setAttribute('data-voto-id', j.id);
+                    btnVoto.onclick = () => votarJugador(j.id);
+                    listaVotos.appendChild(btnVoto);
                 }
             }
         });
 
+        document.getElementById('contador-jugadores').textContent = jugadores.length;
+        document.getElementById('jugadores-activos-contador').textContent = contadorActivos;
         actualizarBotonInicioJuego();
         
         // Marcar el voto actual si ya voté
-        if (opcionesVotacion) {
-            document.querySelectorAll('.card-jugador-voto').forEach(card => card.classList.remove('votado-seleccionado'));
-            const cardVotado = opcionesVotacion.querySelector(`[data-voto-id="${miVotoSeleccionadoId}"]`);
-            if (cardVotado) {
-               cardVotado.classList.add('votado-seleccionado');
-            }
+        if (miVotoSeleccionadoId !== 'none') {
+             const btnVotado = listaVotos.querySelector(`[data-voto-id="${miVotoSeleccionadoId}"]`);
+             if (btnVotado) {
+                document.querySelectorAll('.btn-votar').forEach(btn => btn.classList.remove('votado'));
+                btnVotado.classList.add('votado');
+             }
         }
     }
     
-    // Renderizado y Lectura de Categorías
     function renderConfiguracion() {
-        const categoriasContainer = document.getElementById('categorias-container');
-        if (!categoriasContainer) return;
-        
-        // Si ya hay contenido y se renderizó una vez, no lo hacemos de nuevo
-        if (categoriasContainer.children.length > 0) return;
-
-        TEMAS_DISPONIBLES.forEach(tema => {
-            const checkboxId = `tema-${tema.replace(/[^a-zA-Z0-9]/g, '-')}`;
-            const div = document.createElement('div');
-            div.classList.add('card-categoria'); 
-            div.setAttribute('data-tema', tema);
-            
-            // Determinar si es un tema "picante" para la etiqueta HOT
-            const isHot = tema.includes('Picante');
-            const hotTag = isHot ? '<span class="tag-hot">HOT</span>' : '';
-            
-            div.innerHTML = `
-                ${hotTag}
-                <span class="emoji">${tema.split(' ')[1] || '?' }</span>
-                <h4>${tema.split(' ')[0]}</h4>
-                <input type="checkbox" id="${checkboxId}" value="${tema}" name="tema-selector" style="display:none;">
-            `;
-            
-            // Lógica de selección/deselección
-            div.onclick = function() {
-                const isSelected = div.classList.toggle('seleccionada');
-                const checkbox = document.getElementById(checkboxId);
-                checkbox.checked = isSelected;
-                
-                actualizarConfiguracionLocal();
-                actualizarBotonInicioJuego();
-            };
-            
-            // Inicializar estado visual
-            if (configuracionActual.temasSeleccionados.includes(tema)) {
-                div.classList.add('seleccionada');
-                // No necesitamos el checkbox real si usamos la clase seleccionada para la lógica, pero lo mantenemos
-                document.getElementById(checkboxId).checked = true;
-            }
-
-            categoriasContainer.appendChild(div);
-        });
-        
-        // Sincronizar UI de Agente Doble
-        const checkboxDoble = document.getElementById('checkbox-agente-doble');
-        if (checkboxDoble) {
-            checkboxDoble.checked = configuracionActual.incluirAgenteDoble;
-            checkboxDoble.addEventListener('change', () => {
-                actualizarConfiguracionLocal();
-                actualizarBotonInicioJuego();
+        // Llenar el selector de temas
+        const selectorTema = document.getElementById('selector-tema');
+        if (selectorTema && selectorTema.options.length === 0) {
+            TEMAS_DISPONIBLES.forEach(tema => {
+                const option = document.createElement('option');
+                option.value = tema;
+                option.textContent = tema;
+                selectorTema.appendChild(option);
             });
         }
-    }
-    
-    // Función para actualizar la configuración local y emitir a Firebase (Host)
-    function actualizarConfiguracionLocal() {
-        const temas = Array.from(document.querySelectorAll('.card-categoria.seleccionada'))
-                           .map(div => div.getAttribute('data-tema'));
-                           
-        const doble = document.getElementById('checkbox-agente-doble')?.checked || false;
         
-        configuracionActual = {
-            temasSeleccionados: temas,
-            incluirAgenteDoble: doble
-        };
+        // Poner los valores actuales
+        if (selectorTema) selectorTema.value = configuracionActual.tema;
+        const inputTiempo = document.getElementById('input-tiempo-ronda');
+        if (inputTiempo) inputTiempo.value = configuracionActual.tiempoRondaSegundos;
+        const checkboxDoble = document.getElementById('checkbox-agente-doble');
+        if (checkboxDoble) checkboxDoble.checked = configuracionActual.incluirAgenteDoble;
 
-        const jugadoresArray = Object.values(jugadoresActuales);
-        const esHost = jugadoresArray.find(j => j.id === miId)?.esHost;
-        
-        if (esHost && codigoSalaActual) {
-            // Actualizar solo la configuración en Firebase
-            db.ref('salas/' + codigoSalaActual + '/configuracion').set(configuracionActual)
-                .catch(error => console.error("Error al actualizar config en Firebase:", error));
-        }
-    }
-
-    // Habilitar/deshabilitar el botón de iniciar juego
-    function actualizarBotonInicioJuego() {
-        const jugadoresArray = Object.values(jugadoresActuales);
-        const esHost = jugadoresArray.find(j => j.id === miId)?.esHost;
-        const numJugadores = jugadoresArray.length;
-        const btnIniciar = document.getElementById('btn-iniciar-juego');
-        const avisoMin = document.getElementById('min-jugadores-aviso');
-        const avisoCategoria = document.getElementById('aviso-categoria');
-        
-        // Asegurar que solo el host vea la configuración
+        // Mostrar u ocultar la configuración si soy el HOST
+        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         const configHostDiv = document.getElementById('configuracion-host');
         if (configHostDiv) configHostDiv.style.display = esHost ? 'block' : 'none';
+    }
 
-        if (esHost && btnIniciar) {
-            const numTemas = configuracionActual.temasSeleccionados?.length || 0;
-            
-            const puedeIniciar = (numJugadores >= MIN_JUGADORES && numTemas > 0);
-
-            btnIniciar.disabled = !puedeIniciar;
-            
-            // Mostrar avisos
-            if (avisoMin) avisoMin.style.display = (numJugadores < MIN_JUGADORES) ? 'block' : 'none';
-            if (avisoCategoria) avisoCategoria.style.display = (numTemas === 0) ? 'block' : 'none';
+    function actualizarBotonInicioJuego() {
+        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        const numJugadores = jugadoresActuales.length;
+        const btnIniciar = document.getElementById('btn-iniciar-juego');
+        const avisoMin = document.getElementById('min-jugadores-aviso');
+        
+        if (esHost && btnIniciar && avisoMin) {
+            if (numJugadores >= MIN_JUGADORES && numJugadores <= MAX_JUGADORES) {
+                btnIniciar.disabled = false;
+                avisoMin.style.display = 'none';
+            } else {
+                btnIniciar.disabled = true;
+                avisoMin.style.display = 'block';
+            }
         }
     }
     
-    // Función para actualizar la información de mi rol en la vista de juego/revelación
-    function actualizarMiInfo(jugadores) {
-        const misDatos = Object.values(jugadores).find(j => j.id === miId);
-        if (misDatos) {
-            miRolActual = misDatos.rol;
-            miPalabraSecreta = misDatos.palabraSecreta;
-            miTemaActual = misDatos.tema;
+    function limpiarTemporizador() {
+        if (temporizadorInterval) {
+            clearInterval(temporizadorInterval);
+            temporizadorInterval = null;
         }
     }
     
     // =================================================================
-    // 5. LÓGICA DE FIREBASE (LISTENER)
+    // 6. LÓGICA DE FIREBASE (El reemplazo de Socket.IO)
     // =================================================================
-
-    // Detiene el listener activo de Firebase
-    function detenerEscuchadorSala() {
-        if (salaRef) {
-            salaRef.off(); 
-            salaRef = null;
+    
+    function configurarEscuchadorSala(codigoSala) {
+        // Detener escuchador anterior si existe
+        if (listenerSala) {
+            db.ref('salas/' + codigoSalaActual).off('value', listenerSala);
         }
-    }
+        
+        codigoSalaActual = codigoSala; // Asegurar que el código actual esté configurado
+        const salaRef = db.ref('salas/' + codigoSala);
 
-    // Configura el listener principal de la sala
-    function configurarEscuchadorSala(codigo) {
-        // Asegurarse de que solo haya un listener activo
-        detenerEscuchadorSala();
-        
-        codigoSalaActual = codigo;
-        salaRef = db.ref('salas/' + codigo);
-        
-        salaRef.on('value', (snapshot) => {
+        // Define la función de escucha (el "socket.on" que se ejecuta en todos)
+        listenerSala = salaRef.on('value', (snapshot) => {
+            
+            if (!snapshot.exists()) {
+                // Esto podría ocurrir si el Host borró la sala o fuiste expulsado y la sala se limpió
+                alert('La sala ha sido eliminada, has sido expulsado o no existe.');
+                window.location.reload(); 
+                return;
+            }
+
             const sala = snapshot.val();
             
-            if (!sala) {
-                // Si la sala desaparece, es porque el Host cerró/abandonó
-                alert("⛔ El Host cerró la sala o la sala ya no existe.");
-                detenerEscuchadorSala();
-                abandonarSalaLocal();
-                return;
-            }
-
-            // 1. Actualizar jugadores y configuración localmente
-            const jugadores = sala.jugadores || {};
-            const jugadoresArray = Object.values(jugadores);
-            const miJugador = jugadoresArray.find(j => j.id === miId);
-
-            if (!miJugador) {
-                // Me expulsaron
-                alert("🚪 Has sido expulsado de la sala por el Host.");
-                detenerEscuchadorSala();
-                abandonarSalaLocal();
-                return;
+            // Reconstruir la lista de jugadores a partir del objeto de Firebase
+            const jugadoresObj = sala.jugadores || {};
+            const jugadoresArray = Object.keys(jugadoresObj).map(key => ({ ...jugadoresObj[key], id: key }));
+            jugadoresActuales = jugadoresArray;
+            
+            // Encontrar mis datos
+            const misDatos = jugadoresArray.find(j => j.id === miId);
+            if (!misDatos) {
+                 // Si mis datos no están, fui expulsado
+                 alert('Has sido expulsado de la sala.');
+                 window.location.reload();
+                 return;
             }
             
-            jugadoresActuales = jugadores;
-            configuracionActual = sala.configuracion || configuracionActual; 
+            // Actualizar variables de mi rol
+            miRolActual = misDatos.rol || 'Tripulante';
+            miPalabraSecreta = misDatos.palabraSecreta || '';
+            miTemaActual = misDatos.tema || '';
 
-            // 2. Determinar la vista a mostrar
-            const estado = sala.estado || 'esperando';
-            const rondaEstado = sala.rondaEstado || 'esperando';
-
-            if (estado === 'esperando') {
-                document.getElementById('codigo-lobby-display').textContent = codigo;
-                actualizarListaJugadores(jugadores);
+            // Lógica de Vistas basada en el estado de la sala
+            
+            if (sala.estado === 'esperando') {
+                configuracionActual = sala.configuracion || configuracionActual;
+                actualizarListaJugadores(jugadoresArray);
                 cambiarVista('vista-lobby');
-            } else if (estado === 'revelacion') {
-                actualizarMiInfo(jugadores);
-                actualizarListaJugadores(jugadores); 
-                manejarRevelacion(miJugador.esHost);
-            } else if (estado === 'enJuego') {
-                actualizarMiInfo(jugadores);
-                actualizarListaJugadores(jugadores); 
-                if (rondaEstado === 'discutiendo') {
-                    manejarInicioDiscusion(miJugador.esHost);
-                } else if (rondaEstado === 'votando') {
-                    manejarInicioVotacion();
-                } else if (rondaEstado === 'resultado') {
-                    manejarResultadoVotacion(sala.ultimoResultado, miJugador.esHost);
+            
+            } else if (sala.estado === 'enJuego') {
+                // Sincronización de variables y UI
+                actualizarListaJugadores(jugadoresArray);
+                
+                // Mostrar la vista de juego o votación según el estado de la ronda
+                if (sala.rondaEstado === 'discutiendo') {
+                    manejarInicioRonda(sala); // Mostrar vista de juego
+                } else if (sala.rondaEstado === 'votando') {
+                    manejarInicioVotacion(sala); // Mostrar vista de votación
+                } else if (sala.rondaEstado === 'resultado') {
+                    manejarResultadoVotacion(sala); // Mostrar resultados
                 }
-            } else if (estado === 'finalizado') {
-                manejarFinDeJuego(sala.ultimoResultado.ganador, jugadoresArray, miJugador.esHost);
+
+                // Sincronizar temporizador (solo para el host)
+                if (misDatos.esHost && sala.temporizadorFinTimestamp && sala.rondaEstado === 'discutiendo') {
+                    iniciarTemporizadorHost(sala);
+                }
+            
+            } else if (sala.estado === 'finalizado') {
+                manejarFinDeJuego(sala);
             }
         });
     }
 
     // =================================================================
-    // 6. MANEJADORES DE EVENTOS DEL DOM Y FIREBASE ACTIONS
+    // 7. MANEJADORES DE EVENTOS DEL DOM
     // =================================================================
-    
-    // INICIO: Registrar nombre
+
+    // CORRECCIÓN CLAVE: El listener del formulario de inicio que da error
     document.getElementById('form-inicio').addEventListener('submit', (e) => {
         e.preventDefault();
+        // El input-nombre debe ser accesible aquí
         nombreJugador = document.getElementById('input-nombre').value.trim();
         if (!nombreJugador) return alert('Por favor, ingresa tu nombre.');
         
+        // Si el nombre es válido, mostramos la siguiente vista.
         document.getElementById('nombre-jugador-display').textContent = nombreJugador;
         cambiarVista('vista-seleccion');
     });
 
-    // SELECCIÓN: Crear Sala (HOST)
+    // ----------------------------------------------------
+    // *** CREAR SALA CON FIREBASE (CLIENTE HOST) ***
+    // ----------------------------------------------------
     document.getElementById('btn-crear-sala').addEventListener('click', async () => {
-        try {
-            let codigo = generarCodigoSala();
-            let salaExists = (await db.ref('salas/' + codigo).once('value')).exists();
+        // 1. Generar código único y verificar la no existencia (CRÍTICO)
+        let codigo;
+        let snapshot;
+        do {
+            codigo = generarCodigoSala();
+            snapshot = await db.ref('salas/' + codigo).once('value');
+        } while (snapshot.exists());
 
-            // Generar código único
-            while (salaExists) {
-                codigo = generarCodigoSala();
-                salaExists = (await db.ref('salas/' + codigo).once('value')).exists();
-            }
+        // 2. Crear el objeto de jugador local con flag de Host
+        const jugadorHost = { 
+            id: miId, 
+            nombre: nombreJugador, 
+            esHost: true, 
+            rol: 'Tripulante', 
+            eliminado: false 
+        };
 
-            const jugadorHost = { 
-                id: miId, 
-                nombre: nombreJugador, 
-                esHost: true, 
-                rol: 'Tripulante', 
-                eliminado: false
-            };
-
-            const nuevaSala = {
-                codigo: codigo,
-                hostId: miId, 
-                estado: 'esperando',
-                rondaEstado: 'esperando',
-                configuracion: configuracionActual,
-                votos: {}, 
-                ultimoResultado: null,
-                palabraElegida: null, 
-                temaElegido: null
-            };
-            
-            // 1. Crear la sala y el jugador host en una sola actualización (mejor)
-            await db.ref('salas/' + codigo).set(nuevaSala);
-            await db.ref('salas/' + codigo + '/jugadores/' + miId).set(jugadorHost); 
-
-            // 2. Configurar el listener e ir al lobby
-            configurarEscuchadorSala(codigo);
-            codigoSalaActual = codigo;
-            document.getElementById('codigo-lobby-display').textContent = codigo;
-            cambiarVista('vista-lobby'); // <--- CORRECCIÓN: CAMBIO EXPLÍCITO DE VISTA
-            
-            console.log(`Sala ${codigo} creada por ${nombreJugador}.`);
-
-        } catch (error) {
-            console.error("Error al crear la sala en Firebase:", error);
-            alert(`🔴 ERROR AL CREAR SALA: ${error.message}`);
-        }
+        // 3. Crear el objeto de sala
+        const nuevaSala = {
+            codigo: codigo,
+            hostId: miId, // El ID del Host para referencia
+            jugadores: {
+                [miId]: jugadorHost
+            },
+            estado: 'esperando',
+            rondaActual: 0,
+            rondaEstado: 'esperando',
+            configuracion: configuracionActual,
+            votos: {}, 
+            temporizadorFinTimestamp: null 
+        };
+        
+        // 4. Escribir la sala en Firebase
+        await db.ref('salas/' + codigo).set(nuevaSala);
+        
+        // 5. Configurar el escuchador y pasar a la vista
+        configurarEscuchadorSala(codigo);
+        document.getElementById('codigo-lobby-display').textContent = codigo;
     });
 
-    // SELECCIÓN: Unirse a Sala (Jugador)
+    // ----------------------------------------------------
+    // *** UNIRSE A SALA CON FIREBASE ***
+    // ----------------------------------------------------
     document.getElementById('form-unirse-sala').addEventListener('submit', async (e) => {
         e.preventDefault();
         const codigo = document.getElementById('input-codigo').value.trim().toUpperCase();
-        if (codigo.length !== 4) return alert('El código de sala debe ser de 4 letras.');
+        if (!codigo) return;
         
-        try {
-            const snapshot = await db.ref('salas/' + codigo).once('value');
-            const sala = snapshot.val();
+        const salaRef = db.ref('salas/' + codigo);
+        const snapshot = await salaRef.once('value');
+        const sala = snapshot.val();
 
-            if (!sala) {
-                return alert('ERROR: La sala con el código ' + codigo + ' no existe.');
-            }
-
-            if (sala.estado !== 'esperando') {
-                return alert('ERROR: El juego ya inició o la sala está cerrada.');
-            }
-            
-            const numJugadores = Object.keys(sala.jugadores || {}).length;
-            if (numJugadores >= MAX_JUGADORES) {
-                 return alert('ERROR: La sala está llena. ¡Máximo ' + MAX_JUGADORES + ' jugadores!');
-            }
-            
-            const nombresExistentes = Object.values(sala.jugadores || {}).map(j => j.nombre.toLowerCase());
-            if (nombresExistentes.includes(nombreJugador.toLowerCase())) {
-                 return alert('ERROR: Ese nombre ya está en uso en esta sala.');
-            }
-
-            const nuevoJugador = { 
-                 id: miId, 
-                 nombre: nombreJugador, 
-                 esHost: false, 
-                 rol: 'Tripulante', 
-                 eliminado: false
-            };
-            
-            const jugadoresRef = db.ref('salas/' + codigo + '/jugadores/' + miId);
-            await jugadoresRef.set(nuevoJugador);
-
-            configurarEscuchadorSala(codigo);
-            // El listener se encarga del cambio de vista, pero establecemos el código inmediatamente
-            document.getElementById('codigo-lobby-display').textContent = codigo;
-            console.log(`${nombreJugador} unido a la sala ${codigo}.`);
-
-
-        } catch (error) {
-            console.error("Error al unirse a la sala en Firebase:", error);
-            alert(`🔴 ERROR AL UNIRSE: Fallo de red o de permisos. Detalle: ${error.message}`);
+        if (!snapshot.exists()) {
+            return alert('ERROR: La sala con el código ' + codigo + ' no existe.');
         }
-    });
 
-    // LOBBY: Iniciar Juego (Host)
+        if (sala.estado !== 'esperando') {
+            return alert('ERROR: El juego ya inició o la sala está cerrada.');
+        }
+        
+        const numJugadores = Object.keys(sala.jugadores || {}).length;
+        if (numJugadores >= MAX_JUGADORES) {
+             return alert('ERROR: La sala está llena. ¡Máximo ' + MAX_JUGADORES + ' jugadores!');
+        }
+
+        // 1. Crear el objeto de jugador
+        const nuevoJugador = { id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante', eliminado: false };
+        
+        // 2. Agregar el jugador a la sala
+        const jugadoresRef = db.ref('salas/' + codigo + '/jugadores/' + miId);
+        await jugadoresRef.set(nuevoJugador);
+
+        // 3. Configurar el escuchador y pasar a la vista
+        configurarEscuchadorSala(codigo);
+        document.getElementById('codigo-lobby-display').textContent = codigo;
+    });
+    
+    // ----------------------------------------------------
+    // *** ABANDONAR SALA (COMÚN) ***
+    // ----------------------------------------------------
+    window.abandonarSala = async function() {
+        if (codigoSalaActual) {
+            const salaRef = db.ref('salas/' + codigoSalaActual);
+            
+            // Apagar el listener para evitar bucles
+            if (listenerSala) {
+                salaRef.off('value', listenerSala);
+            }
+
+            const jugadoresRef = db.ref('salas/' + codigoSalaActual + '/jugadores/' + miId);
+            await jugadoresRef.remove();
+            
+            // Si era el Host y no quedan más jugadores, eliminar la sala
+            const snapshot = await salaRef.once('value');
+            if (snapshot.exists()) {
+                 const sala = snapshot.val();
+                 if (sala.hostId === miId) {
+                      const jugadoresRestantes = Object.keys(sala.jugadores || {}).length;
+                      // Si soy el Host y solo quedo yo (o ya me fui)
+                      if (jugadoresRestantes <= 1) { 
+                          await salaRef.remove();
+                      } else {
+                          // Si quedan jugadores, transferir el host al primero que quede
+                          const primerJugadorId = Object.keys(sala.jugadores).find(id => id !== miId);
+                          if (primerJugadorId) {
+                              await salaRef.update({ hostId: primerJugadorId });
+                              await db.ref('salas/' + codigoSalaActual + '/jugadores/' + primerJugadorId).update({ esHost: true });
+                          }
+                      }
+                 }
+            }
+        }
+        window.location.reload(); 
+    }
+    
+    // ----------------------------------------------------
+    // *** GUARDAR CONFIGURACIÓN (Host) ***
+    // ----------------------------------------------------
+    document.getElementById('form-configuracion').addEventListener('change', async () => {
+        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        if (!esHost || !codigoSalaActual) return;
+
+        const tema = document.getElementById('selector-tema').value;
+        const tiempo = parseInt(document.getElementById('input-tiempo-ronda').value);
+        const doble = document.getElementById('checkbox-agente-doble').checked;
+        
+        const nuevaConfig = {
+            tema: tema,
+            tiempoRondaSegundos: isNaN(tiempo) ? 0 : tiempo,
+            incluirAgenteDoble: doble
+        };
+
+        // Escribir la nueva configuración directamente a Firebase
+        await db.ref('salas/' + codigoSalaActual + '/configuracion').update(nuevaConfig);
+    });
+    
+    // ----------------------------------------------------
+    // *** INICIAR JUEGO (Host) - LÓGICA MÁS COMPLEJA ***
+    // ----------------------------------------------------
     document.getElementById('btn-iniciar-juego').addEventListener('click', async () => {
-        const jugadoresArray = Object.values(jugadoresActuales);
-        if (jugadoresArray.length < MIN_JUGADORES) {
-             return alert(`Se requieren al menos ${MIN_JUGADORES} jugadores para iniciar.`);
-        }
-        if ((configuracionActual.temasSeleccionados?.length || 0) === 0) {
-             return alert('Debes seleccionar al menos una categoría.');
+        const misDatos = jugadoresActuales.find(j => j.id === miId);
+        if (!misDatos?.esHost || !codigoSalaActual) return;
+
+        if (jugadoresActuales.length < MIN_JUGADORES || jugadoresActuales.length > MAX_JUGADORES) {
+             return alert(`Se necesitan al menos ${MIN_JUGADORES} y máximo ${MAX_JUGADORES} jugadores.`);
         }
         
-        try {
-            // Esta acción será procesada por server.js
-            await db.ref('salas/' + codigoSalaActual + '/acciones/iniciarJuego').set({ hostId: miId, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        } catch (error) {
-            alert('Error al iniciar el juego: ' + error.message);
+        const salaRef = db.ref('salas/' + codigoSalaActual);
+        
+        // 1. Asignar Roles
+        const jugadoresConRoles = asignarRoles(jugadoresActuales, configuracionActual);
+        
+        // 2. Seleccionar Palabra Secreta
+        if (!PALABRAS_POR_TEMA[configuracionActual.tema]) {
+             return alert('Tema de palabras no válido.');
         }
-    });
-    
-    // REVELACIÓN: Iniciar Discusión (Host)
-    document.getElementById('btn-iniciar-discusion').addEventListener('click', async () => {
-        try {
-             // Esta acción será procesada por server.js
-            await db.ref('salas/' + codigoSalaActual + '/acciones/iniciarDiscusion').set({ hostId: miId, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        } catch (error) {
-            alert('Error al iniciar la discusión: ' + error.message);
-        }
-    });
-    
-    // JUEGO: Forzar Votación (Host)
-    document.getElementById('btn-forzar-votacion').addEventListener('click', async () => {
-        try {
-            // Esta acción será procesada por server.js
-            await db.ref('salas/' + codigoSalaActual + '/acciones/forzarVotacion').set({ hostId: miId, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        } catch (error) {
-            alert('Error al forzar votación: ' + error.message);
-        }
-    });
-    
-    // FIN DE JUEGO: Reiniciar Partida (Host)
-    document.getElementById('btn-reiniciar-partida').addEventListener('click', async () => {
-        try {
-            if (confirm('¿Estás seguro de que quieres reiniciar la partida? Los jugadores se mantendrán.')) {
-                 // Esta acción será procesada por server.js
-                 await db.ref('salas/' + codigoSalaActual + '/acciones/reiniciarPartida').set({ hostId: miId, timestamp: firebase.database.ServerValue.TIMESTAMP });
+        const palabras = PALABRAS_POR_TEMA[configuracionActual.tema];
+        const palabraElegida = palabras[Math.floor(Math.random() * palabras.length)];
+        
+        // 3. Preparar la estructura de jugadores para Firebase (objeto de objetos)
+        const jugadoresParaFirebase = {};
+        jugadoresConRoles.forEach(jugador => {
+            let palabraInfo = palabraElegida;
+            let temaInfo = configuracionActual.tema;
+            
+            // LÓGICA PARA IMPOSTOR Y AGENTE DOBLE
+            if (jugador.rol === 'Impostor') {
+                palabraInfo = 'NINGUNA'; 
+                temaInfo = '???'; 
+            } else if (jugador.rol === 'Agente Doble') {
+                 palabraInfo = 'NINGUNA'; 
+                 // Sí ve la categoría (temaInfo se mantiene)
             }
-        } catch (error) {
-            alert('Error al reiniciar: ' + error.message);
-        }
+
+            jugadoresParaFirebase[jugador.id] = {
+                 ...jugador,
+                 rol: jugador.rol,
+                 palabraSecreta: palabraInfo,
+                 tema: temaInfo,
+                 // Estos datos son privados para el cliente que los recibe (en el listener)
+            };
+        });
+        
+        // 4. Actualizar la sala en Firebase
+        const tiempoFin = Date.now() + configuracionActual.tiempoRondaSegundos * 1000;
+
+        await salaRef.update({
+            jugadores: jugadoresParaFirebase, // Reescribir jugadores con roles
+            estado: 'enJuego',
+            rondaActual: 1,
+            rondaEstado: 'discutiendo',
+            'configuracion/palabra': palabraElegida, // Guardar la palabra elegida en la config
+            votos: {},
+            temporizadorFinTimestamp: tiempoFin // Iniciar temporizador
+        });
     });
-    
-    // FIN DE JUEGO: Finalizar Juego y Cerrar Sala (Host)
-    document.getElementById('btn-finalizar-juego').addEventListener('click', async () => {
-        try {
-            if (confirm('¿Estás seguro de que quieres FINALIZAR el juego y CERRAR la sala?')) {
-                // El cliente Host puede eliminar directamente la sala en Firebase
-                await db.ref('salas/' + codigoSalaActual).remove();
-                abandonarSalaLocal();
-            }
-        } catch (error) {
-            alert('Error al finalizar: ' + error.message);
-        }
-    });
-    
-    // LOBBY/JUEGO: Abandonar Sala
-    window.abandonarSala = function() {
-        if (confirm('¿Estás seguro de que quieres abandonar la sala?')) {
-            // El jugador se elimina de la lista. Si era el Host, el listener manejará el cierre total de la sala.
-            db.ref('salas/' + codigoSalaActual + '/jugadores/' + miId).remove()
-                .then(() => {
-                    abandonarSalaLocal();
-                })
-                .catch(error => {
-                    alert('Error al intentar salir: ' + error.message);
+
+    // ----------------------------------------------------
+    // *** CONTROL DE TEMPORIZADOR (SOLO HOST) ***
+    // ----------------------------------------------------
+    function iniciarTemporizadorHost(sala) {
+        // Solo el Host debe correr el intervalo para actualizar a los demás
+        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        if (!esHost || !sala.temporizadorFinTimestamp) return;
+
+        limpiarTemporizador(); 
+        
+        temporizadorInterval = setInterval(async () => {
+            const tiempoRestante = Math.max(0, Math.floor((sala.temporizadorFinTimestamp - Date.now()) / 1000));
+            
+            // Actualizar la UI del temporizador (solo para que sea más fluido para el Host)
+            const tiempoDisplay = document.getElementById('tiempo-restante');
+            if (tiempoDisplay) tiempoDisplay.textContent = tiempoRestante; 
+            
+            if (tiempoRestante <= 0) {
+                limpiarTemporizador();
+                
+                // NOTA: El Host actualiza el estado en Firebase, y el Listener (todos) reaccionan.
+                await db.ref('salas/' + codigoSalaActual).update({
+                    rondaEstado: 'votando' 
                 });
-        }
-    };
-    
-    // Función de limpieza local
-    function abandonarSalaLocal() {
-        detenerEscuchadorSala();
-        codigoSalaActual = '';
-        jugadoresActuales = {};
-        miVotoSeleccionadoId = 'none';
-        cambiarVista('vista-seleccion');
-    }
-    
-    // LOBBY: Expulsar Jugador (Host)
-    window.expulsarJugador = function(idJugador) {
-        if (confirm('¿Estás seguro de que quieres expulsar a este jugador?')) {
-            db.ref('salas/' + codigoSalaActual + '/jugadores/' + idJugador).remove()
-                .catch(error => alert('Error al expulsar: ' + error.message));
-        }
-    };
-    
-    // VOTACIÓN: Votar Jugador
-    window.votarJugador = async function(votoId) {
-        if (miVotoSeleccionadoId === votoId) return; // Ya votó por este
-        
-        try {
-            // Registrar el voto en el nodo 'votos'
-            await db.ref('salas/' + codigoSalaActual + '/votos/' + miId).set(votoId);
-            
-            miVotoSeleccionadoId = votoId;
-            const jugadoresArray = Object.values(jugadoresActuales);
-            const nombreVotado = (votoId === 'none') 
-                             ? 'Abstención' 
-                             : jugadoresArray.find(j => j.id === votoId)?.nombre || 'Jugador Desconocido';
-                             
-            document.getElementById('voto-confirmado-display').textContent = `Votaste por: ${nombreVotado}`;
-            
-            // Actualizar UI del voto
-            document.querySelectorAll('.card-jugador-voto').forEach(card => card.classList.remove('votado-seleccionado'));
-            const cardVotado = document.querySelector(`[data-voto-id="${votoId}"]`);
-            if (cardVotado) {
-               cardVotado.classList.add('votado-seleccionado');
             }
-            
-            // Si todos votaron, el backend (server.js) lo detecta y cambia el estado.
-            
-        } catch (error) {
-            alert('Error al registrar el voto: ' + error.message);
-        }
-    };
-
-    // =================================================================
-    // 7. MANEJADORES DE VISTAS DETALLADOS (RENDERIZADO)
-    // =================================================================
-    
-    // Vista: Revelación de Roles (Punto 3)
-    function manejarRevelacion(esHost) {
-        cambiarVista('vista-revelacion-rol');
-        
-        const titulo = document.getElementById('revelacion-titulo');
-        const detalle = document.getElementById('revelacion-detalle');
-        const btnDiscusion = document.getElementById('btn-iniciar-discusion');
-        
-        if (btnDiscusion) {
-             btnDiscusion.style.display = esHost ? 'block' : 'none';
-        }
-
-        if (miRolActual === 'Impostor') {
-            titulo.textContent = '¡IMPOSTOR!';
-            titulo.style.color = 'var(--color-red)';
-            detalle.innerHTML = `<h3>Tu Misión</h3><p>No conoces la palabra. Debes disimular y convencer a los demás de que eres un tripulante para no ser votado. **Tema (Pista):** ${miTemaActual}</p>`;
-        } else if (miRolActual === 'Agente Doble') {
-             titulo.textContent = 'Agente Doble';
-             titulo.style.color = 'var(--color-orange)';
-             detalle.innerHTML = `<h3>Tu Misión</h3><p>La palabra secreta es: <span style="font-weight: bold; color: var(--color-orange);">${miPalabraSecreta}</span>. Eres un tripulante que juega solo. Ganas si el impostor es eliminado y tú sobrevives. **Tema:** ${miTemaActual}</p>`;
-        } else {
-            titulo.textContent = 'Tripulante';
-            titulo.style.color = 'var(--color-green)';
-            detalle.innerHTML = `<h3>Tu Palabra Secreta</h3><p style="font-size: 1.5em; font-weight: bold; color: var(--color-green);">${miPalabraSecreta}</p><p>Usa la palabra sin revelarla directamente. **Tema:** ${miTemaActual}</p>`;
-        }
+        }, 500); // 500ms para precisión decente
     }
-    
-    // Vista: Inicio de Discusión (Estado: 'enJuego', rondaEstado: 'discutiendo')
-    function manejarInicioDiscusion(esHost) {
+
+    // ----------------------------------------------------
+    // *** FUNCIONES DE MANEJO DE VISTAS DE JUEGO ***
+    // ----------------------------------------------------
+
+    function manejarInicioRonda(sala) {
         cambiarVista('vista-juego');
         
-        const palabraDisplay = document.getElementById('palabra-secreta-juego');
-        const rolDisplay = document.getElementById('rol-juego-display');
-        const temaDisplay = document.getElementById('tema-valor-juego');
+        // Actualizar UI con datos de mi rol
+        const rolDisplay = document.getElementById('rol-display');
+        if (rolDisplay) rolDisplay.textContent = `Tu Rol: ¡${miRolActual}!`;
         
-        if (rolDisplay) rolDisplay.textContent = `Rol: ${miRolActual}`;
-        if (temaDisplay) temaDisplay.textContent = miTemaActual;
+        const rondaDisplay = document.getElementById('ronda-actual-display');
+        if (rondaDisplay) rondaDisplay.textContent = sala.rondaActual;
 
-        if (palabraDisplay) {
-             if (miRolActual === 'Impostor') {
-                palabraDisplay.textContent = "IMPOSTOR: ¡A disimular!";
-                palabraDisplay.style.color = 'var(--color-red)';
-             } else if (miRolActual === 'Agente Doble') {
-                 palabraDisplay.textContent = miPalabraSecreta;
-                 palabraDisplay.style.color = 'var(--color-orange)';
-             } else {
-                palabraDisplay.textContent = miPalabraSecreta;
-                palabraDisplay.style.color = 'var(--color-green)';
-             }
-        }
+        const palabraDisplay = document.getElementById('palabra-secreta-display');
+        const temaDisplay = document.getElementById('tema-display');
         
-        // Mostrar botón de forzar votación al Host
+        if (palabraDisplay && temaDisplay) {
+            if (miRolActual === 'Impostor') {
+                palabraDisplay.textContent = "Eres el IMPOSTOR. Descríbelo sin la palabra secreta.";
+                temaDisplay.querySelector('span').textContent = '??? (No lo sabes)';
+                palabraDisplay.style.backgroundColor = '#990000';
+                palabraDisplay.style.color = '#fff';
+            } else if (miRolActual === 'Agente Doble') {
+                 palabraDisplay.textContent = "Eres el AGENTE DOBLE. Descríbelo sin la palabra secreta.";
+                 temaDisplay.querySelector('span').textContent = miTemaActual;
+                 palabraDisplay.style.backgroundColor = '#8B4513';
+                 palabraDisplay.style.color = '#fff';
+            } else {
+                palabraDisplay.textContent = miPalabraSecreta;
+                temaDisplay.querySelector('span').textContent = miTemaActual;
+                palabraDisplay.style.backgroundColor = '#4CAF50';
+                palabraDisplay.style.color = '#fff';
+            }
+        }
+
+        // Mostrar u ocultar botón de forzar votación (Host)
+        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         const btnForzar = document.getElementById('btn-forzar-votacion');
         if (btnForzar) btnForzar.style.display = esHost ? 'block' : 'none';
         
-        // Ocultar acciones finales
-        document.getElementById('acciones-finales-host').style.display = 'none';
+        // Sincronizar temporizador (solo para clientes, el host lo maneja en el listener)
+        if (!esHost && sala.temporizadorFinTimestamp) {
+            limpiarTemporizador(); 
+            temporizadorInterval = setInterval(() => {
+                const tiempoRestante = Math.max(0, Math.floor((sala.temporizadorFinTimestamp - Date.now()) / 1000));
+                const tiempoDisplay = document.getElementById('tiempo-restante');
+                if (tiempoDisplay) tiempoDisplay.textContent = tiempoRestante; 
+            }, 500);
+        }
     }
     
-    // Vista: Inicio de Votación (Estado: 'enJuego', rondaEstado: 'votando')
-    function manejarInicioVotacion() {
+    // ----------------------------------------------------
+    // *** PASAR A ELIMINACIÓN (HOST) ***
+    // ----------------------------------------------------
+    document.getElementById('btn-forzar-votacion').addEventListener('click', async () => {
+         const misDatos = jugadoresActuales.find(j => j.id === miId);
+         if (!misDatos?.esHost || !codigoSalaActual) return;
+         
+         // El host actualiza el estado, y todos los clientes lo reciben
+         await db.ref('salas/' + codigoSalaActual).update({ rondaEstado: 'votando' });
+    });
+    
+    // ----------------------------------------------------
+    // *** INICIO DE VOTACIÓN ***
+    // ----------------------------------------------------
+    function manejarInicioVotacion(sala) {
         cambiarVista('vista-votacion');
-        miVotoSeleccionadoId = 'none'; // Resetear voto local al iniciar la fase
+        limpiarTemporizador();
         
-        const jugadoresActivos = Object.values(jugadoresActuales).filter(j => !j.eliminado);
+        const rondaVotacionDisplay = document.getElementById('ronda-votacion-display');
+        if (rondaVotacionDisplay) rondaVotacionDisplay.textContent = sala.rondaActual;
         
-        document.getElementById('voto-confirmado-display').textContent = "Esperando tu voto...";
-        // Mostrar 0/Total_Activos (el backend lo actualiza con votos ya emitidos)
-        document.getElementById('votos-emitidos-display').textContent = `Votos recibidos: 0/${jugadoresActivos.length}`; 
-    }
-
-    // Vista: Resultado de Votación (Estado: 'enJuego' o 'finalizado', rondaEstado: 'resultado')
-    function manejarResultadoVotacion(resultado, esHost) {
-        cambiarVista('vista-resultado');
+        const votoConfirmadoDisplay = document.getElementById('voto-confirmado-display');
+        if (votoConfirmadoDisplay) votoConfirmadoDisplay.textContent = 'Esperando tu voto...';
         
-        const detallesContainer = document.getElementById('detalles-votacion-container');
-        const eliminadoDisplay = document.getElementById('jugador-eliminado-display');
+        const estadoVotoDiv = document.getElementById('estado-voto');
+        if (estadoVotoDiv) estadoVotoDiv.classList.remove('voto-emitido');
         
-        if (detallesContainer) detallesContainer.innerHTML = '<h4>Conteo de Votos:</h4>';
-        const jugadoresArray = Object.values(jugadoresActuales);
+        const jugadoresActivos = jugadoresActuales.filter(j => !j.eliminado);
+        const votosEmitidos = Object.keys(sala.votos || {}).length;
         
-        let jugadorEliminadoNombre = 'Nadie (Empate o Abstención)';
+        const votosEmitidosDisplay = document.getElementById('votos-emitidos-display');
+        if (votosEmitidosDisplay) votosEmitidosDisplay.textContent = `Votos recibidos: ${votosEmitidos}/${jugadoresActivos.length}`;
         
-        // Renderizar conteo de votos
-        const conteoList = document.createElement('ul');
-        conteoList.classList.add('lista-jugadores');
-        
-        for (const id in resultado.conteo) {
-            const votoCount = resultado.conteo[id];
-            let nombre = 'Abstención';
-            
-            if (id !== 'none') {
-                const jugador = jugadoresArray.find(j => j.id === id);
-                nombre = jugador ? jugador.nombre : 'Jugador Desconocido';
-            }
-            
-            const li = document.createElement('li');
-            li.textContent = `${nombre}: ${votoCount} voto(s)`;
-            conteoList.appendChild(li);
+        // Si ya voté, mostrar confirmación
+        if (sala.votos && sala.votos[miId]) {
+            const votadoId = sala.votos[miId];
+            const nombreVotado = (votadoId === 'none') 
+                                 ? 'Abstención (Nadie)' 
+                                 : jugadoresActuales.find(j => j.id === votadoId)?.nombre || 'Desconocido';
+                                 
+            if (votoConfirmadoDisplay) votoConfirmadoDisplay.textContent = `¡Tu voto por ${nombreVotado} ha sido emitido!`;
+            if (estadoVotoDiv) estadoVotoDiv.classList.add('voto-emitido');
         }
-        if (detallesContainer) detallesContainer.appendChild(conteoList);
-
-        // Renderizar Eliminación
-        if (eliminadoDisplay) {
-            if (resultado.jugadorEliminadoId) {
-                const jugador = jugadoresArray.find(j => j.id === resultado.jugadorEliminadoId);
-                if (jugador) {
-                    jugadorEliminadoNombre = jugador.nombre;
-                    eliminadoDisplay.textContent = `¡${jugadorEliminadoNombre} ha sido eliminado!\nRol revelado: ${resultado.rolRevelado}`;
-                    eliminadoDisplay.style.color = 'var(--color-red)';
-                    eliminadoDisplay.style.borderColor = 'var(--color-red)';
-                }
-            } else {
-                eliminadoDisplay.textContent = jugadorEliminadoNombre;
-                eliminadoDisplay.style.color = 'var(--color-secondary)';
-                eliminadoDisplay.style.borderColor = 'var(--color-secondary)';
-            }
+        
+        // Si todos han votado y soy el Host, procesar los votos
+        if (votosEmitidos === jugadoresActivos.length && jugadoresActuales.find(j => j.id === miId)?.esHost) {
+             procesarVotacionHost(sala);
         }
-
-        // Mostrar/Ocultar acciones finales
-        const accionesHost = document.getElementById('acciones-finales-host');
-        if (accionesHost) accionesHost.style.display = esHost ? 'flex' : 'none';
     }
     
-    // Vista: Fin de Juego (Estado: 'finalizado')
-    function manejarFinDeJuego(ganador, jugadoresArray, esHost) {
-        cambiarVista('vista-final');
+    // ----------------------------------------------------
+    // *** VOTAR JUGADOR (COMÚN) ***
+    // ----------------------------------------------------
+    window.votarJugador = async function(jugadorVotadoId) {
+        if (!codigoSalaActual || jugadoresActuales.find(j => j.id === miId)?.eliminado) return;
         
-        const ganadorDisplay = document.getElementById('ganador-display');
-        const listaRolesFinal = document.getElementById('lista-roles-final');
-        if (listaRolesFinal) listaRolesFinal.innerHTML = '';
-        
-        if (ganadorDisplay) ganadorDisplay.textContent = `🏆 ¡Ganan los ${ganador}! 🏆`;
+        const salaRef = db.ref('salas/' + codigoSalaActual);
+        const votosRef = db.ref('salas/' + codigoSalaActual + '/votos/' + miId);
 
-        jugadoresArray.forEach(j => {
-            const li = document.createElement('li');
-            li.textContent = `${j.nombre} fue ${j.rol}`;
-            if (j.rol === 'Impostor') {
-                li.classList.add('impostor');
-            } else if (j.rol === 'Agente Doble') {
-                li.classList.add('orange');
-            } else {
-                li.classList.add('tripulante');
-            }
-            li.style.textDecoration = j.eliminado ? 'line-through' : 'none';
-            if (listaRolesFinal) listaRolesFinal.appendChild(li);
-        });
+        // Registrar mi voto
+        await votosRef.set(jugadorVotadoId);
+        miVotoSeleccionadoId = jugadorVotadoId;
+
+        // Actualizar UI inmediatamente
+        const nombreVotado = (jugadorVotadoId === 'none') 
+                                 ? 'Abstención (Nadie)' 
+                                 : jugadoresActuales.find(j => j.id === jugadorVotadoId)?.nombre || 'Desconocido';
+                                 
+        const votoConfirmadoDisplay = document.getElementById('voto-confirmado-display');
+        const estadoVotoDiv = document.getElementById('estado-voto');
         
-        // El Host tiene las opciones de Reiniciar/Cerrar
-        const accionesFinalesHost = document.getElementById('acciones-finales-host');
-        if (accionesFinalesHost) {
-            accionesFinalesHost.style.display = esHost ? 'flex' : 'none';
-            // Clonar o mostrar si ya existe
-            const vistaFinal = document.getElementById('vista-final');
-            if (vistaFinal && !vistaFinal.querySelector('#acciones-finales-host-cloned')) {
-                 const clonedActions = accionesFinalesHost.cloneNode(true);
-                 clonedActions.id = 'acciones-finales-host-cloned';
-                 clonedActions.style.display = esHost ? 'flex' : 'none';
-                 // Remover listeners anteriores si es necesario o manejar con el nuevo ID
-                 vistaFinal.insertBefore(clonedActions, vistaFinal.querySelector('.btn-principal'));
+        if (votoConfirmadoDisplay) votoConfirmadoDisplay.textContent = `¡Tu voto por ${nombreVotado} ha sido emitido!`;
+        if (estadoVotoDiv) estadoVotoDiv.classList.add('voto-emitido');
+
+        // El listener se encargará de re-renderizar la vista de votación para todos.
+    }
+    
+    // ----------------------------------------------------
+    // *** PROCESAR VOTACIÓN (SOLO HOST) ***
+    // ----------------------------------------------------
+    async function procesarVotacionHost(sala) {
+        if (!jugadoresActuales.find(j => j.id === miId)?.esHost) return; // Solo Host
+
+        const conteoVotos = {}; 
+        const jugadoresActivos = jugadoresActuales.filter(j => !j.eliminado);
+
+        // Inicializar el conteo de votos
+        jugadoresActivos.forEach(j => conteoVotos[j.id] = 0);
+        conteoVotos['none'] = 0;
+
+        // Contar los votos
+        for (const votanteId in sala.votos) {
+            const votadoId = sala.votos[votanteId];
+            if (conteoVotos.hasOwnProperty(votadoId)) {
+                conteoVotos[votadoId]++;
+            } else if (votadoId === 'none') {
+                conteoVotos['none']++;
             }
         }
+
+        let jugadorEliminado = null;
+        let maxVotos = 0;
+        let empates = [];
+
+        for (const id in conteoVotos) {
+            if (id !== 'none' && conteoVotos[id] > maxVotos) {
+                maxVotos = conteoVotos[id];
+                jugadorEliminado = jugadoresActuales.find(j => j.id === id);
+                empates = [jugadorEliminado];
+            } else if (id !== 'none' && conteoVotos[id] === maxVotos && maxVotos > 0) {
+                empates.push(jugadoresActuales.find(j => j.id === id));
+            }
+        }
+
+        if (empates.length > 1 || maxVotos === 0) {
+            jugadorEliminado = null; // Nadie eliminado por empate o abstención total
+        }
+
+        // 1. Actualizar el jugador eliminado en la DB
+        if (jugadorEliminado) {
+            await db.ref(`salas/${codigoSalaActual}/jugadores/${jugadorEliminado.id}/eliminado`).set(true);
+        }
+        
+        // 2. Actualizar el resultado de la ronda en la DB para que todos lo lean
+        await db.ref('salas/' + codigoSalaActual).update({
+            rondaEstado: 'resultado',
+            ultimoResultado: {
+                conteo: conteoVotos,
+                jugadorEliminadoId: jugadorEliminado ? jugadorEliminado.id : null,
+                rolRevelado: jugadorEliminado ? jugadorEliminado.rol : null,
+            }
+        });
+
+        // El listener activará la vista de resultados
     }
-});
+    
+    // ----------------------------------------------------
+    // *** MANEJAR RESULTADO DE VOTACIÓN (TODOS) ***
+    // ----------------------------------------------------
+    function manejarResultadoVotacion(sala) {
+         cambiarVista('vista-resultado');
+         
+         const resultado = sala.ultimoResultado;
+         if (!resultado) return;
+
+         const jugadorEliminado = resultado.jugadorEliminadoId 
+                                  ? jugadoresActuales.find(j => j.id === resultado.jugadorEliminadoId) 
+                                  : null;
+         
+         let mensaje = "";
+         if (jugadorEliminado) {
+             mensaje = `¡${jugadorEliminado.nombre} fue ELIMINADO! Su rol era: ${resultado.rolRevelado}.`;
+         } else {
+             mensaje = "Nadie fue eliminado. Hubo empate o abstención.";
+         }
+         
+         const resultadoRondaDisplay = document.getElementById('resultado-ronda-display');
+         if (resultadoRondaDisplay) resultadoRondaDisplay.textContent = `Ronda ${sala.rondaActual} finalizada.`;
+         
+         const jugadorEliminadoDisplay = document.getElementById('jugador-eliminado-display');
+         if (jugadorEliminadoDisplay) jugadorEliminadoDisplay.textContent = mensaje;
+
+         // Renderizar el conteo de votos (TO-DO)
+         const detallesVotos = document.getElementById('detalles-votacion-container');
+         if (detallesVotos) {
+             detallesVotos.innerHTML = '<h4>Conteo de Votos:</h4>';
+             for (const id in resultado.conteo) {
+                 const nombre = id === 'none' ? 'Abstención' : jugadoresActuales.find(j => j.id === id)?.nombre || 'Desconocido';
+                 detallesVotos.innerHTML += `<p>${nombre}: ${resultado.conteo[id]} votos</p>`;
+             }
+         }
+         
+         // Chequear fin de juego y mostrar botones
+         const finJuego = chequearFinDeJuego(jugadoresActuales);
+         
+         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+         const btnVerGanador = document.getElementById('btn-ver-ganador');
+         const btnSiguienteRonda = document.getElementById('btn-siguiente-ronda');
+
+         if (finJuego) {
+             if (btnVerGanador) btnVerGanador.style.display = esHost ? 'block' : 'none';
+             if (btnSiguienteRonda) btnSiguienteRonda.style.display = 'none';
+             
+             // Si no es Host, el botón de ver ganador no aparece, se queda esperando el cambio de estado
+         } else {
+             if (btnSiguienteRonda) btnSiguienteRonda.style.display = esHost ? 'block' : 'none';
+             if (btnVerGanador) btnVerGanador.style.display = 'none';
+         }
+    }
+    
+    // ----------------------------------------------------
+    // *** INICIAR SIGUIENTE RONDA / VER GANADOR (HOST) ***
+    // ----------------------------------------------------
+    document.getElementById('btn-siguiente-ronda').addEventListener('click', async () => {
+         const misDatos = jugadoresActuales.find(j => j.id === miId);
+         if (!misDatos?.esHost || !codigoSalaActual) return;
+         
+         const tiempoFin = Date.now() + configuracionActual.tiempoRondaSegundos * 1000;
+
+         await db.ref('salas/' + codigoSalaActual).update({
+             rondaActual: firebase.database.ServerValue.increment(1),
+             rondaEstado: 'discutiendo',
+             votos: {}, // Limpiar votos para la nueva ronda
+             temporizadorFinTimestamp: tiempoFin
+         });
+         miVotoSeleccionadoId = 'none'; // Resetear mi voto
+    });
+
+    document.getElementById('btn-ver-ganador').addEventListener('click', async () => {
+         const misDatos = jugadoresActuales.find(j => j.id === miId);
+         if (!misDatos?.esHost || !codigoSalaActual) return;
+         
+         // El host simplemente cambia el estado a 'finalizado', y todos lo reciben
+         await db.ref('salas/' + codigoSalaActual).update({
+             estado: 'finalizado'
+         });
+    });
+
+    // ----------------------------------------------------
+    // *** LÓGICA DE FIN DE JUEGO ***
+    // ----------------------------------------------------
+    function chequearFinDeJuego(jugadores) {
+        const jugadoresActivos = jugadores.filter(j => !j.eliminado);
+        const impostoresActivos = jugadoresActivos.filter(j => j.rol === 'Impostor').length;
+        const tripulantesActivos = jugadoresActivos.filter(j => j.rol === 'Tripulante' || j.rol === 'Agente Doble').length;
+        
+        if (impostoresActivos === 0) {
+            return 'Tripulantes'; 
+        } else if (impostoresActivos >= tripulantesActivos) {
+            return 'Impostores'; 
+        }
+        return null;
+    }
+
+    function manejarFinDeJuego(sala) {
+         cambiarVista('vista-final');
+         const ganador = chequearFinDeJuego(jugadoresActuales);
+         
+         const ganadorDisplay = document.getElementById('ganador-display');
+         if (ganadorDisplay) ganadorDisplay.textContent = `🏆 ¡Ganan los ${ganador}! 🏆`;
+         
+         const listaRolesFinal = document.getElementById('lista-roles-final');
+         if (listaRolesFinal) {
+             listaRolesFinal.innerHTML = '';
+             jugadoresActuales.forEach(j => {
+                 const elemento = document.createElement('li');
+                 elemento.textContent = `${j.nombre} - Rol: ${j.rol} ${j.eliminado ? '(Eliminado)' : '(Activo)'}`;
+                 listaRolesFinal.appendChild(elemento);
+             });
+         }
+
+
+         // Borrar la sala de Firebase después de un tiempo prudente (Host)
+         if (jugadoresActuales.find(j => j.id === miId)?.esHost) {
+              setTimeout(() => {
+                   db.ref('salas/' + codigoSalaActual).remove();
+              }, 120000); // 2 minutos
+         }
+    }
+    
+}); // CIERRE DEL DOMContentLoaded
