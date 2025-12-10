@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego del Impostor</title>
+    <link rel="stylesheet" href="style.css"> 
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body id="cuerpo-app">
+    <h1>Juego del Impostor</h1>
+
+    <div id="vista-inicio" class="vista activa">
+        <h2>👋 Ingresa tu Nombre</h2>
+        <input type="text" id="nombre-jugador" placeholder="Tu Nombre" maxlength="15">
+        <button onclick="mostrarVistaCrearUnirse()">▶️ Siguiente</button>
+    </div>
+
+    <div id="vista-menu" class="vista">
+        <h2>Elige tu Acción</h2>
+        <button onclick="crearSala()">✨ Crear Sala (HOST)</button>
+        <button onclick="mostrarFormUnirse()">🚪 Unirse a Sala</button>
+    </div>
+
+    <div id="vista-unirse" class="vista">
+        <h2>Unirse a Sala</h2>
+        <input type="text" id="codigo-sala-input" placeholder="Código de Sala (ej: ABCD)" maxlength="4" style="text-transform: uppercase;">
+        <p id="error-unirse" class="rojo"></p>
+        <button onclick="unirseSala()">✅ Unirme</button>
+        <button onclick="mostrarVistaMenu()">⬅️ Volver</button>
+    </div>
+
+    <div id="vista-lobby" class="vista">
+        <div class="header-lobby">
+            <h2>Sala: <span id="codigo-sala-lobby">ABCD</span></h2>
+            <p id="config-actual-lobby"></p>
+        </div>
+        
+        <h3>Jugadores (<span id="num-jugadores">1</span>/10)</h3>
+        <ul id="jugadores-lista" class="lista-jugadores">
+            </ul>
+
+        <div id="espera-host" class="mensaje-espera">
+            <p>Esperando a que el HOST inicie el juego...</p>
+        </div>
+        
+        <button id="boton-iniciar" class="btn-primary" onclick="mostrarConfiguracion()">
+            Configurar e Iniciar
+        </button>
+    </div>
+
+    <div id="vista-configuracion" class="vista">
+        <h2>🛠️ Configuración de Sala</h2>
+        <div class="config-grid">
+            
+            <div class="config-item">
+                <label>Tema de Palabras:</label>
+                <input type="hidden" id="select-tema"> 
+                <button class="btn-secondary" onclick="abrirModalCategorias()">
+                    <span id="nombre-tema-seleccionado">Animales 🐾</span> 
+                    <span style="font-size: 0.8em; margin-left: 5px;">(Cambiar)</span>
+                </button>
+            </div>
+            
+            <div class="config-item">
+                <label>Tiempo por Ronda:</label>
+                <span class="config-label-fijo">Sin Límite de Tiempo ♾️</span>
+            </div>
+            
+            <div class="config-item">
+                <label for="input-rondas">Número de Rondas:</label>
+                <input type="number" id="input-rondas" value="3" min="1" max="10" class="input-number-small"> 
+            </div>
+
+            <div class="config-item checkbox-item">
+                <input type="checkbox" id="check-agente-doble">
+                <label for="check-agente-doble">Incluir Agente Doble (Recomendado +4 Jugadores)</label>
+            </div>
+            
+        </div>
+        
+        <div class="config-botones">
+            <button onclick="cancelarConfiguracion()">⬅️ Volver</button>
+            <button class="btn-confirm" onclick="iniciarJuegoFinal()">🔥 Iniciar Juego</button>
+        </div>
+    </div>
+    
+    <div id="vista-revelacion-rol" class="vista">
+        <div class="caja-rol">
+            <h2>TU ROL ES:</h2>
+            <h1 id="revelacion-titulo"></h1>
+            
+            <div id="revelacion-detalle">
+                </div>
+            
+            <button id="btn-entendido-juego" class="btn-confirm">
+                ¡ENTENDIDO! IR AL JUEGO ▶️
+            </button>
+        </div>
+    </div>
+    
+    <div id="vista-juego" class="vista">
+        <div class="info-juego-header">
+            <p>Ronda: <strong id="ronda-actual">1</strong> de <span id="rondas-totales">3</span></p>
+            <p id="estado-ronda">Discusión...</p>
+        </div>
+
+        <div class="caja-personal-rol">
+            <p class="config-label">Jugador: <strong id="mi-nombre"></strong></p>
+            <h2 id="mi-rol" style="margin-top: 5px;">ROL</h2>
+            <div id="palabra-secreta-container" class="palabra-secreta-container">
+                </div>
+        </div>
+
+        <div class="display-temporizador">
+            <span id="temporizador-display">01:00</span>
+        </div>
+        
+        <div id="eliminacion-host-div">
+            <button id="boton-pasar-eliminacion" class="btn-alert" onclick="forzarVotacion()">Forzar Votación</button>
+        </div>
+        
+        <div id="votacion-div" style="display: none;">
+            <div id="interfaz-votacion">
+                <h3>VOTA A QUIÉN CREES QUE ES EL IMPOSTOR:</h3>
+                <div class="grid-jugadores-voto" id="lista-jugadores-votacion">
+                    </div>
+                
+                <p id="progreso-votos" class="config-label" style="margin-top: 20px;">0 de 0 votos emitidos</p>
+                
+                <button id="boton-votar" class="btn-confirm" onclick="emitirVoto()" style="margin-top: 15px;">
+                    🗳️ Votar
+                </button>
+                <input type="hidden" id="select-voto" value="none">
+            </div>
+
+            <div id="confirmacion-voto" style="display: none; margin-top: 20px;">
+                <p class="config-label">✅ Voto realizado.</p>
+                <p>Has votado por: <strong><span id="voto-realizado"></span></strong></p>
+            </div>
+            
+            <div id="resultados-votos-detallados">
+                </div>
+        </div>
+        
+    </div>
+
+    <div id="vista-final" class="vista">
+        <h2 id="resultado-ganador"></h2>
+        <p>El juego ha terminado. Roles revelados:</p>
+        <ul id="lista-final" class="lista-final"></ul>
+        <button onclick="window.location.reload();">🔄 Jugar de Nuevo</button>
+    </div>
+    
+    <div id="custom-confirm-modal" class="modal-fondo">
+        <div class="modal-contenido">
+            <p id="modal-mensaje"></p>
+            <div class="modal-botones">
+                <button id="modal-aceptar" class="btn-confirm">Aceptar</button>
+                <button id="modal-cancelar" class="btn-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-seleccion-categoria" class="modal-categoria-fondo">
+        <div class="modal-categoria-contenido">
+            <h2>✨ Elige una Categoría</h2>
+            <div id="grid-categorias" class="grid-categorias">
+                </div>
+            <p>Categoría Actual: <strong><span id="nombre-tema-modal">Animales 🐾</span></strong></p>
+            <button id="btn-cerrar-modal-categoria" class="btn-secondary" onclick="cerrarModalCategorias()">Guardar y Cerrar</button>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="cliente.js"></script>
+</body>
+</html>
