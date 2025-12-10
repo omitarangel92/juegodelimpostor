@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const listaJuego = document.getElementById('lista-jugadores-juego');
         const opcionesVotacion = document.getElementById('opciones-votacion');
         
-        listaHost.innerHTML = '';
+        if (listaHost) listaHost.innerHTML = '';
         if (listaJuego) listaJuego.innerHTML = '';
         
         // Reiniciar opciones de votación
@@ -122,17 +122,19 @@ document.addEventListener('DOMContentLoaded', (event) => {
             const esEliminado = j.eliminado;
             
             // 1. Lista del Lobby
-            const elementoLobby = document.createElement('li');
-            elementoLobby.textContent = j.nombre + (esHostJugador ? ' (HOST)' : '') + (esMiJugador ? ' (Tú)' : '');
+            if (listaHost) {
+                const elementoLobby = document.createElement('li');
+                elementoLobby.textContent = j.nombre + (esHostJugador ? ' (HOST)' : '') + (esMiJugador ? ' (Tú)' : '');
 
-            if (esHost && !esMiJugador && !esEliminado) {
-                const btnExpulsar = document.createElement('button');
-                btnExpulsar.textContent = 'Expulsar';
-                btnExpulsar.classList.add('btn-expulsar');
-                btnExpulsar.onclick = () => expulsarJugador(j.id);
-                elementoLobby.appendChild(btnExpulsar);
+                if (esHost && !esMiJugador && !esEliminado) {
+                    const btnExpulsar = document.createElement('button');
+                    btnExpulsar.textContent = 'Expulsar';
+                    btnExpulsar.classList.add('btn-expulsar');
+                    btnExpulsar.onclick = () => expulsarJugador(j.id);
+                    elementoLobby.appendChild(btnExpulsar);
+                }
+                listaHost.appendChild(elementoLobby);
             }
-            listaHost.appendChild(elementoLobby);
 
             // 2. Lista de Juego (Solo activos)
             if (!esEliminado && listaJuego) {
@@ -300,6 +302,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         salaRef.on('value', (snapshot) => {
             const sala = snapshot.val();
+            
             if (!sala) {
                 // Si la sala desaparece, es porque el Host cerró/abandonó
                 alert("⛔ El Host cerró la sala o la sala ya no existe.");
@@ -402,9 +405,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
             await db.ref('salas/' + codigo).set(nuevaSala);
             await db.ref('salas/' + codigo + '/jugadores/' + miId).set(jugadorHost); 
 
-            // 2. Configurar el listener y redirigir
+            // 2. Configurar el listener e ir al lobby
             configurarEscuchadorSala(codigo);
-            // La función cambiarVista a 'vista-lobby' es manejada por el listener al recibir el evento.
+            codigoSalaActual = codigo;
+            document.getElementById('codigo-lobby-display').textContent = codigo;
+            cambiarVista('vista-lobby'); // <--- CORRECCIÓN: CAMBIO EXPLÍCITO DE VISTA
+            
             console.log(`Sala ${codigo} creada por ${nombreJugador}.`);
 
         } catch (error) {
@@ -453,7 +459,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
             await jugadoresRef.set(nuevoJugador);
 
             configurarEscuchadorSala(codigo);
-            // La función cambiarVista a 'vista-lobby' es manejada por el listener al recibir el evento.
+            // El listener se encarga del cambio de vista, pero establecemos el código inmediatamente
+            document.getElementById('codigo-lobby-display').textContent = codigo;
             console.log(`${nombreJugador} unido a la sala ${codigo}.`);
 
 
@@ -474,6 +481,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
         
         try {
+            // Esta acción será procesada por server.js
             await db.ref('salas/' + codigoSalaActual + '/acciones/iniciarJuego').set({ hostId: miId, timestamp: firebase.database.ServerValue.TIMESTAMP });
         } catch (error) {
             alert('Error al iniciar el juego: ' + error.message);
@@ -483,6 +491,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // REVELACIÓN: Iniciar Discusión (Host)
     document.getElementById('btn-iniciar-discusion').addEventListener('click', async () => {
         try {
+             // Esta acción será procesada por server.js
             await db.ref('salas/' + codigoSalaActual + '/acciones/iniciarDiscusion').set({ hostId: miId, timestamp: firebase.database.ServerValue.TIMESTAMP });
         } catch (error) {
             alert('Error al iniciar la discusión: ' + error.message);
@@ -492,6 +501,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // JUEGO: Forzar Votación (Host)
     document.getElementById('btn-forzar-votacion').addEventListener('click', async () => {
         try {
+            // Esta acción será procesada por server.js
             await db.ref('salas/' + codigoSalaActual + '/acciones/forzarVotacion').set({ hostId: miId, timestamp: firebase.database.ServerValue.TIMESTAMP });
         } catch (error) {
             alert('Error al forzar votación: ' + error.message);
@@ -502,6 +512,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('btn-reiniciar-partida').addEventListener('click', async () => {
         try {
             if (confirm('¿Estás seguro de que quieres reiniciar la partida? Los jugadores se mantendrán.')) {
+                 // Esta acción será procesada por server.js
                  await db.ref('salas/' + codigoSalaActual + '/acciones/reiniciarPartida').set({ hostId: miId, timestamp: firebase.database.ServerValue.TIMESTAMP });
             }
         } catch (error) {
@@ -513,6 +524,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('btn-finalizar-juego').addEventListener('click', async () => {
         try {
             if (confirm('¿Estás seguro de que quieres FINALIZAR el juego y CERRAR la sala?')) {
+                // El cliente Host puede eliminar directamente la sala en Firebase
                 await db.ref('salas/' + codigoSalaActual).remove();
                 abandonarSalaLocal();
             }
@@ -524,11 +536,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // LOBBY/JUEGO: Abandonar Sala
     window.abandonarSala = function() {
         if (confirm('¿Estás seguro de que quieres abandonar la sala?')) {
-            // El Host al abandonar elimina la sala. El Jugador solo se elimina de la lista.
+            // El jugador se elimina de la lista. Si era el Host, el listener manejará el cierre total de la sala.
             db.ref('salas/' + codigoSalaActual + '/jugadores/' + miId).remove()
                 .then(() => {
-                    // Si el jugador era el Host, el listener manejará el cierre de la sala
-                    // Si era un jugador, solo se actualiza la lista
                     abandonarSalaLocal();
                 })
                 .catch(error => {
@@ -551,7 +561,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (confirm('¿Estás seguro de que quieres expulsar a este jugador?')) {
             db.ref('salas/' + codigoSalaActual + '/jugadores/' + idJugador).remove()
                 .catch(error => alert('Error al expulsar: ' + error.message));
-            // La actualización es manejada por el listener de Firebase
         }
     };
     
@@ -578,7 +587,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                cardVotado.classList.add('votado-seleccionado');
             }
             
-            // Si todos votaron, el backend lo detecta y cambia el estado.
+            // Si todos votaron, el backend (server.js) lo detecta y cambia el estado.
             
         } catch (error) {
             alert('Error al registrar el voto: ' + error.message);
@@ -667,7 +676,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const detallesContainer = document.getElementById('detalles-votacion-container');
         const eliminadoDisplay = document.getElementById('jugador-eliminado-display');
         
-        detallesContainer.innerHTML = '<h4>Conteo de Votos:</h4>';
+        if (detallesContainer) detallesContainer.innerHTML = '<h4>Conteo de Votos:</h4>';
         const jugadoresArray = Object.values(jugadoresActuales);
         
         let jugadorEliminadoNombre = 'Nadie (Empate o Abstención)';
@@ -689,25 +698,28 @@ document.addEventListener('DOMContentLoaded', (event) => {
             li.textContent = `${nombre}: ${votoCount} voto(s)`;
             conteoList.appendChild(li);
         }
-        detallesContainer.appendChild(conteoList);
+        if (detallesContainer) detallesContainer.appendChild(conteoList);
 
         // Renderizar Eliminación
-        if (resultado.jugadorEliminadoId) {
-            const jugador = jugadoresArray.find(j => j.id === resultado.jugadorEliminadoId);
-            if (jugador) {
-                jugadorEliminadoNombre = jugador.nombre;
-                eliminadoDisplay.textContent = `¡${jugadorEliminadoNombre} ha sido eliminado!\nRol revelado: ${resultado.rolRevelado}`;
-                eliminadoDisplay.style.color = 'var(--color-red)';
-                eliminadoDisplay.style.borderColor = 'var(--color-red)';
+        if (eliminadoDisplay) {
+            if (resultado.jugadorEliminadoId) {
+                const jugador = jugadoresArray.find(j => j.id === resultado.jugadorEliminadoId);
+                if (jugador) {
+                    jugadorEliminadoNombre = jugador.nombre;
+                    eliminadoDisplay.textContent = `¡${jugadorEliminadoNombre} ha sido eliminado!\nRol revelado: ${resultado.rolRevelado}`;
+                    eliminadoDisplay.style.color = 'var(--color-red)';
+                    eliminadoDisplay.style.borderColor = 'var(--color-red)';
+                }
+            } else {
+                eliminadoDisplay.textContent = jugadorEliminadoNombre;
+                eliminadoDisplay.style.color = 'var(--color-secondary)';
+                eliminadoDisplay.style.borderColor = 'var(--color-secondary)';
             }
-        } else {
-            eliminadoDisplay.textContent = jugadorEliminadoNombre;
-            eliminadoDisplay.style.color = 'var(--color-secondary)';
-            eliminadoDisplay.style.borderColor = 'var(--color-secondary)';
         }
 
         // Mostrar/Ocultar acciones finales
-        document.getElementById('acciones-finales-host').style.display = esHost ? 'flex' : 'none';
+        const accionesHost = document.getElementById('acciones-finales-host');
+        if (accionesHost) accionesHost.style.display = esHost ? 'flex' : 'none';
     }
     
     // Vista: Fin de Juego (Estado: 'finalizado')
@@ -716,9 +728,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         const ganadorDisplay = document.getElementById('ganador-display');
         const listaRolesFinal = document.getElementById('lista-roles-final');
-        listaRolesFinal.innerHTML = '';
+        if (listaRolesFinal) listaRolesFinal.innerHTML = '';
         
-        ganadorDisplay.textContent = `🏆 ¡Ganan los ${ganador}! 🏆`;
+        if (ganadorDisplay) ganadorDisplay.textContent = `🏆 ¡Ganan los ${ganador}! 🏆`;
 
         jugadoresArray.forEach(j => {
             const li = document.createElement('li');
@@ -731,12 +743,22 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 li.classList.add('tripulante');
             }
             li.style.textDecoration = j.eliminado ? 'line-through' : 'none';
-            listaRolesFinal.appendChild(li);
+            if (listaRolesFinal) listaRolesFinal.appendChild(li);
         });
         
         // El Host tiene las opciones de Reiniciar/Cerrar
         const accionesFinalesHost = document.getElementById('acciones-finales-host');
-        accionesFinalesHost.style.display = esHost ? 'flex' : 'none';
-        document.getElementById('vista-final').appendChild(accionesFinalesHost.cloneNode(true));
+        if (accionesFinalesHost) {
+            accionesFinalesHost.style.display = esHost ? 'flex' : 'none';
+            // Clonar o mostrar si ya existe
+            const vistaFinal = document.getElementById('vista-final');
+            if (vistaFinal && !vistaFinal.querySelector('#acciones-finales-host-cloned')) {
+                 const clonedActions = accionesFinalesHost.cloneNode(true);
+                 clonedActions.id = 'acciones-finales-host-cloned';
+                 clonedActions.style.display = esHost ? 'flex' : 'none';
+                 // Remover listeners anteriores si es necesario o manejar con el nuevo ID
+                 vistaFinal.insertBefore(clonedActions, vistaFinal.querySelector('.btn-principal'));
+            }
+        }
     }
 });

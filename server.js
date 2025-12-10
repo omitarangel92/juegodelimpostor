@@ -1,4 +1,4 @@
-// server.js (CÓDIGO COMPLETO Y CORREGIDO - FIREBASE REALTIME DATABASE)
+// server.js (CÓDIGO COMPLETO Y FUNCIONAL - FIREBASE ADMIN SDK)
 
 const express = require('express');
 const http = require('http');
@@ -11,15 +11,15 @@ const PORT = process.env.PORT || 8080;
 const MIN_JUGADORES = 3; 
 
 // --- Configuración de Firebase Admin (REEMPLAZAR CON TUS CREDENCIALES) ---
-// Es NECESARIO configurar el SDK de Admin para escuchar y escribir en la DB
-// Si estás usando Render, la clave privada debe estar en una variable de entorno
-// La forma más segura es usar variables de entorno JSON, o un archivo.
+// La forma más segura es usar el JSON de la cuenta de servicio.
 
-const serviceAccount = require("./serviceAccountKey.json"); // Reemplaza con tu archivo
+const serviceAccount = require("./serviceAccountKey.json"); // REEMPLAZA ESTO
+// NOTA: Si usas Render, considera usar variables de entorno para la clave JSON,
+// en lugar de depender de un archivo.
 
 firebase.initializeApp({
   credential: firebase.credential.cert(serviceAccount),
-  databaseURL: "https://juego-impostor-firebase-default-rtdb.firebaseio.com" // Reemplaza con tu URL
+  databaseURL: "https://juego-impostor-firebase-default-rtdb.firebaseio.com" // REEMPLAZA ESTO
 });
 
 const db = firebase.database();
@@ -70,14 +70,16 @@ function asignarRoles(jugadores, configuracion) {
 
     // 1. Asignar Agente Doble
     if (configuracion.incluirAgenteDoble && numJugadores >= 4) {
+        // Encontrar posibles candidatos a Doble que aún sean Tripulantes
         const tripulantesPotenciales = candidatos.filter(j => j.rol === 'Tripulante');
         if (tripulantesPotenciales.length > 0) {
             const agenteDoble = popRandom(tripulantesPotenciales);
             const indexEnCandidatos = candidatos.findIndex(j => j.id === agenteDoble.id);
             if (indexEnCandidatos !== -1) {
+                // Actualizar el rol en la lista de candidatos
                 candidatos[indexEnCandidatos].rol = 'Agente Doble';
             }
-            // Eliminar al agente doble de la lista de candidatos a impostor
+            // Eliminar al agente doble de la lista de candidatos a impostor (si estaba allí)
             candidatos = candidatos.filter(j => j.id !== agenteDoble.id);
         }
     }
@@ -88,7 +90,7 @@ function asignarRoles(jugadores, configuracion) {
     while (impostoresAsignados < numImpostores && candidatos.length > 0) {
         const impostorSeleccionado = popRandom(candidatos);
         
-        // Asegurarse de que no sea ya un Agente Doble (aunque el filtro anterior debería manejarlo)
+        // Asignar rol si aún es Tripulante
         if (impostorSeleccionado.rol === 'Tripulante') {
             impostorSeleccionado.rol = 'Impostor';
             impostoresAsignados++;
@@ -227,6 +229,8 @@ salasRef.on('child_added', (snapshot) => {
     
     // Iniciar escucha de acciones para esta sala
     const accionesRef = db.ref(`salas/${codigoSala}/acciones`);
+    // Usamos once() en lugar de on() para evitar que se dispare por datos preexistentes
+    // Y luego on() para nuevos datos. O mejor:
     accionesRef.on('child_added', (accionSnapshot) => manejarAccionHost(codigoSala, accionSnapshot));
 });
 
@@ -245,10 +249,10 @@ salasRef.on('child_changed', (snapshot) => {
     const sala = snapshot.val();
     const codigoSala = snapshot.key;
     
-    // Lógica para procesar la votación
-    if (sala.rondaEstado === 'votando' && sala.jugadores && sala.votos) {
+    // Lógica para procesar la votación: se activa si el estado es 'votando' y hay un cambio en la sala
+    if (sala.rondaEstado === 'votando' && sala.jugadores) {
         const jugadoresActivos = Object.values(sala.jugadores).filter(j => !j.eliminado);
-        const totalVotosRecibidos = Object.keys(sala.votos).length;
+        const totalVotosRecibidos = Object.keys(sala.votos || {}).length; // Usar || {} por seguridad
         
         if (totalVotosRecibidos === jugadoresActivos.length) {
             console.log(`[FIREBASE] Todos votaron en ${codigoSala}. Procesando...`);
@@ -285,7 +289,7 @@ async function manejarAccionHost(codigoSala, accionSnapshot) {
                     const jugadoresArray = Object.values(sala.jugadores);
                     if (jugadoresArray.length < MIN_JUGADORES || sala.configuracion.temasSeleccionados.length === 0) {
                         console.warn(`Intento de inicio fallido en ${codigoSala}: No hay suficientes jugadores o temas.`);
-                        borrarAccion = true; // Borrar la acción para que no se reintente
+                        borrarAccion = true; 
                         break;
                     }
 
@@ -310,7 +314,6 @@ async function manejarAccionHost(codigoSala, accionSnapshot) {
                         
                         if (j.rol === 'Impostor') {
                             palabraInfo = 'NINGUNA'; 
-                            temaInfo = temaElegido; // El impostor conoce el tema
                         } else if (j.rol === 'Agente Doble') {
                              palabraInfo = palabraElegida; 
                         }
@@ -360,8 +363,6 @@ async function manejarAccionHost(codigoSala, accionSnapshot) {
                     updates.jugadores = jugadoresReset;
                 }
                 break;
-
-            // La acción 'finalizarJuego' elimina la sala, no se necesita aquí.
 
             default:
                 borrarAccion = true;
