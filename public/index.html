@@ -124,14 +124,14 @@
 
         
         <div id="acciones-finales-host" style="display: none;">
-            <button id="btn-continuar-discusion" class="btn-principal btn-grande" style="display: none;">
+            <button id="btn-continuar-discusion" class="btn-principal btn-grande">
                 ▶️ Continuar Discusión
             </button>
             
-            <button id="btn-reiniciar-partida" class="btn-secundario btn-grande" style="display: none;">
-                🔄 Reiniciar Partida (Ir a Configuración)
+            <button id="btn-reiniciar-partida-resultado" class="btn-secundario btn-grande" style="display: none;">
+                🔄 Reiniciar Partida (Ir a Lobby)
             </button>
-            <button id="btn-finalizar-juego" class="btn-danger btn-grande" style="display: none;">
+            <button id="btn-finalizar-juego-resultado" class="btn-danger btn-grande" style="display: none;">
                 🚪 Finalizar Juego (Cerrar Sala)
             </button>
         </div>
@@ -145,16 +145,16 @@
         <ul id="lista-roles-final" class="lista-jugadores lista-final">
             </ul>
         
-        <div id="acciones-finales-final-host" style="display: none; margin-top: 30px; gap: 15px;">
-             <button id="btn-reiniciar-partida" class="btn-secundario btn-grande">
-                🔄 Reiniciar Partida (Ir a Configuración)
+        <div id="acciones-finales-final-host" style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
+             <button id="btn-reiniciar-partida-final" class="btn-secundario btn-grande">
+                🔄 Reiniciar Partida (Ir a Lobby)
             </button>
-            <button id="btn-finalizar-juego" class="btn-danger btn-grande">
+            <button id="btn-finalizar-juego-final" class="btn-danger btn-grande">
                 🚪 Finalizar Juego (Cerrar Sala)
             </button>
         </div>
         
-        <button onclick="window.location.reload()" class="btn-principal">
+        <button onclick="window.location.reload()" class="btn-principal" style="margin-top: 20px;">
             Volver a la Pantalla de Inicio
         </button>
     </div>
