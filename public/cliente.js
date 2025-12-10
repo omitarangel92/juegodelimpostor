@@ -1,17 +1,18 @@
 // public/cliente.js (CÓDIGO FINAL - CONEXIÓN UNIVERSAL)
 
 // ¡CORRECCIÓN CRÍTICA! Conexión a la raíz del host (Render, Railway, Local)
-const socket = io(); // <-- ¡Así es como debe quedar!
-
-let nombreJugador = ''; 
+const socket = io({
+    transports: ['websocket', 'polling']
+});
+let nombreJugador = '';
 let codigoSalaActual = '';
-const MIN_JUGADORES_CLIENTE = 3; 
-let configuracionActual = { tema: 'Animales 🐾', tiempoRondaSegundos: 0, numRondas: 3, incluirAgenteDoble: false }; 
-let jugadoresActuales = []; 
-let miRolActual = ''; 
-let miPalabraSecreta = ''; 
-let miTemaActual = ''; 
-let votoSeleccionadoId = 'none'; 
+const MIN_JUGADORES_CLIENTE = 3;
+let configuracionActual = { tema: 'Animales 🐾', tiempoRondaSegundos: 0, numRondas: 3, incluirAgenteDoble: false };
+let jugadoresActuales = [];
+let miRolActual = '';
+let miPalabraSecreta = '';
+let miTemaActual = '';
+let votoSeleccionadoId = 'none';
 
 // --- LISTA DE CATEGORÍAS (Mismo contenido de categorías) ---
 const categorias = [
@@ -47,7 +48,7 @@ function cambiarVista(vistaId) {
     document.getElementById(vistaId).classList.add('activa');
     if (vistaId === 'vista-lobby') {
         actualizarBotonInicioJuego();
-        renderConfiguracion(); 
+        renderConfiguracion();
     }
 }
 
@@ -55,7 +56,7 @@ function actualizarListaJugadores(jugadores) {
     jugadoresActuales = jugadores;
     const listaHost = document.getElementById('lista-jugadores-host');
     const listaLobby = document.getElementById('lista-jugadores-lobby');
-    
+
     const renderJugadores = (listaElement, isHostView) => {
         listaElement.innerHTML = '';
         jugadores.forEach(j => {
@@ -84,7 +85,7 @@ function actualizarBotonInicioJuego() {
     if (!btnIniciar) return;
 
     const esHost = jugadoresActuales.find(j => j.id === socket.id)?.esHost;
-    
+
     if (esHost) {
         btnIniciar.style.display = 'block';
         if (jugadoresActuales.length < MIN_JUGADORES_CLIENTE) {
@@ -102,17 +103,17 @@ function actualizarBotonInicioJuego() {
 function renderConfiguracion() {
     const selectorTema = document.getElementById('selector-tema');
     if (selectorTema) {
-        selectorTema.innerHTML = categorias.map(c => 
+        selectorTema.innerHTML = categorias.map(c =>
             `<option value="${c.valor}" ${configuracionActual.tema === c.valor ? 'selected' : ''}>${c.emoji} ${c.nombre}</option>`
         ).join('');
         document.getElementById('input-tiempo-ronda').value = configuracionActual.tiempoRondaSegundos;
         document.getElementById('checkbox-agente-doble').checked = configuracionActual.incluirAgenteDoble;
     }
-    
+
     // Solo el Host puede editar la configuración
     const esHost = jugadoresActuales.find(j => j.id === socket.id)?.esHost;
     const form = document.getElementById('form-configuracion');
-    if(form) {
+    if (form) {
         form.style.pointerEvents = esHost ? 'auto' : 'none';
         form.style.opacity = esHost ? 1 : 0.6;
     }
@@ -143,7 +144,7 @@ document.getElementById('form-configuracion').addEventListener('change', () => {
     const tema = document.getElementById('selector-tema').value;
     const tiempo = parseInt(document.getElementById('input-tiempo-ronda').value);
     const doble = document.getElementById('checkbox-agente-doble').checked;
-    
+
     const nuevaConfig = {
         tema: tema,
         tiempoRondaSegundos: isNaN(tiempo) ? 0 : tiempo,
@@ -224,8 +225,8 @@ socket.on('juegoIniciado', (data) => {
     miRolActual = data.rol;
     miPalabraSecreta = data.palabraSecreta;
     miTemaActual = data.tema;
-    jugadoresActuales = data.jugadores; 
-    
+    jugadoresActuales = data.jugadores;
+
     // Ocultar botones de Host si no lo es (p. ej., Expulsar)
     document.querySelectorAll('.control-host').forEach(el => {
         el.style.display = data.jugadores.find(j => j.id === socket.id)?.esHost ? 'block' : 'none';
@@ -237,11 +238,11 @@ socket.on('juegoIniciado', (data) => {
     document.getElementById('rol-display').textContent = miRolActual;
     document.getElementById('tema-display').textContent = miTemaActual;
     document.getElementById('palabra-secreta').textContent = miPalabraSecreta;
-    
+
     let rolClase = 'tripulante';
     if (miRolActual === 'Impostor') rolClase = 'impostor';
     if (miRolActual === 'Agente Doble') rolClase = 'agente-doble';
-    
+
     document.getElementById('rol-display').className = rolClase;
 
     // Mostrar jugadores y estados de eliminación
@@ -262,7 +263,7 @@ socket.on('iniciarVotacion', (data) => {
     document.getElementById('titulo-votacion').textContent = `RONDA ${data.ronda}: ¿Quién es el impostor?`;
     renderOpcionesVoto(data.jugadoresActivos);
     votoSeleccionadoId = 'none'; // Resetear selección
-    document.getElementById('info-voto-emitido').textContent = ''; 
+    document.getElementById('info-voto-emitido').textContent = '';
     document.getElementById('btn-emitir-voto').disabled = false;
 });
 
@@ -272,7 +273,7 @@ socket.on('votoEmitidoConfirmacion', (data) => {
 });
 
 socket.on('actualizarVotos', (data) => {
-     document.getElementById('progreso-votos').textContent = `Votos emitidos: ${data.votosEmitidos} / ${data.totalVotantes}`;
+    document.getElementById('progreso-votos').textContent = `Votos emitidos: ${data.votosEmitidos} / ${data.totalVotantes}`;
 });
 
 socket.on('resultadoVotacion', (data) => {
@@ -314,12 +315,12 @@ socket.on('expulsadoDeSala', (mensaje) => {
 function actualizarEstadoJugadoresJuego(jugadores) {
     const listaJuego = document.getElementById('lista-jugadores-juego');
     listaJuego.innerHTML = '';
-    
+
     jugadores.forEach(j => {
         const li = document.createElement('li');
         let estado = '';
         let rolClase = '';
-        
+
         if (j.eliminado) {
             estado = '💀 ELIMINADO';
             rolClase = 'eliminado';
@@ -375,28 +376,28 @@ function mostrarResultadoVotacion(conteo, jugadorEliminadoNombre) {
     document.getElementById('resultado-ronda-titulo').textContent = `Resultados de la Votación:`;
     const resultadosDiv = document.getElementById('resultado-votos-lista');
     let listaVotos = '<ul>';
-    
+
     // Mapear y ordenar los resultados
     const itemsVotados = Object.keys(conteo)
-                               .filter(id => id !== 'none') // Excluir 'none' del mapeo inicial
-                               .map(id => {
-        const j = jugadoresActuales.find(jug => jug.id === id);
-        if (!j) return null;
+        .filter(id => id !== 'none') // Excluir 'none' del mapeo inicial
+        .map(id => {
+            const j = jugadoresActuales.find(jug => jug.id === id);
+            if (!j) return null;
 
-        let icono = '';
-        if (j.nombre === jugadorEliminadoNombre) {
-            icono = '❌';
-        } else if (conteo[id] > 0) {
-            icono = '🗳️';
-        }
-        return { id, nombre: j.nombre, votos: conteo[id], icono };
-    }).filter(item => item !== null);
-    
+            let icono = '';
+            if (j.nombre === jugadorEliminadoNombre) {
+                icono = '❌';
+            } else if (conteo[id] > 0) {
+                icono = '🗳️';
+            }
+            return { id, nombre: j.nombre, votos: conteo[id], icono };
+        }).filter(item => item !== null);
+
     // Agregar la abstención al final
     itemsVotados.push({ id: 'none', nombre: 'Abstención (Nadie)', votos: conteo['none'] || 0, icono: conteo['none'] > 0 ? '🚫' : '' });
 
 
-    itemsVotados.sort((a, b) => b.votos - a.votos); 
+    itemsVotados.sort((a, b) => b.votos - a.votos);
 
     itemsVotados.forEach(item => {
         const estilo = (item.nombre === jugadorEliminadoNombre) ? 'color: var(--color-red); font-weight: bold;' : '';
@@ -410,15 +411,15 @@ function mostrarResultadoVotacion(conteo, jugadorEliminadoNombre) {
 function manejarFinDeJuego(ganador, jugadores) {
     cambiarVista('vista-final');
     document.getElementById('resultado-ganador').innerHTML = `🎉 ¡VICTORIA DE LOS <span class="${ganador === 'Impostores' ? 'impostor' : 'tripulante'}">${ganador.toUpperCase()}</span>! 🎉`;
-    
+
     const listaFinal = document.getElementById('lista-final');
     listaFinal.innerHTML = '';
-    
+
     jugadores.forEach(j => {
         const li = document.createElement('li');
         let rolClass = (j.rol === 'Impostor') ? 'impostor' : (j.rol === 'Agente Doble' ? 'agente-doble' : 'tripulante');
         const estado = j.eliminado ? '💀' : '✅';
-        
+
         li.className = rolClass;
         li.innerHTML = `${estado} <strong>${j.nombre}</strong> - ${j.rol}`;
         listaFinal.appendChild(li);
