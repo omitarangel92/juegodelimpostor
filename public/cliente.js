@@ -4,10 +4,8 @@
 // 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
 // =================================================================
 
-// NOTA DE SEGURIDAD: Esta clave está expuesta públicamente, es CRÍTICO
-// que configures reglas de seguridad ESTRICTAS en Firebase.
 const firebaseConfig = {
-    // Reemplaza con tus CREDENCIALES REALES de Firebase
+    // 🛑 ¡IMPORTANTE! REEMPLAZA CON TUS CREDENCIALES REALES DE FIREBASE
     apiKey: "AIzaSyBFWEizn6N1iDkvZr2FkN3Vfn7IWGIuG0", 
     authDomain: "juego-impostor-firebase.firebaseapp.com",
     databaseURL: "https://juego-impostor-firebase-default-rtdb.firebaseio.com",
@@ -57,27 +55,28 @@ function generarCodigoSala() {
     return result;
 }
 
-// Lógica de Asignación de Roles (Ahora en el cliente Host)
+// Lógica de Asignación de Roles 
 function asignarRoles(jugadores, configuracion) {
     const numJugadores = jugadores.length;
     let numImpostores = 0;
     
-    // Lógica para determinar el número de impostores
+    // Regla de Impostores: 1 para 3-5 jugadores, 2 para 6-10 jugadores
     if (numJugadores >= 3 && numJugadores <= 5) {
         numImpostores = 1;
     } else if (numJugadores >= 6 && numJugadores <= 10) {
         numImpostores = 2;
     } 
     
-    // Resetear roles y limpiar estado de juego (para jugadores que ya estaban en la sala)
+    // Resetear roles y limpiar estado de juego
     jugadores.forEach(j => {
         j.rol = 'Tripulante';
         j.eliminado = false;
         j.voto = null; 
     });
 
-    // 1. Asignar Agente Doble
+    // 1. Asignar Agente Doble (si está activado y hay suficientes jugadores)
     if (configuracion.incluirAgenteDoble && numJugadores >= 4) {
+        // Encontrar un tripulante potencial
         const tripulantesPotenciales = jugadores.filter(j => j.rol === 'Tripulante');
         if (tripulantesPotenciales.length > 0) {
             const indiceAleatorio = Math.floor(Math.random() * tripulantesPotenciales.length);
@@ -119,15 +118,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // 4. VARIABLES GLOBALES
     let nombreJugador = ''; 
     let codigoSalaActual = '';
-    // Generar un ID único para este cliente
     let miId = Date.now().toString(36) + Math.random().toString(36).substring(2); 
     
     let jugadoresActuales = []; 
-    // Usar la configuración por defecto
+    // Configuración por defecto
     let configuracionActual = { tema: TEMAS_DISPONIBLES[0], incluirAgenteDoble: false }; 
-    let miRolActual = ''; 
-    let miPalabraSecreta = ''; 
-    let miTemaActual = ''; 
     let miVotoSeleccionadoId = 'none'; 
     
     let listenerSala = null; // Para almacenar el listener de la sala
@@ -136,7 +131,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // 5. FUNCIONES DE UI Y LÓGICA AUXILIAR
     // =================================================================
 
-    // FUNCIÓN DE NAVEGACIÓN
+    // FUNCIÓN DE NAVEGACIÓN (Controla el flujo de vistas)
     window.cambiarVista = function(vistaId) {
         document.querySelectorAll('.vista').forEach(vista => {
             vista.classList.remove('activa');
@@ -144,19 +139,20 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const nuevaVista = document.getElementById(vistaId);
         if (nuevaVista) {
             nuevaVista.classList.add('activa');
-        } else {
-            console.error('Error: La vista ' + vistaId + ' no existe en el HTML.');
-            return;
-        }
+        } 
         
         if (vistaId === 'vista-lobby') {
             actualizarBotonInicioJuego();
             renderConfiguracion(); 
         }
+        
+        // Resetear estado de voto al cambiar de vista, excepto en la votación
+        if (vistaId !== 'vista-votacion') {
+             miVotoSeleccionadoId = 'none';
+        }
     }
     
     function actualizarListaJugadores(jugadores) {
-        // Asegurarse de que jugadoresActuales se actualiza
         jugadoresActuales = jugadores.map(j => ({ ...j })); // Copia profunda
         
         const listaHost = document.getElementById('lista-jugadores-host');
@@ -198,7 +194,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 listaHost.appendChild(elementoLobby);
             }
 
-
             // 2. Lista de Juego (Solo activos)
             if (!esEliminado) {
                 contadorActivos++;
@@ -209,13 +204,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 }
                 
                 // 3. Opciones de Votación (Solo activos, excluyéndome a mí mismo)
-                if (!esMiJugador && listaVotos) {
+                if (listaVotos) {
                     const btnVoto = document.createElement('button');
-                    btnVoto.textContent = j.nombre;
+                    btnVoto.textContent = j.nombre + (esMiJugador ? ' (Tú)' : '');
                     btnVoto.classList.add('btn-votar');
                     btnVoto.setAttribute('data-voto-id', j.id);
                     btnVoto.onclick = () => votarJugador(j.id);
-                    listaVotos.appendChild(btnVoto);
+                    // Deshabilitar el botón de voto si es mi propio jugador, para obligar a votar a otros o abstenerse.
+                    btnVoto.disabled = esMiJugador;
+                    // Opcional: Agregar el botón solo si no es mi jugador, ya que la abstención cubre el caso.
+                    if (!esMiJugador) {
+                        listaVotos.appendChild(btnVoto);
+                    }
                 }
             }
         });
@@ -236,7 +236,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (!btnIniciar || !avisoMin) return;
 
         const numJugadores = jugadoresActuales.length;
-        // La propiedad esHost ahora está en los datos del jugador
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost; 
         
         if (esHost) {
@@ -247,10 +246,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 btnIniciar.disabled = true;
                 avisoMin.style.display = 'block';
             }
-            btnIniciar.style.display = 'block'; // Asegurar que sea visible para el Host
+            btnIniciar.style.display = 'block'; 
         } else {
-            btnIniciar.style.display = 'none'; // Esconder para no-Hosts
-            avisoMin.style.display = 'none'; // Esconder aviso también
+            btnIniciar.style.display = 'none'; 
+            avisoMin.style.display = 'none'; 
         }
     }
 
@@ -265,34 +264,29 @@ document.addEventListener('DOMContentLoaded', (event) => {
         codigoSalaActual = codigoSala; 
         const salaRef = db.ref('salas/' + codigoSala);
 
-        // Define la función de escucha (la "suscripción" a los cambios en la sala)
         listenerSala = salaRef.on('value', (snapshot) => {
             if (!snapshot.exists()) {
-                alert('La sala ha sido eliminada, has sido expulsado o no existe.');
+                alert('La sala ha sido eliminada o has sido desconectado.');
                 window.location.reload();
                 return;
             }
             const sala = snapshot.val(); 
             
-            // 1. Reconstruir lista de jugadores y mi info
+            // 1. Reconstruir lista de jugadores
             const jugadores = Object.values(sala.jugadores || {});
             actualizarListaJugadores(jugadores);
 
             const misDatos = sala.jugadores[miId];
-            if (misDatos) {
-                // Actualizar info local
-                miRolActual = misDatos.rol || '';
-                miPalabraSecreta = misDatos.palabraSecreta || '';
-                miTemaActual = misDatos.tema || '';
-                // Actualizar la configuración para el Host
-                configuracionActual = sala.configuracion || configuracionActual; 
-            } else {
-                 // Si mis datos desaparecen, significa que fui expulsado o la sala se cerró
+            if (!misDatos) {
+                 // Si mis datos desaparecen y la sala no está finalizada, fui expulsado
                  if (sala.estado !== 'finalizado') {
-                      alert('Has sido desconectado o expulsado de la sala.');
+                      alert('Has sido expulsado o la sala se cerró inesperadamente.');
                       window.location.reload();
                       return;
                  }
+            } else {
+                 // Actualizar la configuración para el Host
+                 configuracionActual = sala.configuracion || configuracionActual; 
             }
             
             // 2. Manejar el flujo del juego basado en el estado
@@ -332,7 +326,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         // 3. Lógica de transferencia de Host si es necesario
         if (misDatos?.esHost && jugadoresActuales.length > 1) {
-            // Buscar al primer jugador activo y no host
+            // Buscar al primer jugador activo que no sea el jugador saliente
             const siguienteHost = jugadoresActuales.find(j => j.id !== miId && !j.eliminado); 
             if (siguienteHost) {
                 await db.ref(`salas/${codigoSalaActual}/hostId`).set(siguienteHost.id);
@@ -364,13 +358,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         const checkboxAgente = document.getElementById('checkbox-agente-doble');
         if (checkboxAgente) checkboxAgente.checked = configuracionActual.incluirAgenteDoble;
+        
+        // Deshabilitar la configuración si no soy el Host
+        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        selectTema.disabled = !esHost;
+        if(checkboxAgente) checkboxAgente.disabled = !esHost;
     }
 
     // =================================================================
     // 7. HANDLERS DE FORMULARIOS Y FLUJO DEL JUEGO
     // =================================================================
     
-    // *** 7.1. HANDLER DE INICIO DE NOMBRE ***
+    // *** 7.1. HANDLER DE INICIO DE NOMBRE (Sección 1 -> Sección 2) ***
     document.getElementById('form-inicio').addEventListener('submit', (e) => {
         e.preventDefault(); 
         nombreJugador = document.getElementById('input-nombre').value.trim();
@@ -452,7 +451,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                  tema: null 
             };
             
-            // Si el jugador ya está en la sala (ej. recarga)
+            // Si el jugador ya está en la sala (ej. recarga), solo configuramos el listener
             if (sala.jugadores && sala.jugadores[miId]) {
                  configurarEscuchadorSala(codigo);
                  document.getElementById('codigo-lobby-display').textContent = codigo;
@@ -516,6 +515,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
         jugadoresConRoles.forEach(jugador => {
             let palabraInfo = (jugador.rol === 'Impostor') ? palabraImpostor : palabraTripulante;
             let temaInfo = temaElegido;
+            
+            // Si es Agente Doble, debe tener la palabra del tripulante, pero su objetivo es adivinar la del Impostor
+            if (jugador.rol === 'Agente Doble') {
+                 palabraInfo = palabraTripulante; // Recibe la palabra correcta para no ser detectado
+            }
 
             jugadoresParaFirebase[jugador.id] = { 
                 ...jugador, 
@@ -544,25 +548,21 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const misDatos = sala.jugadores[miId];
         if (!misDatos) return; 
 
-        miRolActual = misDatos.rol;
-        miPalabraSecreta = misDatos.palabraSecreta;
-        miTemaActual = misDatos.tema;
-
         const rolDisplay = document.getElementById('revelacion-titulo');
         const palabraDisplay = document.getElementById('revelacion-palabra');
         const temaDisplay = document.getElementById('revelacion-tema');
         const botonHost = document.getElementById('btn-iniciar-discusion');
         const avisoEspera = document.getElementById('aviso-espera-discusion');
 
-        if (rolDisplay) rolDisplay.textContent = miRolActual;
-        if (palabraDisplay) palabraDisplay.textContent = miPalabraSecreta;
-        if (temaDisplay) temaDisplay.textContent = 'Tema: ' + miTemaActual;
+        if (rolDisplay) rolDisplay.textContent = misDatos.rol;
+        if (palabraDisplay) palabraDisplay.textContent = misDatos.palabraSecreta;
+        if (temaDisplay) temaDisplay.textContent = 'Tema: ' + misDatos.tema;
 
         // Estilos de color
         let color = 'var(--color-primary)';
-        if (miRolActual === 'Impostor') color = 'var(--color-red)';
-        if (miRolActual === 'Agente Doble') color = 'var(--color-orange)';
-        if (miRolActual === 'Tripulante') color = 'var(--color-green)';
+        if (misDatos.rol === 'Impostor') color = 'var(--color-red)';
+        if (misDatos.rol === 'Agente Doble') color = 'var(--color-orange)';
+        if (misDatos.rol === 'Tripulante') color = 'var(--color-green)';
         if (rolDisplay) rolDisplay.style.color = color;
         
         // Mostrar botón solo al Host
@@ -600,7 +600,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         if (sala.rondaEstado === 'discutiendo') {
             cambiarVista('vista-juego');
-            miVotoSeleccionadoId = 'none'; // Resetear el estado de voto local
             
             const btnForzarVotacion = document.getElementById('btn-forzar-votacion');
             if (btnForzarVotacion) {
@@ -611,11 +610,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
             manejarInicioVotacion(sala); 
         }
         
-        if (chequearFinDeJuego(jugadoresActuales)) {
-             // Si el juego terminó, forzar el estado 'finalizado'
-             if (esHost) {
-                db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
-             }
+        // Si el juego termina durante la discusión, forzamos el estado 'finalizado'
+        if (chequearFinDeJuego(jugadoresActuales) && esHost) {
+             db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
         }
     }
     
@@ -636,16 +633,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         const votoConfirmadoDisplay = document.getElementById('voto-confirmado-display');
         
-        // Revisa si ya voté en esta ronda (a través del estado local)
-        if (miVotoSeleccionadoId !== 'none') {
-            const votado = jugadoresActuales.find(j => j.id === miVotoSeleccionadoId);
+        // Revisa si ya voté en esta ronda
+        if (sala.votos && sala.votos[miId]) {
+            const votoId = sala.votos[miId];
+            const votado = jugadoresActuales.find(j => j.id === votoId);
+            
             votoConfirmadoDisplay.textContent = 
-                (miVotoSeleccionadoId === 'none') ? '⚠️ Abstención confirmada.' : '✅ Voto por ' + votado.nombre + ' confirmado.';
+                (votoId === 'none') ? '⚠️ Abstención confirmada.' : '✅ Voto por ' + votado.nombre + ' confirmado.';
+            
             document.querySelectorAll('.btn-votar').forEach(btn => btn.disabled = true);
         } else {
             votoConfirmadoDisplay.textContent = 'Esperando tu voto...';
             // Reactivar botones
-            document.querySelectorAll('.btn-votar').forEach(btn => btn.disabled = false);
+            document.querySelectorAll('.btn-votar').forEach(btn => {
+                 // Solo reactivar si no es mi propio botón
+                 if (btn.getAttribute('data-voto-id') !== miId) {
+                      btn.disabled = false;
+                 }
+            });
         }
 
         const votantesActivos = jugadoresActuales.filter(j => !j.eliminado).length;
@@ -664,23 +669,19 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
     // *** 7.11. VOTAR (TODOS LOS CLIENTES) ***
     window.votarJugador = async function(votadoId) {
-        // Permitir votar solo si el estado local es 'none'
-        if (miVotoSeleccionadoId !== 'none' || !codigoSalaActual) return; 
+        if (!codigoSalaActual || (jugadoresActuales.find(j => j.id === miId)?.eliminado)) return; 
+        
+        // Verificar si ya voté en Firebase (el listener maneja el feedback visual)
+        const votoExistente = await db.ref('salas/' + codigoSalaActual + '/votos/' + miId).once('value');
+        if (votoExistente.exists()) return;
 
-        // 1. Mostrar confirmación en la UI
-        miVotoSeleccionadoId = votadoId; 
-        const votado = jugadoresActuales.find(j => j.id === votadoId);
-        
-        document.getElementById('voto-confirmado-display').textContent = 
-            (votadoId === 'none') ? '⚠️ Abstención confirmada.' : '✅ Voto por ' + votado.nombre + ' confirmado.';
-        
-        // 2. Deshabilitar botones
+        // 1. Deshabilitar botones inmediatamente para UX
         document.querySelectorAll('.btn-votar').forEach(btn => btn.disabled = true);
         
-        // 3. Actualizar el voto en Firebase
+        // 2. Actualizar el voto en Firebase
         await db.ref('salas/' + codigoSalaActual + '/votos/' + miId).set(votadoId);
         
-        // Nota: El cambio en votos activará manejarInicioVotacion, donde el Host detectará si todos votaron.
+        // El listener (manejarInicioVotacion) se encargará de confirmar el voto en la UI.
     };
 
     // *** 7.12. MANEJAR RESULTADO DE RONDA (TODOS LOS CLIENTES) ***
@@ -694,9 +695,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
         let jugadoresActivos = jugadoresActuales.filter(j => !j.eliminado);
         let jugadorEliminado = null;
 
+        // Inicializar conteo
         jugadoresActivos.forEach(j => conteoVotos[j.id] = 0);
         conteoVotos['none'] = 0; // Contabilizar abstenciones/votos inválidos
 
+        // Contar votos
         Object.values(votosRecibidos).forEach(votoId => {
             if (conteoVotos[votoId] !== undefined) {
                 conteoVotos[votoId]++;
@@ -708,6 +711,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         let maxVotos = 0;
         let candidatosAEliminar = [];
         
+        // Determinar el más votado
         Object.keys(conteoVotos).forEach(id => {
             if (id !== 'none' && conteoVotos[id] > maxVotos) {
                 maxVotos = conteoVotos[id];
@@ -732,7 +736,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (candidatosAEliminar.length === 1 && maxVotos > 0) {
             jugadorEliminado = jugadoresActuales.find(j => j.id === candidatosAEliminar[0]);
             resultadoDisplay.textContent = `¡${jugadorEliminado.nombre} ha sido eliminado con ${maxVotos} votos! Era ${jugadorEliminado.rol}.`;
-            // Aplicar eliminación (solo Host)
+            // Aplicar eliminación (solo Host, se aplica al jugador eliminado en Firebase)
             if (jugadoresActuales.find(j => j.id === miId)?.esHost) {
                 const jugadorRef = db.ref(`salas/${codigoSalaActual}/jugadores/${jugadorEliminado.id}/eliminado`);
                 jugadorRef.set(true); 
@@ -745,30 +749,37 @@ document.addEventListener('DOMContentLoaded', (event) => {
              resultadoDisplay.textContent = `Nadie fue eliminado en esta ronda (No hubo mayoría de votos).`;
         }
         
-        // Comprobar si el juego termina después de la eliminación/empate
-        const ganador = chequearFinDeJuego(jugadoresActuales);
+        // Comprobar si el juego termina (usando el estado más reciente de la sala)
+        // Nota: chequearFinDeJuego debe usar la lista de jugadores actualizada
+        const ganador = chequearFinDeJuego(jugadoresActuales); 
 
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         const btnSiguiente = document.getElementById('btn-siguiente-ronda');
         const btnVerGanador = document.getElementById('btn-ver-ganador');
         const accionesFinalesHost = document.getElementById('acciones-finales-host');
+        const accionesJuegoContinua = document.getElementById('acciones-juego-continua');
+        
+        // Ocultar acciones de Host al final del juego para todos
+        if (accionesFinalesHost) accionesFinalesHost.style.display = 'none';
 
         if (ganador) {
-            // El juego terminó. Ocultar Siguiente/Ver Ganador y mostrar botones de Host
-            if (esHost) accionesFinalesHost.style.display = 'block'; else accionesFinalesHost.style.display = 'none';
-            if (btnVerGanador) btnVerGanador.style.display = 'block'; 
-            if (btnSiguiente) btnSiguiente.style.display = 'none';
+            // El juego terminó.
+            if (accionesJuegoContinua) accionesJuegoContinua.style.display = 'none';
+            if (esHost) accionesFinalesHost.style.display = 'block'; 
             
-            // Si el juego finalizó por lógica, forzamos la vista final
+            // Si el juego finalizó por lógica, el Host cambia el estado a 'finalizado'
             if (esHost) {
-                 db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
+                 // Usamos un pequeño timeout para que el cliente no-host tenga tiempo de leer los resultados
+                 setTimeout(() => {
+                     db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
+                 }, 2000); 
             }
 
         } else {
             // El juego continúa
+            if (accionesJuegoContinua) accionesJuegoContinua.style.display = 'block';
             if (esHost) btnSiguiente.style.display = 'block'; else btnSiguiente.style.display = 'none';
             if (btnVerGanador) btnVerGanador.style.display = 'none';
-            if (accionesFinalesHost) accionesFinalesHost.style.display = 'none';
         }
     }
 
@@ -777,17 +788,17 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const jugadoresActivos = jugadores.filter(j => !j.eliminado);
 
         const impostoresActivos = jugadoresActivos.filter(j => j.rol === 'Impostor').length;
-        const tripulantesActivos = jugadoresActivos.filter(j => j.rol === 'Tripulante' || j.rol === 'Agente Doble').length;
+        const tripulantesYDoblesActivos = jugadoresActivos.filter(j => j.rol === 'Tripulante' || j.rol === 'Agente Doble').length;
         
         if (impostoresActivos === 0) {
             return 'Tripulantes'; // Ganan los tripulantes si eliminan a todos los impostores
-        } else if (impostoresActivos >= tripulantesActivos) {
-            return 'Impostores'; // Ganan los impostores si son igual o más que los tripulantes
+        } else if (impostoresActivos >= tripulantesYDoblesActivos) {
+            return 'Impostores'; // Ganan los impostores si son igual o más que los tripulantes/dobles
         }
         return null; // El juego continúa
     }
     
-    // *** 7.14. RESULTADO -> DISCUSIÓN / FIN (HOST) ***
+    // *** 7.14. RESULTADO -> DISCUSIÓN (HOST) ***
     document.getElementById('btn-siguiente-ronda').addEventListener('click', async () => {
         const misDatos = jugadoresActuales.find(j => j.id === miId);
         if (!misDatos?.esHost || !codigoSalaActual) return;
@@ -802,18 +813,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 
-    document.getElementById('btn-ver-ganador').addEventListener('click', async () => {
-         const misDatos = jugadoresActuales.find(j => j.id === miId);
-         if (!misDatos?.esHost || !codigoSalaActual) return;
-         
-         await db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
-    });
-    
     // *** 7.15. MANEJAR FIN DE JUEGO (TODOS LOS CLIENTES) ***
     function manejarFinDeJuego(sala) {
          cambiarVista('vista-final');
          
-         // Re-calcular el ganador por si la sala pasó directamente de 'enJuego' a 'finalizado'
          const ganador = chequearFinDeJuego(jugadoresActuales);
          
          const ganadorDisplay = document.getElementById('ganador-display');
@@ -825,21 +828,23 @@ document.addEventListener('DOMContentLoaded', (event) => {
              jugadoresActuales.forEach(j => {
                  const elemento = document.createElement('li');
                  
-                 // Usar j.palabraSecreta directamente
-                 const palabraMostrada = j.palabraSecreta; 
+                 const palabraMostrada = j.palabraSecreta || 'N/A';
                  const estado = j.eliminado ? '(Eliminado)' : '(Activo)';
                  
-                 // Colorear el texto según el rol para claridad
                  let estiloRol = '';
                  if (j.rol === 'Impostor') estiloRol = 'style="color: var(--color-red);"';
                  if (j.rol === 'Agente Doble') estiloRol = 'style="color: var(--color-orange);"';
                  if (j.rol === 'Tripulante') estiloRol = 'style="color: var(--color-green);"';
 
-                 // Usar innerHTML para aplicar el estilo
                  elemento.innerHTML = `${j.nombre} - Rol: <strong ${estiloRol}>${j.rol}</strong> (Palabra: ${palabraMostrada}) ${estado}`;
                  listaRolesFinal.appendChild(elemento);
              });
          }
+         
+         // Mostrar botones de reinicio/finalización al Host en la vista final (si no se mostraron en los resultados)
+         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+         const accionesFinalesHost = document.getElementById('acciones-finales-host');
+         if (accionesFinalesHost) accionesFinalesHost.style.display = esHost ? 'block' : 'none';
     }
     
     // *** 7.16. REINICIAR PARTIDA (VOLVER A SECCIÓN 3) ***
@@ -867,16 +872,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
              };
         });
 
-        // 2. Actualizar la sala a estado 'esperando' (Lobby)
+        // 2. Actualizar la sala a estado 'esperando' (Lobby/Sección 3)
         await salaRef.update({
              estado: 'esperando',
              jugadores: jugadoresReseteados,
              rondaActual: 1,
              votos: {}
-             // Mantener la configuración anterior (tema, agente doble)
         });
-        
-        // El listener detectará el cambio y nos llevará a 'vista-lobby'
     });
     
     // *** 7.17. FINALIZAR JUEGO (CERRAR SALA) ***
@@ -891,8 +893,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
          // Eliminar la sala de Firebase
          await db.ref('salas/' + codigoSalaActual).remove()
              .then(() => {
-                 // El listener en los clientes detectará que la sala no existe y recargará
                  alert('Sala cerrada exitosamente.');
+                 // Forzar recarga para ir a la vista inicial
                  window.location.reload(); 
              })
              .catch(error => {
@@ -901,6 +903,4 @@ document.addEventListener('DOMContentLoaded', (event) => {
              });
     });
 
-    // *** INICIO DE LA APP (EVENTOS DE PRIMERA CARGA) ***
-    renderConfiguracion(); 
 });

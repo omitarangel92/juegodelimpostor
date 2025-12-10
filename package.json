@@ -1,14 +1,15 @@
 {
   "name": "juego-impostor",
   "version": "1.0.0",
-  "description": "Juego en tiempo real al estilo del impostor.",
+  "description": "Juego en tiempo real al estilo del impostor usando Firebase y Express.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "express"
+    "express",
+    "firebase"
   ],
   "author": "",
   "license": "ISC",
