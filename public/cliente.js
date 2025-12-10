@@ -4,9 +4,11 @@
 // 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
 // =================================================================
 
-// TUS CREDENCIALES DE FIREBASE:
+// NOTA DE SEGURIDAD: Esta clave está expuesta públicamente, es CRÍTICO
+// que configures reglas de seguridad ESTRICTAS en Firebase.
 const firebaseConfig = {
-    apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0",
+    // Reemplaza con tus CREDENCIALES
+    apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0", 
     authDomain: "juego-impostor-firebase.firebaseapp.com",
     databaseURL: "https://juego-impostor-firebase-default-rtdb.firebaseio.com",
     projectId: "juego-impostor-firebase",
@@ -134,11 +136,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // 5. FUNCIONES DE UI Y LÓGICA AUXILIAR
     // =================================================================
 
-    function cambiarVista(vistaId) {
+    // FUNCIÓN DE NAVEGACIÓN (Necesaria para los onclick del HTML)
+    window.cambiarVista = function(vistaId) {
         document.querySelectorAll('.vista').forEach(vista => {
             vista.classList.remove('activa');
         });
-        document.getElementById(vistaId).classList.add('activa');
+        const nuevaVista = document.getElementById(vistaId);
+        if (nuevaVista) {
+            nuevaVista.classList.add('activa');
+        } else {
+            console.error('Error: La vista ' + vistaId + ' no existe en el HTML.');
+            return;
+        }
         
         // Lógica específica al cambiar de vista
         if (vistaId === 'vista-lobby') {
@@ -166,7 +175,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         let contadorActivos = 0;
 
         jugadores.forEach(j => {
-            const esHost = j.hostId === j.id; // En Firebase, el hostId está dentro del objeto jugador del Host
+            const esHost = j.hostId === j.id; 
             const esMiJugador = j.id === miId;
             const esEliminado = j.eliminado;
 
@@ -221,7 +230,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function renderConfiguracion() {
         // Llenar el selector de temas
         const selectorTema = document.getElementById('selector-tema');
-        if (selectorTema.options.length === 0) {
+        if (selectorTema && selectorTema.options.length === 0) {
             TEMAS_DISPONIBLES.forEach(tema => {
                 const option = document.createElement('option');
                 option.value = tema;
@@ -231,27 +240,31 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
         
         // Poner los valores actuales
-        selectorTema.value = configuracionActual.tema;
-        document.getElementById('input-tiempo-ronda').value = configuracionActual.tiempoRondaSegundos;
-        document.getElementById('checkbox-agente-doble').checked = configuracionActual.incluirAgenteDoble;
+        if (selectorTema) selectorTema.value = configuracionActual.tema;
+        const inputTiempo = document.getElementById('input-tiempo-ronda');
+        if (inputTiempo) inputTiempo.value = configuracionActual.tiempoRondaSegundos;
+        const checkboxDoble = document.getElementById('checkbox-agente-doble');
+        if (checkboxDoble) checkboxDoble.checked = configuracionActual.incluirAgenteDoble;
 
         // Mostrar u ocultar la configuración si soy el HOST
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
-        document.getElementById('configuracion-host').style.display = esHost ? 'block' : 'none';
+        const configHostDiv = document.getElementById('configuracion-host');
+        if (configHostDiv) configHostDiv.style.display = esHost ? 'block' : 'none';
     }
 
     function actualizarBotonInicioJuego() {
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         const numJugadores = jugadoresActuales.length;
         const btnIniciar = document.getElementById('btn-iniciar-juego');
+        const avisoMin = document.getElementById('min-jugadores-aviso');
         
-        if (esHost) {
+        if (esHost && btnIniciar && avisoMin) {
             if (numJugadores >= MIN_JUGADORES && numJugadores <= MAX_JUGADORES) {
                 btnIniciar.disabled = false;
-                document.getElementById('min-jugadores-aviso').style.display = 'none';
+                avisoMin.style.display = 'none';
             } else {
                 btnIniciar.disabled = true;
-                document.getElementById('min-jugadores-aviso').style.display = 'block';
+                avisoMin.style.display = 'block';
             }
         }
     }
@@ -280,7 +293,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
         listenerSala = salaRef.on('value', (snapshot) => {
             
             if (!snapshot.exists()) {
-                alert('La sala ha sido eliminada o ya no existe.');
+                // Esto podría ocurrir si el Host borró la sala o fuiste expulsado y la sala se limpió
+                alert('La sala ha sido eliminada, has sido expulsado o no existe.');
                 window.location.reload(); 
                 return;
             }
@@ -323,7 +337,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 } else if (sala.rondaEstado === 'votando') {
                     manejarInicioVotacion(sala); // Mostrar vista de votación
                 } else if (sala.rondaEstado === 'resultado') {
-                    // Mostrar resultados y esperar al Host (TO-DO)
+                    manejarResultadoVotacion(sala); // Mostrar resultados
                 }
 
                 // Sincronizar temporizador (solo para el host)
@@ -341,10 +355,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // 7. MANEJADORES DE EVENTOS DEL DOM
     // =================================================================
 
+    // CORRECCIÓN CLAVE: El listener del formulario de inicio que da error
     document.getElementById('form-inicio').addEventListener('submit', (e) => {
         e.preventDefault();
+        // El input-nombre debe ser accesible aquí
         nombreJugador = document.getElementById('input-nombre').value.trim();
         if (!nombreJugador) return alert('Por favor, ingresa tu nombre.');
+        
+        // Si el nombre es válido, mostramos la siguiente vista.
         document.getElementById('nombre-jugador-display').textContent = nombreJugador;
         cambiarVista('vista-seleccion');
     });
@@ -564,7 +582,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
             const tiempoRestante = Math.max(0, Math.floor((sala.temporizadorFinTimestamp - Date.now()) / 1000));
             
             // Actualizar la UI del temporizador (solo para que sea más fluido para el Host)
-            document.getElementById('tiempo-restante').textContent = tiempoRestante; 
+            const tiempoDisplay = document.getElementById('tiempo-restante');
+            if (tiempoDisplay) tiempoDisplay.textContent = tiempoRestante; 
             
             if (tiempoRestante <= 0) {
                 limpiarTemporizador();
@@ -572,7 +591,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 // NOTA: El Host actualiza el estado en Firebase, y el Listener (todos) reaccionan.
                 await db.ref('salas/' + codigoSalaActual).update({
                     rondaEstado: 'votando' 
-                    // No necesitamos temporizadorFinTimestamp, el estado 'votando' es la señal
                 });
             }
         }, 500); // 500ms para precisión decente
@@ -586,36 +604,46 @@ document.addEventListener('DOMContentLoaded', (event) => {
         cambiarVista('vista-juego');
         
         // Actualizar UI con datos de mi rol
-        document.getElementById('rol-display').textContent = `Tu Rol: ¡${miRolActual}!`;
-        document.getElementById('ronda-actual-display').textContent = sala.rondaActual;
+        const rolDisplay = document.getElementById('rol-display');
+        if (rolDisplay) rolDisplay.textContent = `Tu Rol: ¡${miRolActual}!`;
+        
+        const rondaDisplay = document.getElementById('ronda-actual-display');
+        if (rondaDisplay) rondaDisplay.textContent = sala.rondaActual;
 
-        if (miRolActual === 'Impostor') {
-            document.getElementById('palabra-secreta-display').textContent = "Eres el IMPOSTOR. Descríbelo sin la palabra secreta.";
-            document.getElementById('tema-display').textContent = 'Tema: ??? (No lo sabes)';
-            document.getElementById('palabra-secreta-display').style.backgroundColor = '#990000';
-            document.getElementById('palabra-secreta-display').style.color = '#fff';
-        } else if (miRolActual === 'Agente Doble') {
-             document.getElementById('palabra-secreta-display').textContent = "Eres el AGENTE DOBLE. Descríbelo sin la palabra secreta.";
-             document.getElementById('tema-display').textContent = `Tema: ${miTemaActual}`;
-             document.getElementById('palabra-secreta-display').style.backgroundColor = '#8B4513';
-             document.getElementById('palabra-secreta-display').style.color = '#fff';
-        } else {
-            document.getElementById('palabra-secreta-display').textContent = miPalabraSecreta;
-            document.getElementById('tema-display').textContent = `Tema: ${miTemaActual}`;
-            document.getElementById('palabra-secreta-display').style.backgroundColor = '#4CAF50';
-            document.getElementById('palabra-secreta-display').style.color = '#fff';
+        const palabraDisplay = document.getElementById('palabra-secreta-display');
+        const temaDisplay = document.getElementById('tema-display');
+        
+        if (palabraDisplay && temaDisplay) {
+            if (miRolActual === 'Impostor') {
+                palabraDisplay.textContent = "Eres el IMPOSTOR. Descríbelo sin la palabra secreta.";
+                temaDisplay.querySelector('span').textContent = '??? (No lo sabes)';
+                palabraDisplay.style.backgroundColor = '#990000';
+                palabraDisplay.style.color = '#fff';
+            } else if (miRolActual === 'Agente Doble') {
+                 palabraDisplay.textContent = "Eres el AGENTE DOBLE. Descríbelo sin la palabra secreta.";
+                 temaDisplay.querySelector('span').textContent = miTemaActual;
+                 palabraDisplay.style.backgroundColor = '#8B4513';
+                 palabraDisplay.style.color = '#fff';
+            } else {
+                palabraDisplay.textContent = miPalabraSecreta;
+                temaDisplay.querySelector('span').textContent = miTemaActual;
+                palabraDisplay.style.backgroundColor = '#4CAF50';
+                palabraDisplay.style.color = '#fff';
+            }
         }
 
         // Mostrar u ocultar botón de forzar votación (Host)
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
-        document.getElementById('btn-forzar-votacion').style.display = esHost ? 'block' : 'none';
+        const btnForzar = document.getElementById('btn-forzar-votacion');
+        if (btnForzar) btnForzar.style.display = esHost ? 'block' : 'none';
         
         // Sincronizar temporizador (solo para clientes, el host lo maneja en el listener)
         if (!esHost && sala.temporizadorFinTimestamp) {
             limpiarTemporizador(); 
             temporizadorInterval = setInterval(() => {
                 const tiempoRestante = Math.max(0, Math.floor((sala.temporizadorFinTimestamp - Date.now()) / 1000));
-                document.getElementById('tiempo-restante').textContent = tiempoRestante; 
+                const tiempoDisplay = document.getElementById('tiempo-restante');
+                if (tiempoDisplay) tiempoDisplay.textContent = tiempoRestante; 
             }, 500);
         }
     }
@@ -638,14 +666,20 @@ document.addEventListener('DOMContentLoaded', (event) => {
         cambiarVista('vista-votacion');
         limpiarTemporizador();
         
-        document.getElementById('ronda-votacion-display').textContent = sala.rondaActual;
-        document.getElementById('voto-confirmado-display').textContent = 'Esperando tu voto...';
-        document.getElementById('estado-voto').classList.remove('voto-emitido');
+        const rondaVotacionDisplay = document.getElementById('ronda-votacion-display');
+        if (rondaVotacionDisplay) rondaVotacionDisplay.textContent = sala.rondaActual;
+        
+        const votoConfirmadoDisplay = document.getElementById('voto-confirmado-display');
+        if (votoConfirmadoDisplay) votoConfirmadoDisplay.textContent = 'Esperando tu voto...';
+        
+        const estadoVotoDiv = document.getElementById('estado-voto');
+        if (estadoVotoDiv) estadoVotoDiv.classList.remove('voto-emitido');
         
         const jugadoresActivos = jugadoresActuales.filter(j => !j.eliminado);
         const votosEmitidos = Object.keys(sala.votos || {}).length;
-
-        document.getElementById('votos-emitidos-display').textContent = `Votos recibidos: ${votosEmitidos}/${jugadoresActivos.length}`;
+        
+        const votosEmitidosDisplay = document.getElementById('votos-emitidos-display');
+        if (votosEmitidosDisplay) votosEmitidosDisplay.textContent = `Votos recibidos: ${votosEmitidos}/${jugadoresActivos.length}`;
         
         // Si ya voté, mostrar confirmación
         if (sala.votos && sala.votos[miId]) {
@@ -654,8 +688,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
                                  ? 'Abstención (Nadie)' 
                                  : jugadoresActuales.find(j => j.id === votadoId)?.nombre || 'Desconocido';
                                  
-            document.getElementById('voto-confirmado-display').textContent = `¡Tu voto por ${nombreVotado} ha sido emitido!`;
-            document.getElementById('estado-voto').classList.add('voto-emitido');
+            if (votoConfirmadoDisplay) votoConfirmadoDisplay.textContent = `¡Tu voto por ${nombreVotado} ha sido emitido!`;
+            if (estadoVotoDiv) estadoVotoDiv.classList.add('voto-emitido');
         }
         
         // Si todos han votado y soy el Host, procesar los votos
@@ -682,8 +716,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
                                  ? 'Abstención (Nadie)' 
                                  : jugadoresActuales.find(j => j.id === jugadorVotadoId)?.nombre || 'Desconocido';
                                  
-        document.getElementById('voto-confirmado-display').textContent = `¡Tu voto por ${nombreVotado} ha sido emitido!`;
-        document.getElementById('estado-voto').classList.add('voto-emitido');
+        const votoConfirmadoDisplay = document.getElementById('voto-confirmado-display');
+        const estadoVotoDiv = document.getElementById('estado-voto');
+        
+        if (votoConfirmadoDisplay) votoConfirmadoDisplay.textContent = `¡Tu voto por ${nombreVotado} ha sido emitido!`;
+        if (estadoVotoDiv) estadoVotoDiv.classList.add('voto-emitido');
 
         // El listener se encargará de re-renderizar la vista de votación para todos.
     }
@@ -767,30 +804,37 @@ document.addEventListener('DOMContentLoaded', (event) => {
              mensaje = "Nadie fue eliminado. Hubo empate o abstención.";
          }
          
-         document.getElementById('resultado-ronda-display').textContent = `Ronda ${sala.rondaActual} finalizada.`;
-         document.getElementById('jugador-eliminado-display').textContent = mensaje;
+         const resultadoRondaDisplay = document.getElementById('resultado-ronda-display');
+         if (resultadoRondaDisplay) resultadoRondaDisplay.textContent = `Ronda ${sala.rondaActual} finalizada.`;
+         
+         const jugadorEliminadoDisplay = document.getElementById('jugador-eliminado-display');
+         if (jugadorEliminadoDisplay) jugadorEliminadoDisplay.textContent = mensaje;
 
          // Renderizar el conteo de votos (TO-DO)
          const detallesVotos = document.getElementById('detalles-votacion-container');
-         detallesVotos.innerHTML = '<h4>Conteo de Votos:</h4>';
-         for (const id in resultado.conteo) {
-             const nombre = id === 'none' ? 'Abstención' : jugadoresActuales.find(j => j.id === id)?.nombre || 'Desconocido';
-             detallesVotos.innerHTML += `<p>${nombre}: ${resultado.conteo[id]} votos</p>`;
+         if (detallesVotos) {
+             detallesVotos.innerHTML = '<h4>Conteo de Votos:</h4>';
+             for (const id in resultado.conteo) {
+                 const nombre = id === 'none' ? 'Abstención' : jugadoresActuales.find(j => j.id === id)?.nombre || 'Desconocido';
+                 detallesVotos.innerHTML += `<p>${nombre}: ${resultado.conteo[id]} votos</p>`;
+             }
          }
          
          // Chequear fin de juego y mostrar botones
          const finJuego = chequearFinDeJuego(jugadoresActuales);
          
          const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+         const btnVerGanador = document.getElementById('btn-ver-ganador');
+         const btnSiguienteRonda = document.getElementById('btn-siguiente-ronda');
 
          if (finJuego) {
-             document.getElementById('btn-ver-ganador').style.display = esHost ? 'block' : 'none';
-             document.getElementById('btn-siguiente-ronda').style.display = 'none';
+             if (btnVerGanador) btnVerGanador.style.display = esHost ? 'block' : 'none';
+             if (btnSiguienteRonda) btnSiguienteRonda.style.display = 'none';
              
              // Si no es Host, el botón de ver ganador no aparece, se queda esperando el cambio de estado
          } else {
-             document.getElementById('btn-siguiente-ronda').style.display = esHost ? 'block' : 'none';
-             document.getElementById('btn-ver-ganador').style.display = 'none';
+             if (btnSiguienteRonda) btnSiguienteRonda.style.display = esHost ? 'block' : 'none';
+             if (btnVerGanador) btnVerGanador.style.display = 'none';
          }
     }
     
@@ -842,16 +886,19 @@ document.addEventListener('DOMContentLoaded', (event) => {
          cambiarVista('vista-final');
          const ganador = chequearFinDeJuego(jugadoresActuales);
          
-         document.getElementById('ganador-display').textContent = `🏆 ¡Ganan los ${ganador}! 🏆`;
+         const ganadorDisplay = document.getElementById('ganador-display');
+         if (ganadorDisplay) ganadorDisplay.textContent = `🏆 ¡Ganan los ${ganador}! 🏆`;
          
          const listaRolesFinal = document.getElementById('lista-roles-final');
-         listaRolesFinal.innerHTML = '';
-         
-         jugadoresActuales.forEach(j => {
-             const elemento = document.createElement('li');
-             elemento.textContent = `${j.nombre} - Rol: ${j.rol} ${j.eliminado ? '(Eliminado)' : '(Activo)'}`;
-             listaRolesFinal.appendChild(elemento);
-         });
+         if (listaRolesFinal) {
+             listaRolesFinal.innerHTML = '';
+             jugadoresActuales.forEach(j => {
+                 const elemento = document.createElement('li');
+                 elemento.textContent = `${j.nombre} - Rol: ${j.rol} ${j.eliminado ? '(Eliminado)' : '(Activo)'}`;
+                 listaRolesFinal.appendChild(elemento);
+             });
+         }
+
 
          // Borrar la sala de Firebase después de un tiempo prudente (Host)
          if (jugadoresActuales.find(j => j.id === miId)?.esHost) {
@@ -861,6 +908,4 @@ document.addEventListener('DOMContentLoaded', (event) => {
          }
     }
     
-}); // CIERRE DEL DOMContentLoaded
-
-// --- FIN DEL ARCHIVO cliente.js ---
+}); 
