@@ -8,7 +8,7 @@
 // que configures reglas de seguridad ESTRICTAS en Firebase.
 const firebaseConfig = {
     // Reemplaza con tus CREDENCIALES REALES de Firebase
-    apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0", 
+    apiKey: "AIzaSyBFWEizn6N1iDkvZr2FkN3Vfn7IWGIuG0", 
     authDomain: "juego-impostor-firebase.firebaseapp.com",
     databaseURL: "https://juego-impostor-firebase-default-rtdb.firebaseio.com",
     projectId: "juego-impostor-firebase",
@@ -123,11 +123,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
     let miId = Date.now().toString(36) + Math.random().toString(36).substring(2); 
     
     let jugadoresActuales = []; 
+    // Usar la configuración por defecto
     let configuracionActual = { tema: TEMAS_DISPONIBLES[0], incluirAgenteDoble: false }; 
     let miRolActual = ''; 
     let miPalabraSecreta = ''; 
     let miTemaActual = ''; 
-    let miVotoSeleccionadoId = 'none'; // Para evitar doble voto en la misma ronda
+    let miVotoSeleccionadoId = 'none'; 
     
     let listenerSala = null; // Para almacenar el listener de la sala
 
@@ -165,7 +166,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (listaHost) listaHost.innerHTML = '';
         if (listaJuego) listaJuego.innerHTML = '';
         
-        // Preparar lista de votos
+        // Preparar lista de votos (resetear)
         if (listaVotos) {
              listaVotos.innerHTML = `
                 <button class="btn-votar" data-voto-id="none" style="background-color: #888;">
@@ -283,6 +284,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 miRolActual = misDatos.rol || '';
                 miPalabraSecreta = misDatos.palabraSecreta || '';
                 miTemaActual = misDatos.tema || '';
+                // Actualizar la configuración para el Host
+                configuracionActual = sala.configuracion || configuracionActual; 
             } else {
                  // Si mis datos desaparecen, significa que fui expulsado o la sala se cerró
                  if (sala.estado !== 'finalizado') {
@@ -369,7 +372,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
     // *** 7.1. HANDLER DE INICIO DE NOMBRE ***
     document.getElementById('form-inicio').addEventListener('submit', (e) => {
-        e.preventDefault(); // <-- CORRECCIÓN: Evitar recarga de página
+        e.preventDefault(); 
         nombreJugador = document.getElementById('input-nombre').value.trim();
         
         if (nombreJugador) {
@@ -593,10 +596,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (document.getElementById('mi-rol-juego')) document.getElementById('mi-rol-juego').textContent = misDatos.rol;
         if (document.getElementById('mi-palabra-juego')) document.getElementById('mi-palabra-juego').textContent = misDatos.palabraSecreta;
         if (document.getElementById('mi-tema-juego')) document.getElementById('mi-tema-juego').textContent = misDatos.tema;
+        if (document.getElementById('ronda-actual-display')) document.getElementById('ronda-actual-display').textContent = sala.rondaActual;
         
         if (sala.rondaEstado === 'discutiendo') {
             cambiarVista('vista-juego');
-            miVotoSeleccionadoId = 'none'; // CORRECCIÓN: Resetear el estado de voto local al iniciar la discusión.
+            miVotoSeleccionadoId = 'none'; // Resetear el estado de voto local
             
             const btnForzarVotacion = document.getElementById('btn-forzar-votacion');
             if (btnForzarVotacion) {
@@ -747,13 +751,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         const btnSiguiente = document.getElementById('btn-siguiente-ronda');
         const btnVerGanador = document.getElementById('btn-ver-ganador');
+        const accionesFinalesHost = document.getElementById('acciones-finales-host');
 
         if (ganador) {
-            if (esHost) btnVerGanador.style.display = 'block'; else btnVerGanador.style.display = 'none';
+            // El juego terminó. Ocultar Siguiente/Ver Ganador y mostrar botones de Host
+            if (esHost) accionesFinalesHost.style.display = 'block'; else accionesFinalesHost.style.display = 'none';
+            if (btnVerGanador) btnVerGanador.style.display = 'block'; 
             if (btnSiguiente) btnSiguiente.style.display = 'none';
+            
+            // Si el juego finalizó por lógica, forzamos la vista final
+            if (esHost) {
+                 db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado' });
+            }
+
         } else {
+            // El juego continúa
             if (esHost) btnSiguiente.style.display = 'block'; else btnSiguiente.style.display = 'none';
             if (btnVerGanador) btnVerGanador.style.display = 'none';
+            if (accionesFinalesHost) accionesFinalesHost.style.display = 'none';
         }
     }
 
@@ -777,12 +792,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const misDatos = jugadoresActuales.find(j => j.id === miId);
         if (!misDatos?.esHost || !codigoSalaActual) return;
         
-        const nuevaRonda = (jugadoresActuales[0].rondaActual || 1) + 1;
+        const salaRef = db.ref('salas/' + codigoSalaActual);
 
-        await db.ref('salas/' + codigoSalaActual).update({
+        await salaRef.update({
             estado: 'enJuego', 
             rondaEstado: 'discutiendo', 
-            rondaActual: nuevaRonda, 
+            rondaActual: firebase.database.ServerValue.increment(1), 
             votos: {} // Limpiar votos para la nueva ronda
         });
     });
@@ -797,6 +812,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // *** 7.15. MANEJAR FIN DE JUEGO (TODOS LOS CLIENTES) ***
     function manejarFinDeJuego(sala) {
          cambiarVista('vista-final');
+         
+         // Re-calcular el ganador por si la sala pasó directamente de 'enJuego' a 'finalizado'
          const ganador = chequearFinDeJuego(jugadoresActuales);
          
          const ganadorDisplay = document.getElementById('ganador-display');
@@ -807,24 +824,83 @@ document.addEventListener('DOMContentLoaded', (event) => {
              listaRolesFinal.innerHTML = '';
              jugadoresActuales.forEach(j => {
                  const elemento = document.createElement('li');
-                 // Mostrar la palabra secreta que le fue asignada a cada jugador
+                 
+                 // Usar j.palabraSecreta directamente
                  const palabraMostrada = j.palabraSecreta; 
                  const estado = j.eliminado ? '(Eliminado)' : '(Activo)';
-                 elemento.textContent = `${j.nombre} - Rol: ${j.rol} (${palabraMostrada}) ${estado}`;
+                 
+                 // Colorear el texto según el rol para claridad
+                 let estiloRol = '';
+                 if (j.rol === 'Impostor') estiloRol = 'style="color: var(--color-red);"';
+                 if (j.rol === 'Agente Doble') estiloRol = 'style="color: var(--color-orange);"';
+                 if (j.rol === 'Tripulante') estiloRol = 'style="color: var(--color-green);"';
+
+                 // Usar innerHTML para aplicar el estilo
+                 elemento.innerHTML = `${j.nombre} - Rol: <strong ${estiloRol}>${j.rol}</strong> (Palabra: ${palabraMostrada}) ${estado}`;
                  listaRolesFinal.appendChild(elemento);
              });
          }
-
-
-         // Borrar la sala de Firebase después de un tiempo prudente (Host)
-         if (jugadoresActuales.find(j => j.id === miId)?.esHost) {
-              setTimeout(() => {
-                   db.ref('salas/' + codigoSalaActual).remove()
-                       .catch(error => console.error("Error al limpiar la sala:", error));
-              }, 120000); // 2 minutos para que todos vean el resultado
-         }
     }
     
+    // *** 7.16. REINICIAR PARTIDA (VOLVER A SECCIÓN 3) ***
+    document.getElementById('btn-reiniciar-partida').addEventListener('click', async () => {
+        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        if (!esHost || !codigoSalaActual) return;
+        
+        if (!confirm('¿Seguro que quieres REINICIAR la partida? Todos los jugadores volverán al lobby de configuración.')) {
+             return;
+        }
+        
+        const salaRef = db.ref('salas/' + codigoSalaActual);
+        
+        // 1. Resetear el estado de los jugadores
+        const jugadoresReseteados = {};
+        jugadoresActuales.forEach(j => {
+             jugadoresReseteados[j.id] = {
+                 id: j.id,
+                 nombre: j.nombre,
+                 esHost: j.esHost,
+                 rol: 'Tripulante', // Resetear rol a default
+                 eliminado: false, // Resetear estado
+                 palabraSecreta: null,
+                 tema: null
+             };
+        });
+
+        // 2. Actualizar la sala a estado 'esperando' (Lobby)
+        await salaRef.update({
+             estado: 'esperando',
+             jugadores: jugadoresReseteados,
+             rondaActual: 1,
+             votos: {}
+             // Mantener la configuración anterior (tema, agente doble)
+        });
+        
+        // El listener detectará el cambio y nos llevará a 'vista-lobby'
+    });
+    
+    // *** 7.17. FINALIZAR JUEGO (CERRAR SALA) ***
+    document.getElementById('btn-finalizar-juego').addEventListener('click', async () => {
+         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+         if (!esHost || !codigoSalaActual) return;
+         
+         if (!confirm('¿Seguro que quieres FINALIZAR el juego y CERRAR la sala? Todos serán desconectados.')) {
+              return;
+         }
+         
+         // Eliminar la sala de Firebase
+         await db.ref('salas/' + codigoSalaActual).remove()
+             .then(() => {
+                 // El listener en los clientes detectará que la sala no existe y recargará
+                 alert('Sala cerrada exitosamente.');
+                 window.location.reload(); 
+             })
+             .catch(error => {
+                 console.error("Error al cerrar la sala:", error);
+                 alert('Hubo un error al intentar cerrar la sala.');
+             });
+    });
+
     // *** INICIO DE LA APP (EVENTOS DE PRIMERA CARGA) ***
     renderConfiguracion(); 
 });

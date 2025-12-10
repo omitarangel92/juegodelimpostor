@@ -333,3 +333,41 @@ form {
     width: 90%;
     max-width: 500px;
 }
+
+/* --- Estilos para la Vista de Resultado --- */
+
+.acciones-finales-host {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-card);
+}
+
+.acciones-finales-host h2 {
+    color: var(--color-text);
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+.acciones-finales-host button {
+    margin: 5px;
+    padding: 15px 30px;
+}
+
+/* --- Estilos para la Vista Final --- */
+#vista-final {
+    padding-top: 60px;
+}
+
+#lista-roles-final {
+    max-width: 450px;
+    margin: 20px auto 40px;
+    text-align: left;
+    background-color: var(--color-card);
+    padding: 20px;
+    border-radius: var(--radius);
+    list-style: none;
+}
+
+#lista-roles-final strong {
+    font-weight: bold;
+}

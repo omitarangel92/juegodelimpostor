@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego del Impostor 🕵️</title>
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
@@ -33,99 +34,100 @@
     </div>
 
     <div id="vista-lobby" class="vista">
-        <h1 class="titulo-sala">Sala <span id="codigo-lobby-display">ABCD</span></h1>
+        <h1>Lobby: <span id="codigo-lobby-display">ABCD</span></h1>
         
-        <h2>Jugadores Conectados (<span id="contador-jugadores">0</span>/10)</h2>
-        <p>Comparte el código con tus amigos.</p>
+        <div class="config-container">
+            <div id="form-configuracion" class="config-options">
+                <h2>⚙️ Configuración</h2>
+                <div class="input-group">
+                    <label for="select-tema">Tema:</label>
+                    <select id="select-tema"></select>
+                </div>
+                <div class="input-group checkbox-group">
+                    <input type="checkbox" id="checkbox-agente-doble">
+                    <label for="checkbox-agente-doble">Incluir Agente Doble (Rol extra)</label>
+                </div>
+            </div>
 
-        <ul id="lista-jugadores-host" class="lista-jugadores">
-            </ul>
+            <div class="lista-container">
+                <h2>Jugadores (<span id="contador-jugadores">0</span>/10)</h2>
+                <ul id="lista-jugadores-host" class="lista-jugadores">
+                    </ul>
+            </div>
+        </div>
         
-        <div class="opciones-host">
-            <h2 class="titulo-config">Configuración del Juego</h2>
-            
-            <form id="form-configuracion" class="config-grid">
-                <div class="config-item">
-                    <label for="select-tema">Tema de las Palabras:</label>
-                    <select id="select-tema" name="tema"></select>
-                </div>
-                <div class="config-item checkbox-item">
-                    <label for="checkbox-agente-doble">Incluir Agente Doble:</label>
-                    <input type="checkbox" id="checkbox-agente-doble" name="incluirAgenteDoble">
-                </div>
-            </form>
-            
-            <p id="aviso-min-jugadores" style="display: block; color: var(--color-red);">
-                ¡Necesitas al menos 3 jugadores para iniciar!
-            </p>
-            
-            <button id="btn-iniciar-revelacion" class="btn-principal btn-grande" disabled>
-                🤫 Asignar Roles e INICIAR
-            </button> 
-            <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
+        <div class="footer-lobby">
+            <p id="aviso-min-jugadores" style="color: var(--color-red); display: none;">Mínimo 3 jugadores para empezar.</p>
+            <button id="btn-iniciar-revelacion" class="btn-principal btn-grande" style="display: none;">
+                ▶️ Iniciar Partida (Revelación de Rol)
+            </button>
+            <button onclick="abandonarSala()" class="btn-volver">← Abandonar Sala</button>
         </div>
     </div>
-    
+
     <div id="vista-revelacion-rol" class="vista">
         <div class="caja-rol">
-            <h2>TU ROL ES:</h2>
-            <h1 id="revelacion-titulo">Tripulante</h1>
+            <h2>Tu Rol Secreto es...</h2>
+            <p id="revelacion-titulo" class="rol-display"></p>
             
-            <p class="aviso-palabra">
-                <span id="revelacion-tema">Tema: [TEMA]</span>
-            </p>
-            <p class="aviso-palabra">
-                Tu palabra clave es: 
-                <strong id="revelacion-palabra">[PALABRA]</strong>
-            </p>
-
-            <hr>
-
-            <p id="aviso-espera-discusion" class="mensaje-espera">
-                Esperando a que el HOST inicie la discusión...
-            </p>
+            <div id="revelacion-detalle">
+                <p>Tu Palabra Secreta: <strong id="revelacion-palabra"></strong></p>
+                <p><span id="revelacion-tema"></span></p>
+            </div>
             
-            <button id="btn-iniciar-discusion" class="btn-confirm btn-grande" style="display: none;">
-                📢 INICIAR DISCUSIÓN (HOST)
+            <button id="btn-iniciar-discusion" class="btn-principal btn-grande" style="display: none;">
+                Comenzar Discusión (Juego)
             </button>
+            <p id="aviso-espera-discusion" style="color: var(--color-secondary);">Esperando que el HOST inicie el juego...</p>
         </div>
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
     
     <div id="vista-juego" class="vista">
-        <h1>Sala de Conversación 💬</h1>
+        <h1>🗣️ ¡Discusión!</h1>
         
-        <div id="datos-juego-container">
-            <div id="temporizador-container" style="display: none;"> 
-                <h2>Tiempo Restante: <span id="tiempo-restante">--</span>s</h2>
+        <div class="info-jugador-juego">
+            <p>Tu Rol: <strong id="mi-rol-juego"></strong></p>
+            <p>Tu Palabra: <strong id="mi-palabra-juego"></strong></p>
+            <p><span id="mi-tema-juego"></span></p>
+        </div>
+
+        <div class="juego-container">
+             <div class="lista-container">
+                <h2>Jugadores Activos (<span id="jugadores-activos-contador">0</span>)</h2>
+                <ul id="lista-jugadores-juego" class="lista-jugadores lista-juego">
+                    </ul>
             </div>
             
-            <div class="datos-rol-juego">
-                <h2>Tu Rol: <span id="mi-rol-juego">Tripulante</span></h2>
-                <p>Tema: <strong id="mi-tema-juego">...</strong></p>
-                <p>Palabra: <strong id="mi-palabra-juego">...</strong></p>
+            <div class="instrucciones-juego">
+                <h2>Reglas:</h2>
+                <ul>
+                    <li>El Tripulante debe adivinar al Impostor.</li>
+                    <li>El Impostor debe adivinar la palabra de los Tripulantes.</li>
+                    <li>Hagan preguntas y den pistas sobre su palabra, ¡pero cuidado con revelar demasiado!</li>
+                </ul>
+                <p style="margin-top: 20px;">
+                    <span style="font-size: 1.5em; font-weight: bold;">Ronda <span id="ronda-actual-display">1</span></span>
+                </p>
+                
+                <button id="btn-forzar-votacion" class="btn-secundario" style="display: none;">
+                    🚨 Iniciar Votación (HOST)
+                </button>
             </div>
         </div>
 
-        <h2>Jugadores Activos: (<span id="jugadores-activos-contador">0</span>)</h2>
-        <ul id="lista-jugadores-juego" class="lista-jugadores">
-            </ul>
-        
-        <button id="btn-forzar-votacion" class="btn-alert btn-grande" style="display: none;">
-            🔴 INICIAR VOTACIÓN (HOST)
-        </button>
-        
         <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-votacion" class="vista">
-        <h1>Votación Pública 🗳️</h1>
-        <p>Ronda <span id="ronda-votacion-display">1</span> - Vota por el impostor.</p>
+        <h1>🗳️ ¡Hora de Votar!</h1>
+        <p class="resultado-ronda">Ronda <span id="ronda-votacion-display">1</span>: ¿A quién eliminar?</p>
         
-        <div id="opciones-votacion" class="opciones-votacion">
-            </div>
-
-        <div class="voto-estado">
+        <div class="votacion-container">
+            <div id="opciones-votacion" class="opciones-votacion">
+                </div>
+        </div>
+        
+        <div class="status-votacion">
             <p id="voto-confirmado-display">Esperando tu voto...</p>
             <p id="votos-emitidos-display">Votos recibidos: 0/0</p>
         </div>
@@ -134,7 +136,8 @@
 
     <div id="vista-resultado" class="vista">
         <h1>✅ Resultados de la Votación</h1>
-        <p id="resultado-ronda-display" class="resultado-ronda">Ronda 1 finalizada.</p>
+        <p id="resultado-ronda-display" class="resultado-ronda">Ronda X finalizada.</p>
+        
         <div id="detalles-votacion-container" class="detalles-votacion-container">
             </div>
 
@@ -148,24 +151,32 @@
         <button id="btn-ver-ganador" class="btn-principal" style="display: none;">
             🏆 Ver Ganador
         </button>
-        
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
-    </div>
 
+        <div id="acciones-finales-host" class="acciones-finales-host" style="display: none;">
+             <hr>
+             <h2>Acciones de Host (Post-Juego)</h2>
+             <button id="btn-reiniciar-partida" class="btn-principal">
+                🔄 Reiniciar Partida (Volver a Configuración)
+            </button>
+            <button id="btn-finalizar-juego" class="btn-danger">
+                🚪 Finalizar Juego (Cerrar Sala)
+            </button>
+        </div>
+        
+    </div>
+    
     <div id="vista-final" class="vista">
         <h1 id="ganador-display">🏆 [GANADOR] 🏆</h1>
-        <p>El juego ha terminado. El rol secreto era:</p>
+        <p>El juego ha terminado. Roles y Palabras Secretas:</p>
         <ul id="lista-roles-final" class="lista-jugadores lista-final">
             </ul>
         
         <button onclick="window.location.reload()" class="btn-principal">
-            Volver a Jugar
+            Volver a la Pantalla de Inicio
         </button>
     </div>
 
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="cliente.js"></script>
 </body>
 </html>
