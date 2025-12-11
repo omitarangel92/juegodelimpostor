@@ -1,21 +1,33 @@
-/* style.css (CÓDIGO COMPLETO DE ESTILOS) */
+/* style.css (DISEÑO FUTURISTA - NEON DARK MODE) */
 
-/* Definición de Variables (Paleta de Colores Dark Mode Base) */
+/* 1. Definición de Variables y Fuentes */
+@import url('https://fonts.googleapis.com/css2?family=Aldrich&display=swap'); /* Fuente futurista/títulos */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&display=swap'); /* Fuente cuerpo/legible */
+
 :root {
-    --color-bg: #151720;        /* Fondo oscuro */
-    --color-card: #1c1f2b;      /* Fondo de tarjeta/vista */
-    --color-text: #e0e0e0;      /* Texto claro */
-    --color-primary: #8a2be2;   /* Azul violeta (Principal) */
-    --color-secondary: #00bcd4; /* Cian (Secundario) */
-    --color-red: #ff4560;       /* Rojo (Alerta/Impostor) */
-    --color-green: #00b386;     /* Verde (Éxito/Tripulante) */
-    --color-orange: #ff9800;    /* Naranja (Doble Agente) */
-    --font-heading: 'Exo 2', sans-serif;    /* Fuentes de impacto (Títulos) */
-    --font-body: 'Rajdhani', sans-serif;    /* Fuentes de cuerpo (General) */
-    --radius: 12px;
+    /* Paleta Futurista */
+    --color-bg: #0a0e14;        /* Fondo súper oscuro */
+    --color-card: #141b29;      /* Fondo de tarjeta / Panel principal */
+    --color-text: #e0f7fa;      /* Texto claro (Aqua) */
+    
+    /* Colores de Resalte con Brillo (Neon) */
+    --color-primary-neon: #673ab7;  /* Púrpura/Violeta principal */
+    --color-primary-glow: #9e46ff;  /* Púrpura más brillante */
+    --color-secondary-neon: #00bcd4; /* Cian secundario */
+    --color-secondary-glow: #00e5ff; /* Cian más brillante */
+    
+    /* Colores de Rol */
+    --color-impostor: #ff4d6e;      /* Rojo (Peligro) */
+    --color-tripulante: #33ff90;    /* Verde (Seguro) */
+    --color-agente: #ffc107;        /* Naranja (Doble) */
+    
+    --font-heading: 'Aldrich', sans-serif;
+    --font-body: 'Rajdhani', sans-serif;
+    --radius-soft: 8px;
+    --radius-round: 25px;
 }
 
-/* Estilos Globales */
+/* 2. Estilos Globales y Vistas */
 body {
     font-family: var(--font-body);
     text-align: center;
@@ -23,13 +35,25 @@ body {
     color: var(--color-text);
     margin: 0;
     min-height: 100vh;
+    padding-top: 20px;
+    background-image: radial-gradient(circle at center, #1b233a 1px, transparent 1px);
+    background-size: 30px 30px;
+    transition: background-color 0.3s;
 }
 
 h1 {
     font-family: var(--font-heading);
-    color: var(--color-primary);
-    font-size: 3em;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+    color: var(--color-secondary-glow);
+    font-size: 3.5em;
+    text-shadow: 0 0 10px var(--color-secondary-glow), 0 0 20px rgba(0, 229, 255, 0.4);
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+}
+
+h2 {
+    color: var(--color-primary-neon);
+    font-family: var(--font-heading);
+    margin-top: 0;
 }
 
 .vista {
@@ -37,108 +61,123 @@ h1 {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 30px 20px;
-    min-height: 90vh;
+    padding: 30px 15px;
+    min-height: 95vh;
 }
 
 .vista.activa {
     display: flex;
 }
 
-/* --- FORMULARIOS Y BOTONES --- */
-form, .opciones-sala, .configuracion-host {
+/* 3. Contenedores y Formularios (Paneles de Control) */
+form, .opciones-sala, .configuracion-host, .info-jugador-juego, .caja-rol, .detalles-votacion-container {
     background-color: var(--color-card);
-    padding: 25px;
-    border-radius: var(--radius);
+    padding: 30px 20px;
+    border-radius: var(--radius-soft);
     margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 15px rgba(103, 58, 183, 0.2); /* Sombra púrpura sutil */
+    border: 1px solid #2e3b50;
     width: 90%;
-    max-width: 400px;
+    max-width: 450px;
 }
 
+/* 4. Inputs y Etiquetas */
 label {
     display: block;
     margin-bottom: 8px;
     font-weight: bold;
-    color: var(--color-secondary);
+    color: var(--color-secondary-glow);
+    text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+    font-family: var(--font-heading);
 }
 
 input[type="text"] {
     width: 95%;
-    padding: 12px;
-    margin-bottom: 15px;
+    padding: 14px 10px;
+    margin-bottom: 20px;
     border: none;
-    border-radius: 6px;
-    background-color: #2b2e3c;
+    border-radius: var(--radius-soft);
+    background-color: #202b3d; /* Fondo de input ligeramente más claro */
     color: var(--color-text);
-    font-size: 1em;
+    font-size: 1.1em;
     box-sizing: border-box;
+    border-left: 3px solid var(--color-primary-neon);
+    transition: border-left-color 0.3s, box-shadow 0.3s;
 }
 
+input[type="text"]:focus {
+    outline: none;
+    border-left: 3px solid var(--color-secondary-glow);
+    box-shadow: 0 0 8px var(--color-secondary-glow);
+}
+
+/* 5. Botones (Con efecto Neon) */
 button {
-    padding: 10px 20px;
+    padding: 12px 25px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-round); /* Más redondeados */
     cursor: pointer;
-    font-size: 1em;
+    font-size: 1.1em;
     font-weight: bold;
-    transition: transform 0.2s, background-color 0.2s;
-    margin: 5px;
+    transition: all 0.2s;
+    margin: 8px 5px;
+    font-family: var(--font-heading);
+    letter-spacing: 1px;
 }
 
 button:hover:not(:disabled) {
-    transform: translateY(-2px);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px currentColor; /* Resalte con color propio */
 }
 
 button:disabled {
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: 0.4;
+    filter: grayscale(80%);
 }
 
 .btn-principal {
-    background-color: var(--color-primary);
-    color: white;
+    background-color: var(--color-primary-neon);
+    color: var(--color-bg);
+    box-shadow: 0 0 5px var(--color-primary-glow);
+}
+.btn-principal:hover:not(:disabled) {
+    background-color: var(--color-primary-glow);
 }
 
 .btn-secundario {
-    background-color: var(--color-secondary);
+    background-color: var(--color-secondary-neon);
     color: var(--color-bg);
+    box-shadow: 0 0 5px var(--color-secondary-glow);
+}
+.btn-secundario:hover:not(:disabled) {
+    background-color: var(--color-secondary-glow);
 }
 
 .btn-danger {
-    background-color: var(--color-red);
-    color: white;
+    background-color: var(--color-impostor);
+    color: var(--color-bg);
+    box-shadow: 0 0 5px var(--color-impostor);
 }
 
 .btn-volver {
     background: none;
-    color: var(--color-text);
+    color: #999;
     border: 1px solid #444;
     padding: 8px 15px;
     font-size: 0.9em;
     margin-top: 20px;
+    border-radius: var(--radius-round);
 }
 
 .btn-grande {
-    padding: 15px 30px;
-    font-size: 1.2em;
-    margin: 10px 0;
+    padding: 18px 35px;
+    font-size: 1.3em;
     width: 100%;
+    margin: 15px 0;
 }
 
-.btn-small {
-    padding: 5px 10px;
-    font-size: 0.8em;
-    margin-left: 10px;
-}
-
-.btn-expulsar {
-    background-color: var(--color-red);
-    color: white;
-    margin-left: 15px;
-}
-
-/* --- LISTAS DE JUGADORES --- */
+/* 6. Listas de Jugadores */
 .lista-jugadores {
     list-style: none;
     padding: 0;
@@ -148,87 +187,100 @@ button:disabled {
 }
 
 .lista-jugadores li {
-    background-color: #242735;
-    padding: 10px 20px;
-    margin-bottom: 8px;
-    border-radius: 6px;
+    background-color: #1a2333;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: var(--radius-soft);
     text-align: left;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-left: 4px solid var(--color-secondary);
-    font-size: 1.1em;
+    border-left: 5px solid var(--color-secondary-neon);
+    font-size: 1.2em;
+    font-weight: 700;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
 .lista-jugadores li.eliminado {
-    opacity: 0.6;
+    opacity: 0.5;
     text-decoration: line-through;
-    border-left-color: var(--color-red);
+    border-left-color: var(--color-impostor);
 }
 
-/* --- CONFIGURACIÓN HOST (LOBBY) --- */
+.lista-final .impostor { color: var(--color-impostor); }
+.lista-final .tripulante { color: var(--color-tripulante); }
+.lista-final .orange { color: var(--color-agente); }
+
+/* 7. Configuración Host (Lobby) */
 .configuracion-host {
-    max-width: 550px; /* Más ancho para categorías */
-    padding: 30px;
-}
-
-.configuracion-host h2 {
-    color: var(--color-green);
-    margin-top: 0;
-}
-
-.configuracion-host h4 {
-    color: var(--color-secondary);
-    margin: 15px 0 10px;
-    border-bottom: 1px dashed #333;
-    padding-bottom: 5px;
+    max-width: 550px;
 }
 
 .opcion-simple {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     margin-bottom: 15px;
-    background-color: #242735;
-    padding: 8px;
-    border-radius: 6px;
+    background-color: #1a2333;
+    padding: 10px 15px;
+    border-radius: var(--radius-soft);
 }
 
 .opcion-simple label {
-    margin: 0 0 0 10px;
+    margin: 0;
     color: var(--color-text);
     font-weight: normal;
+    font-family: var(--font-body);
+    text-shadow: none;
 }
 
 .opcion-simple input[type="checkbox"] {
+    /* Estilo Checkbox futurista */
+    appearance: none;
     width: 20px;
     height: 20px;
+    border: 2px solid var(--color-secondary-neon);
+    border-radius: 4px;
+    position: relative;
     cursor: pointer;
+    background-color: #202b3d;
+    transition: background-color 0.3s, border-color 0.3s;
 }
 
-.min-jugadores-aviso {
-    color: var(--color-red);
+.opcion-simple input[type="checkbox"]:checked {
+    background-color: var(--color-secondary-neon);
+    border-color: var(--color-secondary-glow);
+    box-shadow: 0 0 8px var(--color-secondary-glow);
+}
+.opcion-simple input[type="checkbox"]:checked::after {
+    content: '✓';
+    color: var(--color-bg);
+    font-size: 14px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.aviso-min {
+    color: var(--color-impostor);
     font-weight: bold;
+    font-family: var(--font-heading);
     margin-top: -10px;
-    margin-bottom: 20px;
+    text-shadow: 0 0 5px rgba(255, 77, 110, 0.5);
 }
 
-/* --- ESTILOS PARA LA SELECCIÓN DE CATEGORÍAS (RADIO BUTTONS) --- */
+/* 8. Estilos para la Selección de Categorías (Radio Buttons) */
 .categorias-container {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
     margin-bottom: 20px;
-}
-
-.categoria-item {
-    /* Ocultar el input radio nativo */
-    position: relative;
+    padding: 10px 0;
 }
 
 .categoria-item input[type="radio"] {
-    /* Ocultar nativo y usar el label como control */
     position: absolute;
     opacity: 0;
     width: 0;
@@ -239,85 +291,65 @@ button:disabled {
     display: block;
     cursor: pointer;
     padding: 8px 15px;
-    border: 2px solid #444;
-    border-radius: 20px;
-    background-color: #2b2e3c;
+    border: 2px solid var(--color-primary-neon);
+    border-radius: var(--radius-round);
+    background-color: #202b3d;
     color: var(--color-text);
     font-weight: normal;
     transition: all 0.2s;
     font-size: 0.9em;
-    margin: 0; /* Eliminar margin-bottom de label global */
+    margin: 0;
+    text-shadow: none;
+    font-family: var(--font-body);
 }
 
-/* Estilo cuando el radio está seleccionado */
+/* Estilo cuando el radio está seleccionado (Neon Highlight) */
 .categoria-item input[type="radio"]:checked + label {
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-neon);
     color: white;
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-glow);
+    box-shadow: 0 0 10px var(--color-primary-glow);
     transform: scale(1.05);
 }
 
 .categoria-item label:hover {
-    background-color: #3f4356;
+    background-color: #2e3b50;
 }
 
 .categoria-hot {
-    background-color: var(--color-red) !important;
-    border-color: var(--color-red) !important;
-    color: white !important;
-    font-weight: bold !important;
+    border-color: var(--color-impostor) !important;
+    color: var(--color-impostor) !important;
 }
 .categoria-item input[type="radio"]:checked + .categoria-hot {
-    background-color: #ff6e80 !important;
-    border-color: #ff6e80 !important;
+    background-color: var(--color-impostor) !important;
     color: white !important;
+    box-shadow: 0 0 10px var(--color-impostor) !important;
 }
 
-
-/* --- ESTILOS PARA VISTA REVELACIÓN DE ROL --- */
-#vista-revelacion {
-    /* No centrar verticalmente para dejar espacio para el botón de volver */
-    min-height: 90vh; 
-    justify-content: flex-start;
-}
-
+/* 9. Vista Revelación de Rol */
 .caja-rol {
-    background-color: var(--color-card);
+    background: linear-gradient(145deg, #141b29, #1c273e);
+    border: 2px solid var(--color-primary-neon);
     padding: 40px;
-    border-radius: var(--radius);
-    max-width: 600px;
-    width: 90%;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-    text-align: center;
     margin-top: 30px;
 }
 
-.caja-rol h2 {
-    color: var(--color-secondary);
-    font-size: 1.8em;
-    margin-bottom: 15px;
-}
-
-.caja-rol h3 {
-    font-size: 1.5em;
-    font-family: var(--font-heading);
-    color: var(--color-text);
-    margin-top: 0;
-}
-
 .palabra-revelacion {
-    font-size: 1.6em;
-    font-weight: bold;
+    font-size: 1.8em;
+    font-family: var(--font-heading);
     padding: 15px;
-    border-radius: 8px;
-    margin-top: 20px;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    border-radius: var(--radius-soft);
+    margin-top: 25px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    border: 1px solid; /* Se define el color en JS */
+    text-transform: uppercase;
 }
 
 .etiqueta-pequena {
-    font-size: 0.9em;
-    color: #aaa;
+    font-size: 0.8em;
+    color: #888;
     margin-bottom: 5px;
+    font-family: var(--font-heading);
 }
 
 .aviso-espera {
@@ -326,158 +358,116 @@ button:disabled {
     font-size: 0.9em;
 }
 
-/* --- ESTILOS PARA VISTA DE JUEGO --- */
+/* 10. Vista de Juego */
 .info-jugador-juego {
-    background-color: #242735;
-    padding: 15px;
-    border-radius: var(--radius);
-    margin-bottom: 20px;
+    background-color: #1a2333;
+    border: 1px solid var(--color-secondary-neon);
+}
+
+.info-jugador-juego h2 {
+    font-size: 1.5em;
+    color: var(--color-text);
+}
+
+/* 11. Vista de Votación */
+.aviso-votacion {
+    color: var(--color-agente);
+    font-weight: bold;
+    padding: 10px;
+    background-color: #1a2333;
+    border-radius: var(--radius-soft);
+    border-left: 4px solid var(--color-agente);
     width: 90%;
     max-width: 450px;
 }
 
-.info-jugador-juego h3 {
-    color: var(--color-secondary);
-    margin: 5px 0 10px;
-}
-
-.info-jugador-juego h2 {
-    color: var(--color-text);
-    margin-top: 0;
-}
-
-/* --- ESTILOS PARA VISTA DE VOTACIÓN --- */
-.opciones-votacion-container {
-    width: 90%;
-    max-width: 500px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
-}
-
 .btn-votar {
-    background-color: #444;
+    background-color: #333;
     color: white;
-    border: 2px solid #444;
-    padding: 10px 15px;
-    min-width: 100px;
+    border: 2px solid #555;
+    padding: 12px 18px;
+    min-width: 120px;
     flex-grow: 1;
+    font-size: 1em;
+    border-radius: var(--radius-soft);
 }
 
 .btn-votar:hover {
-    background-color: #555;
+    background-color: #444;
 }
 
 .btn-votar.votado {
-    background-color: var(--color-secondary);
-    border-color: var(--color-secondary);
+    background-color: var(--color-secondary-neon);
+    border-color: var(--color-secondary-glow);
+    box-shadow: 0 0 10px var(--color-secondary-glow);
     transform: scale(1.05);
     font-weight: bold;
     color: var(--color-bg);
 }
 
-.aviso-votacion {
-    color: var(--color-orange);
-    font-weight: bold;
-    padding: 10px;
-    background-color: #242735;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 450px;
-}
-
-.estado-voto {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #242735;
-    border-radius: 8px;
-    width: 15rem;
-}
-
-/* --- RESULTADOS Y FINAL --- */
+/* 12. Resultados y Vista Final */
 .detalles-votacion-container {
-    background-color: #242735;
-    padding: 15px;
-    border-radius: var(--radius);
-    margin: 20px 0;
-    width: 90%;
-    max-width: 450px;
-    text-align: center;
+    background-color: #1a2333;
+    border: 1px solid #444;
 }
 
 .detalles-votacion-container h4 {
-    color: var(--color-secondary);
-    margin-top: 0;
-    border-bottom: 1px solid #333;
-    padding-bottom: 10px;
+    color: var(--color-secondary-glow);
+    border-bottom: 1px dashed #333;
 }
 
 .aviso-eliminado {
-    font-size: 1.3em;
+    font-size: 1.4em;
     font-weight: bold;
-    color: var(--color-red);
-    padding: 10px;
-    border: 2px solid var(--color-red);
-    border-radius: 8px;
+    padding: 15px;
+    border-radius: var(--radius-soft);
     margin-bottom: 25px; 
     width: 90%;
     max-width: 450px;
+    box-shadow: 0 0 10px currentColor; /* Brillará según el color de fondo asignado en JS */
 }
 
-/* Estilo para los botones de Host en VISTA-RESULTADO */
-#acciones-finales-host, #acciones-finales-final-host {
-    display: flex;
-    flex-wrap: wrap; 
-    gap: 15px;
-    justify-content: center;
-}
-
-.lista-final li {
-    background-color: #242735;
-    border-left: 4px solid var(--color-primary);
-}
-
-.lista-final .impostor {
-    color: var(--color-red);
-    font-weight: bold;
-}
-.lista-final .tripulante {
-    color: var(--color-green);
-    font-weight: bold;
-}
-.lista-final .orange {
-    color: var(--color-orange);
-    font-weight: bold;
-}
-.lista-final .eliminado {
-    color: var(--color-red);
-}
-.lista-final .activo {
-    color: var(--color-green);
-}
-
-/* Media Queries para móviles */
-@media (max-width: 600px) {
+/* 13. Adaptabilidad (Responsive Design) */
+@media (max-width: 768px) {
     h1 {
-        font-size: 2em;
+        font-size: 2.5em;
     }
+    .vista {
+        padding: 15px 10px;
+    }
+    
+    form, .opciones-sala, .configuracion-host, .info-jugador-juego, .caja-rol, .detalles-votacion-container {
+        padding: 20px 15px;
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
     .btn-grande {
-        padding: 12px 20px;
+        padding: 15px 25px;
+        font-size: 1.1em;
+    }
+    
+    .lista-jugadores li {
         font-size: 1em;
+        padding: 12px 15px;
     }
-    .configuracion-host, form, .opciones-sala, .lista-jugadores {
-        width: 100%;
-        max-width: none;
-    }
-    .caja-rol {
-        padding: 25px;
-    }
+    
     .palabra-revelacion {
-        font-size: 1.4em;
+        font-size: 1.5em;
+    }
+    
+    .btn-votar {
+        min-width: 80px;
+        padding: 10px 10px;
+        font-size: 0.9em;
+    }
+    
+    .categorias-container {
+        gap: 8px;
     }
     .categoria-item label {
-         font-size: 0.85em;
+        font-size: 0.8em;
+        padding: 6px 10px;
     }
 }
