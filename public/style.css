@@ -58,9 +58,9 @@ form, .opciones-sala, .configuracion-host {
     padding: 25px;
     border-radius: var(--radius);
     margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     width: 95%; /* FIX: Usar 95% para un pequeño margen en móviles */
     max-width: 450px; /* Ajuste para uniformidad en contenedores principales */
+    justify-items: center;
 }
 .configuracion-host {
      max-width: 600px; /* Más ancho para categorías */
@@ -313,7 +313,7 @@ button:disabled {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     width: 95%;
     max-width: 450px;
-    text-align: left;
+    text-align: center;
 }
 
 .info-jugador-juego p {
