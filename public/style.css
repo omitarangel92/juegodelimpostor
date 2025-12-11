@@ -19,12 +19,11 @@
 body {
     font-family: var(--font-body);
     text-align: center;
+    padding-top: 30px;
     background-color: var(--color-bg);
     color: var(--color-text);
     margin: 0;
     min-height: 100vh;
-    align-content: center;
-    margin: 2rem;
 }
 
 h1 {
@@ -164,7 +163,7 @@ input[type="text"], input[type="number"], select {
 
 /* Configuración */
 .config-host {
-    margin: 20px 0;
+    margin-top: 20px;
     padding: 20px;
     background-color: #242735;
     border-radius: var(--radius);
@@ -206,6 +205,7 @@ input[type="text"], input[type="number"], select {
     border-radius: var(--radius);
     max-width: 600px;
     width: 90%;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     text-align: center;
 }
 .palabra-secreta {
@@ -224,7 +224,6 @@ input[type="text"], input[type="number"], select {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 10px;
     margin-top: 20px;
-    max-width: 90%;
 }
 
 .btn-votar {
@@ -237,8 +236,6 @@ input[type="text"], input[type="number"], select {
     border-color: var(--color-secondary);
     box-shadow: 0 0 10px var(--color-secondary);
     transform: scale(1.05);
-    font-size: 1rem;
-    line-height: 1.5;
 }
 
 .btn-votar:hover:not(:disabled) {
@@ -251,7 +248,6 @@ input[type="text"], input[type="number"], select {
     padding: 10px;
     background-color: #242735;
     border-radius: 8px;
-    width: 15rem;
 }
 
 /* Resultados y Final */
@@ -293,6 +289,7 @@ input[type="text"], input[type="number"], select {
 
 /* Estilo para los botones de Host en VISTA-FINAL */
 #acciones-finales-final-host {
+    /* Aquí se define el layout por si JS lo muestra */
     display: flex;
     flex-wrap: wrap; 
     gap: 15px;

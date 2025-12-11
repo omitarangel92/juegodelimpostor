@@ -399,6 +399,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
     window.abandonarSala = async function() {
         if (!codigoSalaActual || !miId) {
+             // Si no hay sala, recargar para volver al inicio
              window.location.reload();
              return;
         }
@@ -411,9 +412,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
             
             const misDatos = jugadoresActuales.find(j => j.id === miId);
 
+            // Eliminar mi jugador de la sala
             await db.ref(`salas/${codigoSalaActual}/jugadores/${miId}`).remove();
 
             if (misDatos?.esHost && jugadoresActuales.length > 1) {
+                // Si el Host se va, reasignar Host al siguiente
                 const jugadoresRestantes = jugadoresActuales.filter(j => j.id !== miId);
                 if (jugadoresRestantes.length > 0) {
                     const nuevoHost = jugadoresRestantes[0];
@@ -421,9 +424,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     await db.ref(`salas/${codigoSalaActual}/jugadores/${nuevoHost.id}/esHost`).set(true);
                 }
             } else if (misDatos?.esHost && jugadoresActuales.length === 1) {
+                 // Si el Host era el único, borrar la sala
                  await db.ref('salas/' + codigoSalaActual).remove();
             }
 
+            // Recargar para volver a la vista inicial
             window.location.reload();
 
         } catch (error) {
@@ -458,6 +463,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function manejarFinDeJuego(sala) {
          cambiarVista('vista-final');
          
+         const misDatos = jugadoresActuales.find(j => j.id === miId);
+         const esHost = misDatos?.esHost;
+         
          // Obtener el ganador actual (si no se pasó por ultimoResultado)
          const ganador = chequearFinDeJuego(jugadoresActuales) || sala.ultimoResultado?.ganador; 
 
@@ -484,6 +492,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
              `;
              listaRoles.appendChild(li);
          });
+
+         // **CORRECCIÓN 1 & 2: Muestra botones de Reiniciar/Cerrar SOLO al Host**
+         const accionesFinalesFinalHost = document.getElementById('acciones-finales-final-host');
+         if (accionesFinalesFinalHost) {
+              accionesFinalesFinalHost.style.display = esHost ? 'flex' : 'none';
+         }
     }
 
 
@@ -789,11 +803,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
          const ganador = chequearFinDeJuego(jugadoresActuales);
 
          if (esHost) {
+             // El contenedor general se muestra si es Host.
              accionesFinalesHost.style.display = 'flex';
              
              // Lógica CLAVE: Botones en VISTA-RESULTADO (inmediatamente después de la votación)
              if (ganador) {
-                 // Si hay ganador, ocultar Continuar Discusión
+                 // Si hay ganador, ocultar Continuar Discusión y mostrar Reiniciar/Finalizar
                  document.getElementById('jugador-eliminado-display').textContent += `\n 🚨 ¡El juego terminó! Ganan los ${ganador}.`;
 
                  if(btnContinuar) btnContinuar.style.display = 'none';
@@ -817,7 +832,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
              }
 
          } else {
-              accionesFinalesHost.style.display = 'none';
+              accionesFinalesHost.style.display = 'none'; // Se oculta para participantes
               if (!ganador) {
                    document.getElementById('jugador-eliminado-display').textContent += `\n Esperando al Host para continuar la discusión...`;
               }

@@ -74,7 +74,7 @@
             
             <p class="aviso-ronda">Memoriza tu información. Solo el Host puede iniciar la discusión.</p>
 
-            <button id="btn-iniciar-discusion" class="btn-principal" style="display: block;justify-self: center;">
+            <button id="btn-iniciar-discusion" class="btn-principal" style="display: none;">
                 ▶️ Iniciar Discusión
             </button>
         </div>
@@ -146,7 +146,7 @@
         <ul id="lista-roles-final" class="lista-jugadores lista-final">
             </ul>
         
-        <div id="acciones-finales-final-host" style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
+        <div id="acciones-finales-final-host" style="display: none;">
              <button id="btn-reiniciar-partida-final" class="btn-secundario btn-grande">
                 🔄 Reiniciar Partida (Ir a Lobby)
             </button>
@@ -155,8 +155,8 @@
             </button>
         </div>
         
-        <button onclick="window.location.reload()" class="btn-principal" style="margin-top: 20px;">
-            Volver a la Pantalla de Inicio
+        <button onclick="abandonarSala()" class="btn-principal" style="margin-top: 20px;">
+            ← Abandonar Sala
         </button>
     </div>
 
