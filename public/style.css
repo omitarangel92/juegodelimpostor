@@ -23,137 +23,420 @@ body {
     color: var(--color-text);
     margin: 0;
     min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 30px;
 }
 
-h1, h2, h3 {
+h1 {
     font-family: var(--font-heading);
-    color: var(--color-secondary);
+    color: var(--color-primary);
+    font-size: 3em;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
 }
 
-/* --- VISTAS --- */
 .vista {
-    width: 95%;
-    max-width: 650px;
-    padding: 20px;
-    background-color: var(--color-card);
-    border-radius: var(--radius);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     display: none;
-    margin-bottom: 30px; 
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 30px 20px;
+    min-height: 90vh;
 }
 
 .vista.activa {
-    display: block;
+    display: flex;
 }
 
-/* --- FORMULARIOS Y INPUTS --- */
-form {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+/* --- FORMULARIOS Y BOTONES --- */
+form, .opciones-sala, .configuracion-host {
+    background-color: var(--color-card);
+    padding: 25px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 400px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--color-secondary);
 }
 
 input[type="text"] {
-    padding: 10px;
-    border: 1px solid #333;
-    border-radius: 6px;
-    background-color: #2a2e3d;
-    color: var(--color-text);
-    font-size: 1.1em;
-    width: 80%;
-    max-width: 300px;
-}
-
-/* --- BOTONES --- */
-button {
-    cursor: pointer;
-    padding: 10px 20px;
+    width: 95%;
+    padding: 12px;
+    margin-bottom: 15px;
     border: none;
     border-radius: 6px;
+    background-color: #2b2e3c;
+    color: var(--color-text);
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
     font-size: 1em;
     font-weight: bold;
-    transition: background-color 0.2s, transform 0.1s;
-    margin-top: 5px; 
+    transition: transform 0.2s, background-color 0.2s;
+    margin: 5px;
+}
+
+button:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .btn-principal {
     background-color: var(--color-primary);
     color: white;
 }
-.btn-principal:hover {
-    background-color: #9a48ff;
-}
 
 .btn-secundario {
     background-color: var(--color-secondary);
     color: var(--color-bg);
-}
-.btn-secundario:hover {
-    background-color: #00e5ff;
 }
 
 .btn-danger {
     background-color: var(--color-red);
     color: white;
 }
-.btn-danger:hover {
-    background-color: #ff6f82;
-}
 
 .btn-volver {
     background: none;
-    border: 1px solid #444;
-    color: #aaa;
-    margin-top: 20px;
-    padding: 5px 10px;
-    font-size: 0.9em;
-}
-.btn-volver:hover {
     color: var(--color-text);
-    border-color: var(--color-text);
-}
-
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    border: 1px solid #444;
+    padding: 8px 15px;
+    font-size: 0.9em;
+    margin-top: 20px;
 }
 
 .btn-grande {
     padding: 15px 30px;
     font-size: 1.2em;
+    margin: 10px 0;
+    width: 100%;
+}
+
+.btn-small {
+    padding: 5px 10px;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
+
+.btn-expulsar {
+    background-color: var(--color-red);
+    color: white;
+    margin-left: 15px;
 }
 
 /* --- LISTAS DE JUGADORES --- */
 .lista-jugadores {
     list-style: none;
     padding: 0;
-    margin: 15px 0;
-    text-align: left;
+    width: 90%;
+    max-width: 450px;
+    margin-bottom: 30px;
 }
+
 .lista-jugadores li {
     background-color: #242735;
-    padding: 10px 15px;
+    padding: 10px 20px;
     margin-bottom: 8px;
     border-radius: 6px;
+    text-align: left;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-left: 4px solid var(--color-secondary);
+    font-size: 1.1em;
 }
 
-.btn-expulsar {
-    background-color: var(--color-red);
-    color: white;
-    padding: 5px 10px;
-    font-size: 0.8em;
+.lista-jugadores li.eliminado {
+    opacity: 0.6;
+    text-decoration: line-through;
+    border-left-color: var(--color-red);
 }
-.btn-expulsar:hover {
-    background-color: #ff6f82;
+
+/* --- CONFIGURACIÓN HOST (LOBBY) --- */
+.configuracion-host {
+    max-width: 550px; /* Más ancho para categorías */
+    padding: 30px;
+}
+
+.configuracion-host h2 {
+    color: var(--color-green);
+    margin-top: 0;
+}
+
+.configuracion-host h4 {
+    color: var(--color-secondary);
+    margin: 15px 0 10px;
+    border-bottom: 1px dashed #333;
+    padding-bottom: 5px;
+}
+
+.opcion-simple {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    background-color: #242735;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.opcion-simple label {
+    margin: 0 0 0 10px;
+    color: var(--color-text);
+    font-weight: normal;
+}
+
+.opcion-simple input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.min-jugadores-aviso {
+    color: var(--color-red);
+    font-weight: bold;
+    margin-top: -10px;
+    margin-bottom: 20px;
+}
+
+/* --- ESTILOS PARA LA SELECCIÓN DE CATEGORÍAS (RADIO BUTTONS) --- */
+.categorias-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.categoria-item {
+    /* Ocultar el input radio nativo */
+    position: relative;
+}
+
+.categoria-item input[type="radio"] {
+    /* Ocultar nativo y usar el label como control */
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.categoria-item label {
+    display: block;
+    cursor: pointer;
+    padding: 8px 15px;
+    border: 2px solid #444;
+    border-radius: 20px;
+    background-color: #2b2e3c;
+    color: var(--color-text);
+    font-weight: normal;
+    transition: all 0.2s;
+    font-size: 0.9em;
+    margin: 0; /* Eliminar margin-bottom de label global */
+}
+
+/* Estilo cuando el radio está seleccionado */
+.categoria-item input[type="radio"]:checked + label {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+    transform: scale(1.05);
+}
+
+.categoria-item label:hover {
+    background-color: #3f4356;
+}
+
+.categoria-hot {
+    background-color: var(--color-red) !important;
+    border-color: var(--color-red) !important;
+    color: white !important;
+    font-weight: bold !important;
+}
+.categoria-item input[type="radio"]:checked + .categoria-hot {
+    background-color: #ff6e80 !important;
+    border-color: #ff6e80 !important;
+    color: white !important;
+}
+
+
+/* --- ESTILOS PARA VISTA REVELACIÓN DE ROL --- */
+#vista-revelacion {
+    /* No centrar verticalmente para dejar espacio para el botón de volver */
+    min-height: 90vh; 
+    justify-content: flex-start;
+}
+
+.caja-rol {
+    background-color: var(--color-card);
+    padding: 40px;
+    border-radius: var(--radius);
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    margin-top: 30px;
+}
+
+.caja-rol h2 {
+    color: var(--color-secondary);
+    font-size: 1.8em;
+    margin-bottom: 15px;
+}
+
+.caja-rol h3 {
+    font-size: 1.5em;
+    font-family: var(--font-heading);
+    color: var(--color-text);
+    margin-top: 0;
+}
+
+.palabra-revelacion {
+    font-size: 1.6em;
+    font-weight: bold;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.etiqueta-pequena {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+.aviso-espera {
+    color: #ccc;
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+/* --- ESTILOS PARA VISTA DE JUEGO --- */
+.info-jugador-juego {
+    background-color: #242735;
+    padding: 15px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    width: 90%;
+    max-width: 450px;
+}
+
+.info-jugador-juego h3 {
+    color: var(--color-secondary);
+    margin: 5px 0 10px;
+}
+
+.info-jugador-juego h2 {
+    color: var(--color-text);
+    margin-top: 0;
+}
+
+/* --- ESTILOS PARA VISTA DE VOTACIÓN --- */
+.opciones-votacion-container {
+    width: 90%;
+    max-width: 500px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-votar {
+    background-color: #444;
+    color: white;
+    border: 2px solid #444;
+    padding: 10px 15px;
+    min-width: 100px;
+    flex-grow: 1;
+}
+
+.btn-votar:hover {
+    background-color: #555;
+}
+
+.btn-votar.votado {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+    transform: scale(1.05);
+    font-weight: bold;
+    color: var(--color-bg);
+}
+
+.aviso-votacion {
+    color: var(--color-orange);
+    font-weight: bold;
+    padding: 10px;
+    background-color: #242735;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 450px;
+}
+
+.estado-voto {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #242735;
+    border-radius: 8px;
+    width: 15rem;
+}
+
+/* --- RESULTADOS Y FINAL --- */
+.detalles-votacion-container {
+    background-color: #242735;
+    padding: 15px;
+    border-radius: var(--radius);
+    margin: 20px 0;
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+}
+
+.detalles-votacion-container h4 {
+    color: var(--color-secondary);
+    margin-top: 0;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+
+.aviso-eliminado {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: var(--color-red);
+    padding: 10px;
+    border: 2px solid var(--color-red);
+    border-radius: 8px;
+    margin-bottom: 25px; 
+    width: 90%;
+    max-width: 450px;
+}
+
+/* Estilo para los botones de Host en VISTA-RESULTADO */
+#acciones-finales-host, #acciones-finales-final-host {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 15px;
+    justify-content: center;
+}
+
+.lista-final li {
+    background-color: #242735;
+    border-left: 4px solid var(--color-primary);
 }
 
 .lista-final .impostor {
@@ -175,210 +458,26 @@ button:disabled {
     color: var(--color-green);
 }
 
-/* --- CONFIGURACIÓN DE HOST (LOBBY) --- */
-.configuracion-host {
-    background-color: #242735;
-    padding: 15px;
-    border-radius: var(--radius);
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.opcion-simple {
-    margin-bottom: 15px;
-    text-align: center;
-}
-.opcion-simple label {
-    margin-left: 10px;
-    font-size: 1.1em;
-}
-
-.tema-selector-box {
-    margin-top: 15px;
-    padding: 10px;
-    background-color: #1c1f2b;
-    border-radius: 8px;
-}
-
-.categorias-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
-    max-height: 250px; 
-    overflow-y: auto; 
-    padding: 5px;
-}
-
-.categoria-item input[type="checkbox"] {
-    display: none; 
-}
-
-.categoria-item label {
-    display: inline-block;
-    padding: 8px 15px;
-    border: 2px solid #555;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.9em;
-    transition: all 0.2s;
-}
-
-.categoria-item input[type="checkbox"]:checked + label {
-    background-color: var(--color-secondary);
-    color: var(--color-bg);
-    border-color: var(--color-secondary);
-}
-
-/* --- ESTILO ESPECIAL PARA CATEGORÍA +18 --- */
-.categoria-item .categoria-hot {
-    color: var(--color-red) !important;
-    border-color: var(--color-red) !important;
-    font-weight: bold;
-    animation: pulseRed 1.5s infinite;
-}
-
-.categoria-item input[type="checkbox"]:checked + .categoria-hot {
-    background-color: var(--color-red);
-    color: var(--color-text) !important;
-    border-color: var(--color-red);
-    animation: none;
-}
-
-@keyframes pulseRed {
-    0% { box-shadow: 0 0 0 0 rgba(255, 69, 96, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(255, 69, 96, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 69, 96, 0); }
-}
-
-
-/* --- ESTILOS DE JUEGO (REVELACIÓN Y DISCUSIÓN) --- */
-.caja-rol {
-    background-color: #242735;
-    padding: 40px 20px;
-    border-radius: var(--radius);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-    text-align: center;
-}
-
-.caja-rol h2 {
-    font-size: 2em;
-    margin-bottom: 20px;
-}
-
-.palabra-revelacion {
-    padding: 15px;
-    border-radius: 8px;
-    font-size: 1.3em;
-    font-weight: bold;
-    margin-top: 15px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-}
-
-.info-juego {
-    background-color: #242735;
-    padding: 15px;
-    border-radius: var(--radius);
-    margin: 20px 0;
-}
-.info-juego h3 {
-    margin: 5px 0;
-}
-.palabra-juego {
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 1.1em;
-    font-weight: bold;
-}
-
-/* --- ESTILOS DE VOTACIÓN --- */
-.opciones-votacion {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin: 20px 0;
-}
-.btn-votar {
-    padding: 12px 20px;
-    background-color: #333;
-    color: var(--color-text);
-    border: 2px solid transparent;
-    transition: background-color 0.1s, border-color 0.1s;
-}
-.btn-votar:hover {
-    background-color: #444;
-}
-.btn-votar.votado {
-    background-color: var(--color-primary);
-    border-color: var(--color-secondary);
-    color: white;
-}
-
-.estado-voto {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #242735;
-    border-radius: 8px;
-    width: 15rem;
-    display: inline-block;
-}
-
-/* Resultados y Final */
-.detalles-votacion-container {
-    background-color: #242735;
-    padding: 15px;
-    border-radius: var(--radius);
-    margin: 20px 0;
-    width: 90%;
-    text-align: center;
-    display: inline-block;
-}
-.detalles-votacion-container h4 {
-    color: var(--color-secondary);
-    margin-top: 0;
-    border-bottom: 1px solid #333;
-    padding-bottom: 10px;
-}
-
-.aviso-eliminado {
-    font-size: 1.3em;
-    font-weight: bold;
-    color: var(--color-red);
-    padding: 10px;
-    border: 2px solid var(--color-red);
-    border-radius: 8px;
-    margin-bottom: 25px; 
-}
-
-/* Estilo para los botones de Host en VISTA-RESULTADO */
-#acciones-finales-host {
-    display: flex;
-    flex-wrap: wrap; 
-    gap: 15px;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
-/* Media Queries para diseño responsivo */
+/* Media Queries para móviles */
 @media (max-width: 600px) {
-    .vista {
-        padding: 15px;
-        margin-top: 0;
-    }
     h1 {
-        font-size: 1.8em;
+        font-size: 2em;
     }
     .btn-grande {
-        padding: 10px 20px;
+        padding: 12px 20px;
         font-size: 1em;
     }
-    .categoria-item label {
-        padding: 6px 12px;
-        font-size: 0.8em;
+    .configuracion-host, form, .opciones-sala, .lista-jugadores {
+        width: 100%;
+        max-width: none;
     }
     .caja-rol {
-        padding: 20px;
+        padding: 25px;
+    }
+    .palabra-revelacion {
+        font-size: 1.4em;
+    }
+    .categoria-item label {
+         font-size: 0.85em;
     }
 }

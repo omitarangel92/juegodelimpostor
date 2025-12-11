@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego del Impostor 🕵️</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
     </head>
 <body>
 
@@ -47,8 +48,8 @@
             </div>
             
             <div class="tema-selector-box">
-                <h4>Seleccionar Categorías:</h4>
-                <p id="aviso-categoria" style="color: var(--color-red); font-weight: bold; display: none;">¡Selecciona al menos 1 categoría!</p>
+                <h4>Seleccionar Categoría:</h4> 
+                <p id="aviso-categoria" style="color: var(--color-red); font-weight: bold; display: none;">¡Selecciona 1 categoría!</p>
                 <div id="categorias-container" class="categorias-container">
                     </div>
             </div>
@@ -58,8 +59,8 @@
             </button>
             <p id="min-jugadores-aviso" class="aviso-min" style="display: none;"></p>
         </div>
-
-        <h2>Jugadores (<span id="contador-jugadores">0</span>/<span id="max-jugadores-display">10</span>)</h2>
+        
+        <h2>Jugadores (<span id="contador-jugadores">0</span>):</h2>
         <ul id="lista-jugadores-host" class="lista-jugadores">
             </ul>
 
@@ -67,53 +68,58 @@
     </div>
 
     <div id="vista-revelacion" class="vista">
+        <h1>¡Mira tu Rol Secreto!</h1>
         <div class="caja-rol">
-            <h1 id="revelacion-titulo">¡Tu Rol Secreto!</h1>
-            <h2 id="rol-revelacion-display">Cargando...</h2>
+            <h2 id="rol-revelacion-display">Tu Rol: [ROL]</h2>
+            <p class="etiqueta-pequena">Tema de la Partida:</p>
+            <h3 id="tema-valor-revelacion"></h3>
+            <p id="palabra-revelacion-display" class="palabra-revelacion"></p>
             
-            <div id="revelacion-detalle">
-                <h3>Categoría: <span id="tema-valor-revelacion">---</span></h3>
-                <p id="palabra-revelacion-display" class="palabra-revelacion">Cargando palabra...</p>
-            </div>
-
             <button id="btn-iniciar-discusion" class="btn-principal btn-grande" style="margin-top: 30px; display: none;">
                 ▶️ Iniciar Discusión
             </button>
+            <p class="aviso-espera" style="margin-top: 15px;">Esperando al Host para iniciar la discusión...</p>
         </div>
+        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-juego" class="vista">
-        <h1>Discusión en Curso</h1>
+        <h1>🎤 Discusión Abierta</h1>
         
-        <div class="info-juego">
-            <h3 id="rol-juego-display">Tu Rol:</h3>
-            <h3>Categoría: <span id="tema-valor">---</span></h3>
-            <p id="palabra-secreta-display" class="palabra-juego">La palabra secreta es: ---</p>
+        <div class="info-jugador-juego">
+            <p class="etiqueta-pequena">Tema:</p>
+            <h3 id="tema-valor"></h3>
+            <h2 id="rol-juego-display">Tu Rol: [ROL]</h2>
+            <p id="palabra-secreta-display" class="palabra-revelacion"></p>
         </div>
-        
-        <h2>Jugadores Activos (<span id="jugadores-activos-contador">0</span>)</h2>
+
+        <h3 style="color: var(--color-secondary);">Jugadores Activos (<span id="jugadores-activos-contador">0</span>):</h3>
         <ul id="lista-jugadores-juego" class="lista-jugadores">
             </ul>
         
-        <button id="btn-forzar-votacion" class="btn-danger btn-grande" style="margin-top: 20px; display: none;">
-            🚨 ¡Forzar Votación!
+        <button id="btn-forzar-votacion" class="btn-danger" style="margin-top: 20px; display: none;">
+            🚨 Forzar Votación (HOST)
         </button>
+        <p class="aviso-espera" style="margin-top: 15px;">Esperando que el Host inicie la votación...</p>
+
+        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-votacion" class="vista">
-        <h1>Votación en Curso 🗳️</h1>
-        <p>¿Quién crees que es el impostor?</p>
-        
-        <div id="opciones-votacion" class="opciones-votacion">
+        <h1>🗳️ ¡Vota por el Impostor!</h1>
+
+        <p class="aviso-votacion">
+            Selecciona un jugador para acusar. Si todos votan, la ronda terminará automáticamente.
+        </p>
+
+        <div id="opciones-votacion" class="opciones-votacion-container">
             </div>
 
-        <div id="estado-voto" class="estado-voto">
-            Tu voto: <span id="voto-actual-display">⚠️ Nadie (Abstenerse)</span>
-        </div>
-        
-        <p class="aviso-min">Esperando que todos los jugadores activos voten para continuar...</p>
+        <p class="estado-voto" id="estado-voto-display" style="display: none;">Tu voto ya fue registrado.</p>
+
+        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
-        
+
     <div id="vista-resultado" class="vista">
         <h1>✅ Resultados de la Votación</h1>
         <div id="detalles-votacion-container" class="detalles-votacion-container">
@@ -123,9 +129,9 @@
             [RESULTADO]
         </p>
         
-        <div id="acciones-finales-host" style="display: none; gap: 15px; margin-top: 30px; justify-content: center;">
+        <div id="acciones-finales-host" style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
             <button id="btn-reiniciar-partida-resultado" class="btn-secundario btn-grande">
-                🔄 Reiniciar Partida (Ir a Lobby)
+                ▶️ Continuar (Nueva Discusión)
             </button>
             <button id="btn-finalizar-juego-resultado" class="btn-danger btn-grande" style="display: none;">
                 🚪 Finalizar Juego (Cerrar Sala)
@@ -157,5 +163,6 @@
 
 
     <script src="cliente.js"></script>
+
 </body>
 </html>

@@ -63,8 +63,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     let miId = Date.now().toString(36) + Math.random().toString(36).substring(2); 
     
     let jugadoresActuales = []; 
+    // Inicializar configuracionActual con el primer tema como seleccionado por defecto
     let configuracionActual = { 
-        // Cambiamos a un solo tema seleccionado, por defecto el primero
         temaSeleccionado: TEMAS_DISPONIBLES[0], 
         incluirAgenteDoble: false 
     }; 
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
 
         if (avisoCategoria) {
-            // El aviso solo se mostrará si no hay tema seleccionado (aunque con radio siempre habrá uno por defecto)
+            // El aviso solo se mostrará si no hay tema seleccionado
             avisoCategoria.style.display = (!configuracionActual.temaSeleccionado) ? 'block' : 'none';
         }
     }
