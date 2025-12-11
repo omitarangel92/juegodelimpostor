@@ -206,7 +206,6 @@ input[type="text"], input[type="number"], select {
     border-radius: var(--radius);
     max-width: 600px;
     width: 90%;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     text-align: center;
 }
 .palabra-secreta {
