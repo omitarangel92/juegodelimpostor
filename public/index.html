@@ -100,6 +100,18 @@
         </h3>
         <ul id="lista-jugadores-juego" class="lista-jugadores">
         </ul>
+        <div id="container-adivinacion" class="acciones-juego" style="display: none;">
+            <h3>¡Intenta Adivinar la Palabra Secreta!</h3>
+            <p>Solo el Impostor ve esto. Si aciertas, ¡ganan los Impostores!</p>
+            <div class="input-grupo">
+                <input type="text" id="input-palabra-adivinar" placeholder="Escribe la palabra secreta..." required
+                    maxlength="20">
+                <button id="btn-adivinar-palabra" class="btn-danger">
+                    🕵️ Adivinar y Ganar
+                </button>
+            </div>
+        </div>
+
 
         <button id="btn-forzar-votacion" class="btn-danger" style="margin-top: 20px; display: none;">
             🚨 Forzar Votación (HOST)
