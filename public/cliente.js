@@ -64,7 +64,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
     let jugadoresActuales = []; 
     let configuracionActual = { 
-        temasSeleccionados: [TEMAS_DISPONIBLES[0]], // Array de temas
+        // Cambiamos a un solo tema seleccionado, por defecto el primero
+        temaSeleccionado: TEMAS_DISPONIBLES[0], 
         incluirAgenteDoble: false 
     }; 
     let miRolActual = ''; 
@@ -225,30 +226,35 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function renderConfiguracion() {
         const categoriasContainer = document.getElementById('categorias-container');
         const avisoCategoria = document.getElementById('aviso-categoria');
+        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        const configHostDiv = document.getElementById('configuracion-host');
+        
+        if (configHostDiv) configHostDiv.style.display = esHost ? 'block' : 'none';
+        if (!esHost) return; // Solo el host renderiza y gestiona esto.
         
         if (categoriasContainer && categoriasContainer.children.length === 0) {
+            
             TEMAS_DISPONIBLES.forEach(tema => {
-                const checkboxId = `tema-${tema.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                const radioId = `tema-${tema.replace(/[^a-zA-Z0-9]/g, '-')}`;
                 const div = document.createElement('div');
                 div.classList.add('categoria-item'); 
                 const esCaliente = tema.includes('Caliente +18');
                 
+                // *** CAMBIO CLAVE: input type="radio" con el mismo name="tema-selector" ***
                 div.innerHTML = `
-                    <input type="checkbox" id="${checkboxId}" value="${tema}" name="tema-selector" ${configuracionActual.temasSeleccionados.includes(tema) ? 'checked' : ''}>
-                    <label for="${checkboxId}">${tema}</label>
+                    <input type="radio" id="${radioId}" value="${tema}" name="tema-selector" ${configuracionActual.temaSeleccionado === tema ? 'checked' : ''}>
+                    <label for="${radioId}" ${esCaliente ? 'class="categoria-hot"' : ''}>${tema}</label>
                 `;
-                if (esCaliente) {
-                    div.querySelector('label').classList.add('categoria-hot');
-                }
                 
                 categoriasContainer.appendChild(div);
             });
-            document.querySelectorAll('input[name="tema-selector"]').forEach(input => {
-                input.addEventListener('change', actualizarConfiguracionHost);
-            });
+            // Añadir listener al contenedor para delegar el evento
+            categoriasContainer.addEventListener('change', actualizarConfiguracionHost);
+            
         } else {
+             // Si ya existe, solo actualiza el estado "checked"
              document.querySelectorAll('input[name="tema-selector"]').forEach(input => {
-                 input.checked = configuracionActual.temasSeleccionados.includes(input.value);
+                 input.checked = configuracionActual.temaSeleccionado === input.value;
              });
         }
         
@@ -261,12 +267,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
         }
 
-        const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
-        const configHostDiv = document.getElementById('configuracion-host');
-        if (configHostDiv) configHostDiv.style.display = esHost ? 'block' : 'none';
-
         if (avisoCategoria) {
-            avisoCategoria.style.display = (configuracionActual.temasSeleccionados.length === 0) ? 'block' : 'none';
+            // El aviso solo se mostrará si no hay tema seleccionado (aunque con radio siempre habrá uno por defecto)
+            avisoCategoria.style.display = (!configuracionActual.temaSeleccionado) ? 'block' : 'none';
         }
     }
 
@@ -277,9 +280,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const avisoMin = document.getElementById('min-jugadores-aviso');
         
         if (esHost && btnIniciar && avisoMin) {
-            const numTemas = configuracionActual.temasSeleccionados.length;
+            const temaSeleccionado = configuracionActual.temaSeleccionado;
             
-            if (numJugadores >= MIN_JUGADORES && numJugadores <= MAX_JUGADORES && numTemas > 0) {
+            if (numJugadores >= MIN_JUGADORES && numJugadores <= MAX_JUGADORES && temaSeleccionado) {
                 btnIniciar.disabled = false;
                 avisoMin.style.display = 'none';
             } else {
@@ -287,8 +290,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 if (numJugadores < MIN_JUGADORES) {
                     avisoMin.textContent = `Se requieren ${MIN_JUGADORES} jugadores para iniciar.`;
                     avisoMin.style.display = 'block';
-                } else if (numTemas === 0) {
-                    avisoMin.textContent = `Selecciona al menos 1 categoría.`;
+                } else if (!temaSeleccionado) {
+                    avisoMin.textContent = `Selecciona 1 categoría.`;
                     avisoMin.style.display = 'block';
                 } else {
                     avisoMin.style.display = 'none';
@@ -301,11 +304,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const esHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         if (!esHost || !codigoSalaActual) return;
 
-        const temas = Array.from(document.querySelectorAll('input[name="tema-selector"]:checked')).map(input => input.value);
+        // *** LECTURA DE UN SOLO VALOR 'radio' ***
+        const temaSeleccionado = document.querySelector('input[name="tema-selector"]:checked')?.value || null;
         const doble = document.getElementById('checkbox-agente-doble').checked;
         
         const nuevaConfig = {
-            temasSeleccionados: temas,
+            temaSeleccionado: temaSeleccionado, // Solo un tema
             incluirAgenteDoble: doble
         };
 
@@ -342,7 +346,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                    if (conteoVotos.hasOwnProperty(votadoId)) {
                        conteoVotos[votadoId]++;
                    } else if (votadoId === 'none') {
-                       conteoVotos['none']++;
+                       conteoVotos[votadoId]++;
                    }
                }
            }
@@ -563,7 +567,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
             miPalabraSecreta = misDatos?.palabraSecreta || '';
             miTemaActual = misDatos?.tema || '';
             
+            // *** LECTURA DE UN SOLO TEMA ***
             configuracionActual = sala.configuracion || configuracionActual;
+            configuracionActual.temaSeleccionado = sala.configuracion?.temaSeleccionado || configuracionActual.temaSeleccionado;
+            configuracionActual.incluirAgenteDoble = sala.configuracion?.incluirAgenteDoble || configuracionActual.incluirAgenteDoble;
 
             // Lógica de Vistas basada en el estado de la sala
             
@@ -608,13 +615,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         const salaRef = db.ref('salas/' + codigoSalaActual);
         
-        if (configuracionActual.temasSeleccionados.length === 0) {
-            return alert('ERROR: Debes seleccionar al menos una categoría.');
+        const temaElegido = configuracionActual.temaSeleccionado; // Leemos el tema único
+        
+        if (!temaElegido || !PALABRAS_POR_TEMA[temaElegido]) {
+            return alert('ERROR: Debes seleccionar una categoría válida.');
         }
 
         const jugadoresConRoles = asignarRoles(jugadoresActuales, configuracionActual);
         
-        const temaElegido = configuracionActual.temasSeleccionados[Math.floor(Math.random() * configuracionActual.temasSeleccionados.length)];
         const palabras = PALABRAS_POR_TEMA[temaElegido];
         const palabraElegida = palabras[Math.floor(Math.random() * palabras.length)];
         
@@ -846,7 +854,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
            await db.ref('salas/' + codigoSalaActual).update({
                estado: 'esperando',
                rondaEstado: 'noIniciada',
-               configuracion: configuracionActual, // mantiene la config anterior
+               // Asegura que la configuración se mantenga (incluyendo el tema seleccionado)
+               configuracion: configuracionActual, 
                votos: {},
                ultimoResultado: null
            });
