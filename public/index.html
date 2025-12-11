@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,13 +10,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
-    </head>
+</head>
+
 <body>
 
     <div id="vista-inicio" class="vista activa">
-        <h1>🕵️ <br>
-        ¿Quién es el impostor?</h1>
-        
+        <h1> ¿Quién es el <strong class="h1-impostor">impostor?</strong></h1>
+
         <form id="form-inicio">
             <label for="input-nombre">Tu Nombre:</label>
             <input type="text" id="input-nombre" placeholder="Ej: Lord" required maxlength="15">
@@ -41,17 +42,18 @@
 
         <div id="configuracion-host" class="configuracion-host">
             <h2>⚙️ Configuración (Solo HOST)</h2>
-            
+
             <div class="opcion-simple">
                 <input type="checkbox" id="checkbox-agente-doble">
                 <label for="checkbox-agente-doble">Incluir Agente Doble (Recomendado para 4+)</label>
             </div>
-            
+
             <div class="tema-selector-box">
-                <h4>Seleccionar Categoría:</h4> 
-                <p id="aviso-categoria" style="color: var(--color-red); font-weight: bold; display: none;">¡Selecciona 1 categoría!</p>
+                <h4>Seleccionar Categoría:</h4>
+                <p id="aviso-categoria" style="color: var(--color-red); font-weight: bold; display: none;">¡Selecciona 1
+                    categoría!</p>
                 <div id="categorias-container" class="categorias-container">
-                    </div>
+                </div>
             </div>
 
             <button id="btn-iniciar-juego" class="btn-principal btn-grande" disabled>
@@ -59,10 +61,10 @@
             </button>
             <p id="min-jugadores-aviso" class="aviso-min" style="display: none;"></p>
         </div>
-        
+
         <h2>Jugadores (<span id="contador-jugadores">0</span>):</h2>
         <ul id="lista-jugadores-host" class="lista-jugadores">
-            </ul>
+        </ul>
 
         <button onclick="abandonarSala()" class="btn-volver">← Abandonar Sala</button>
     </div>
@@ -74,8 +76,9 @@
             <p class="etiqueta-pequena">Tema de la Partida:</p>
             <h3 id="tema-valor-revelacion"></h3>
             <p id="palabra-revelacion-display" class="palabra-revelacion"></p>
-            
-            <button id="btn-iniciar-discusion" class="btn-principal btn-grande" style="margin-top: 30px; display: none;">
+
+            <button id="btn-iniciar-discusion" class="btn-principal btn-grande"
+                style="margin-top: 30px; display: none;">
                 ▶️ Iniciar Discusión
             </button>
             <p class="aviso-espera" style="margin-top: 15px;">Esperando al Host para iniciar la discusión...</p>
@@ -85,7 +88,7 @@
 
     <div id="vista-juego" class="vista">
         <h1>🎤 Discusión Abierta</h1>
-        
+
         <div class="info-jugador-juego">
             <p class="etiqueta-pequena">Tema:</p>
             <h3 id="tema-valor"></h3>
@@ -93,10 +96,11 @@
             <p id="palabra-secreta-display" class="palabra-revelacion"></p>
         </div>
 
-        <h3 style="color: var(--color-secondary);">Jugadores Activos (<span id="jugadores-activos-contador">0</span>):</h3>
+        <h3 style="color: var(--color-secondary);">Jugadores Activos (<span id="jugadores-activos-contador">0</span>):
+        </h3>
         <ul id="lista-jugadores-juego" class="lista-jugadores">
-            </ul>
-        
+        </ul>
+
         <button id="btn-forzar-votacion" class="btn-danger" style="margin-top: 20px; display: none;">
             🚨 Forzar Votación (HOST)
         </button>
@@ -113,7 +117,7 @@
         </p>
 
         <div id="opciones-votacion" class="opciones-votacion-container">
-            </div>
+        </div>
 
         <p class="estado-voto" id="estado-voto-display" style="display: none;">Tu voto ya fue registrado.</p>
 
@@ -123,12 +127,12 @@
     <div id="vista-resultado" class="vista">
         <h1>✅ Resultados de la Votación</h1>
         <div id="detalles-votacion-container" class="detalles-votacion-container">
-            </div>
+        </div>
 
         <p id="jugador-eliminado-display" class="aviso-eliminado">
             [RESULTADO]
         </p>
-        
+
         <div id="acciones-finales-host" style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
             <button id="btn-reiniciar-partida-resultado" class="btn-secundario btn-grande">
                 ▶️ Continuar (Nueva Discusión)
@@ -145,17 +149,18 @@
         <h1 id="ganador-display">🏆 [GANADOR] 🏆</h1>
         <p>El juego ha terminado. El rol de cada jugador era:</p>
         <ul id="lista-roles-final" class="lista-jugadores lista-final">
-            </ul>
-        
-        <div id="acciones-finales-final-host" style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
-             <button id="btn-reiniciar-partida-final" class="btn-secundario btn-grande">
+        </ul>
+
+        <div id="acciones-finales-final-host"
+            style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
+            <button id="btn-reiniciar-partida-final" class="btn-secundario btn-grande">
                 🔄 Reiniciar Partida (Ir a Lobby)
             </button>
             <button id="btn-finalizar-juego-final" class="btn-danger btn-grande">
                 🚪 Finalizar Juego (Cerrar Sala)
             </button>
         </div>
-        
+
         <button onclick="window.location.reload()" class="btn-principal" style="margin-top: 20px;">
             Volver a la Pantalla de Inicio
         </button>
@@ -165,4 +170,5 @@
     <script src="cliente.js"></script>
 
 </body>
+
 </html>

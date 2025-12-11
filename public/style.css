@@ -60,13 +60,17 @@ h2 {
     display: none;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    padding: 30px 15px;
-    min-height: 95vh;
+    min-height: 100vh;
+    justify-content: center;
 }
 
 .vista.activa {
     display: flex;
+}
+
+.h1-impostor {
+    color: red;
+    text-shadow: 0 0 20px red;
 }
 
 /* 3. Contenedores y Formularios (Paneles de Control) */
@@ -140,6 +144,7 @@ button:disabled {
     background-color: var(--color-primary-neon);
     color: var(--color-bg);
     box-shadow: 0 0 5px var(--color-primary-glow);
+    margin-bottom: 2rem;
 }
 .btn-principal:hover:not(:disabled) {
     background-color: var(--color-primary-glow);
@@ -219,7 +224,7 @@ button:disabled {
 .opcion-simple {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-evenly;
     margin-bottom: 15px;
     background-color: #1a2333;
     padding: 10px 15px;
@@ -266,7 +271,7 @@ button:disabled {
     color: var(--color-impostor);
     font-weight: bold;
     font-family: var(--font-heading);
-    margin-top: -10px;
+    margin: 0;
     text-shadow: 0 0 5px rgba(255, 77, 110, 0.5);
 }
 
