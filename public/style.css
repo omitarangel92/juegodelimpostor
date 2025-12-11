@@ -1,4 +1,4 @@
-/* style.css (CÓDIGO COMPLETO DE ESTILOS - MODALES Y CATEGORÍAS) */
+/* style.css (CÓDIGO COMPLETO DE ESTILOS) */
 
 /* Definición de Variables (Paleta de Colores Dark Mode Base) */
 :root {
@@ -19,367 +19,301 @@
 body {
     font-family: var(--font-body);
     text-align: center;
-    padding-top: 30px;
     background-color: var(--color-bg);
     color: var(--color-text);
     margin: 0;
     min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 30px;
 }
 
-h1 {
+h1, h2, h3 {
     font-family: var(--font-heading);
     color: var(--color-secondary);
-    margin-bottom: 25px;
-    font-size: 2.5em;
-    letter-spacing: 2px;
 }
 
-h2 {
-    font-family: var(--font-heading);
-    color: var(--color-primary);
-    font-size: 1.8em;
-}
-
-/* Estilos de Botones */
-button {
-    background-color: var(--color-primary);
-    color: var(--color-text);
-    border: none;
-    padding: 12px 25px;
-    margin: 10px 5px;
+/* --- VISTAS --- */
+.vista {
+    width: 95%;
+    max-width: 650px;
+    padding: 20px;
+    background-color: var(--color-card);
     border-radius: var(--radius);
-    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    display: none;
+    margin-bottom: 30px; 
+}
+
+.vista.activa {
+    display: block;
+}
+
+/* --- FORMULARIOS Y INPUTS --- */
+form {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+input[type="text"] {
+    padding: 10px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background-color: #2a2e3d;
+    color: var(--color-text);
     font-size: 1.1em;
-    transition: all 0.2s ease-in-out;
-    font-family: var(--font-heading);
-    letter-spacing: 1px;
+    width: 80%;
+    max-width: 300px;
 }
 
-button:hover:not(:disabled) {
-    opacity: 0.9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(138, 43, 226, 0.4);
-}
-
-button:disabled {
-    background-color: #555;
-    cursor: not-allowed;
-    opacity: 0.6;
-    box-shadow: none;
+/* --- BOTONES --- */
+button {
+    cursor: pointer;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s, transform 0.1s;
+    margin-top: 5px; 
 }
 
 .btn-principal {
     background-color: var(--color-primary);
+    color: white;
+}
+.btn-principal:hover {
+    background-color: #9a48ff;
 }
 
 .btn-secundario {
-    background-color: #33364f;
-    border: 1px solid var(--color-secondary);
-    color: var(--color-secondary);
-}
-.btn-secundario:hover:not(:disabled) {
     background-color: var(--color-secondary);
     color: var(--color-bg);
-    box-shadow: 0 4px 10px rgba(0, 188, 212, 0.4);
+}
+.btn-secundario:hover {
+    background-color: #00e5ff;
 }
 
 .btn-danger {
     background-color: var(--color-red);
+    color: white;
 }
-.btn-danger:hover:not(:disabled) {
-    box-shadow: 0 4px 10px rgba(255, 69, 96, 0.5);
+.btn-danger:hover {
+    background-color: #ff6f82;
 }
 
-.btn-expulsar {
-    background-color: #555;
+.btn-volver {
+    background: none;
+    border: 1px solid #444;
+    color: #aaa;
+    margin-top: 20px;
     padding: 5px 10px;
     font-size: 0.9em;
-    margin: 0;
 }
-.btn-expulsar:hover:not(:disabled) {
-    background-color: var(--color-red);
-    box-shadow: none;
+.btn-volver:hover {
+    color: var(--color-text);
+    border-color: var(--color-text);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .btn-grande {
     padding: 15px 30px;
     font-size: 1.2em;
-    min-width: 200px;
-    font-weight: bold;
 }
 
-/* Estilos de Input */
-input[type="text"], input[type="number"], select {
-    background-color: var(--color-card);
-    color: var(--color-text);
-    border: 1px solid #444;
-    padding: 10px 15px;
-    margin: 10px 0;
-    border-radius: var(--radius);
-    font-size: 1.1em;
-    width: 80%;
-    max-width: 300px;
-    text-align: center;
-    box-sizing: border-box;
-}
-
-/* Estilos de Vistas */
-.vista {
-    display: none; 
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: var(--color-card);
-    border-radius: var(--radius);
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    min-height: 400px;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.vista.activa {
-    display: flex;
-}
-
-/* Lobby */
+/* --- LISTAS DE JUGADORES --- */
 .lista-jugadores {
     list-style: none;
     padding: 0;
-    width: 100%;
+    margin: 15px 0;
     text-align: left;
 }
 .lista-jugadores li {
     background-color: #242735;
     padding: 10px 15px;
     margin-bottom: 8px;
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 1.1em;
-    border-left: 5px solid var(--color-primary);
 }
 
-/* Configuración */
-.config-host {
-    margin-top: 20px;
-    padding: 20px;
-    background-color: #242735;
-    border-radius: var(--radius);
-    width: 90%;
+.btn-expulsar {
+    background-color: var(--color-red);
+    color: white;
+    padding: 5px 10px;
+    font-size: 0.8em;
+}
+.btn-expulsar:hover {
+    background-color: #ff6f82;
 }
 
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 10px;
+.lista-final .impostor {
+    color: var(--color-red);
+    font-weight: bold;
 }
-
-/* --- ESTILOS DE CATEGORÍAS (MODAL) --- */
-
-.opciones-categorias {
-    margin: 15px 0;
+.lista-final .tripulante {
+    color: var(--color-green);
+    font-weight: bold;
 }
-.opciones-categorias button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 90%;
-    max-width: 350px;
+.lista-final .orange {
+    color: var(--color-orange);
+    font-weight: bold;
 }
-#categorias-seleccionadas-display {
-    margin-left: 10px;
-    font-size: 0.9em;
-    color: var(--color-text);
-}
-
-
-/* --- MODAL GENERAL --- */
-.modal-juego {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.85); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    animation: fadeIn 0.3s ease-out;
-}
-
-.modal-contenido {
-    background-color: var(--color-card);
-    padding: 30px;
-    border-radius: var(--radius);
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
-    max-width: 90%;
-    max-height: 90%;
-    overflow-y: auto;
-    width: 650px;
-    transform: scale(0.95);
-    animation: scaleUp 0.3s ease-out forwards;
-}
-.modal-titulo {
-    color: var(--color-primary);
-    border-bottom: 2px solid var(--color-primary);
-    padding-bottom: 10px;
-    margin-top: 0;
-}
-.modal-acciones {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 25px;
-    gap: 10px;
-}
-
-/* Estilos Específicos para Modal de Categorías */
-.modal-categorias-custom {
-    text-align: left;
-}
-.grid-categorias {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-    padding: 10px;
-}
-
-.categoria-card {
-    background-color: #242735;
-    border: 2px solid #33364f;
-    border-radius: var(--radius);
-    padding: 15px 10px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    font-size: 0.95em;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-.categoria-card:hover {
-    background-color: #33364f;
-    transform: translateY(-3px);
-}
-
-.categoria-card.seleccionada {
-    background-color: var(--color-green);
-    border-color: var(--color-secondary);
-    box-shadow: 0 0 15px rgba(0, 188, 212, 0.5);
-    color: var(--color-bg);
-}
-
-.categoria-card.picante {
-    border-color: var(--color-red);
-}
-.categoria-card.picante .categoria-icono {
+.lista-final .eliminado {
     color: var(--color-red);
 }
-.categoria-card.seleccionada.picante {
-    background-color: var(--color-red);
-    box-shadow: 0 0 15px rgba(255, 69, 96, 0.5);
+.lista-final .activo {
+    color: var(--color-green);
 }
 
-
-.categoria-icono {
-    font-size: 2.2em;
-    margin-bottom: 5px;
-    color: var(--color-primary);
-}
-
-.categoria-card.seleccionada .checkbox-ui {
-    opacity: 1;
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    font-size: 1.2em;
-    color: var(--color-bg);
-}
-.categoria-card:not(.seleccionada) .checkbox-ui {
-    opacity: 0;
-}
-
-
-/* Estilos Específicos para Modal de Confirmación */
-.modal-confirmacion-custom {
-    max-width: 450px;
+/* --- CONFIGURACIÓN DE HOST (LOBBY) --- */
+.configuracion-host {
+    background-color: #242735;
+    padding: 15px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
     text-align: center;
 }
-.modal-confirmacion-custom .aviso-eliminado {
-    border-color: var(--color-primary); 
-    color: var(--color-secondary);
-    background-color: #242735;
-    margin: 20px 0;
+
+.opcion-simple {
+    margin-bottom: 15px;
+    text-align: center;
+}
+.opcion-simple label {
+    margin-left: 10px;
+    font-size: 1.1em;
 }
 
-/* Animaciones */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+.tema-selector-box {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #1c1f2b;
+    border-radius: 8px;
 }
 
-@keyframes scaleUp {
-    from { transform: scale(0.9); }
-    to { transform: scale(1); }
+.categorias-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+    max-height: 250px; 
+    overflow-y: auto; 
+    padding: 5px;
 }
 
-/* --- RESTO DE ESTILOS DE VISTAS --- */
+.categoria-item input[type="checkbox"] {
+    display: none; 
+}
 
-/* Revelación */
+.categoria-item label {
+    display: inline-block;
+    padding: 8px 15px;
+    border: 2px solid #555;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+.categoria-item input[type="checkbox"]:checked + label {
+    background-color: var(--color-secondary);
+    color: var(--color-bg);
+    border-color: var(--color-secondary);
+}
+
+/* --- ESTILO ESPECIAL PARA CATEGORÍA +18 --- */
+.categoria-item .categoria-hot {
+    color: var(--color-red) !important;
+    border-color: var(--color-red) !important;
+    font-weight: bold;
+    animation: pulseRed 1.5s infinite;
+}
+
+.categoria-item input[type="checkbox"]:checked + .categoria-hot {
+    background-color: var(--color-red);
+    color: var(--color-text) !important;
+    border-color: var(--color-red);
+    animation: none;
+}
+
+@keyframes pulseRed {
+    0% { box-shadow: 0 0 0 0 rgba(255, 69, 96, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 69, 96, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 69, 96, 0); }
+}
+
+
+/* --- ESTILOS DE JUEGO (REVELACIÓN Y DISCUSIÓN) --- */
 .caja-rol {
-    background-color: var(--color-card);
-    padding: 40px;
+    background-color: #242735;
+    padding: 40px 20px;
     border-radius: var(--radius);
-    max-width: 600px;
-    width: 90%;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     text-align: center;
 }
-.tema-display {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: var(--color-secondary);
-    margin: 15px 0;
+
+.caja-rol h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
 }
-.palabra-secreta {
-    display: block;
-    margin: 15px 0;
+
+.palabra-revelacion {
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-top: 15px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.info-juego {
+    background-color: #242735;
     padding: 15px;
     border-radius: var(--radius);
-    font-size: 1.2em;
+    margin: 20px 0;
+}
+.info-juego h3 {
+    margin: 5px 0;
+}
+.palabra-juego {
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 1.1em;
     font-weight: bold;
-    color: var(--color-bg);
 }
 
-/* Votación */
-.grid-jugadores-voto {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+/* --- ESTILOS DE VOTACIÓN --- */
+.opciones-votacion {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 10px;
-    margin-top: 20px;
+    margin: 20px 0;
 }
-
 .btn-votar {
-     background-color: #33364f;
-     border: 2px solid #555;
+    padding: 12px 20px;
+    background-color: #333;
+    color: var(--color-text);
+    border: 2px solid transparent;
+    transition: background-color 0.1s, border-color 0.1s;
 }
-
+.btn-votar:hover {
+    background-color: #444;
+}
 .btn-votar.votado {
     background-color: var(--color-primary);
     border-color: var(--color-secondary);
-    box-shadow: 0 0 10px var(--color-secondary);
-    transform: scale(1.05);
-}
-
-.btn-votar:hover:not(:disabled) {
-    background-color: #404463;
-    transform: translateY(-2px);
+    color: white;
 }
 
 .estado-voto {
@@ -387,6 +321,8 @@ input[type="text"], input[type="number"], select {
     padding: 10px;
     background-color: #242735;
     border-radius: 8px;
+    width: 15rem;
+    display: inline-block;
 }
 
 /* Resultados y Final */
@@ -397,6 +333,7 @@ input[type="text"], input[type="number"], select {
     margin: 20px 0;
     width: 90%;
     text-align: center;
+    display: inline-block;
 }
 .detalles-votacion-container h4 {
     color: var(--color-secondary);
@@ -421,37 +358,27 @@ input[type="text"], input[type="number"], select {
     flex-wrap: wrap; 
     gap: 15px;
     justify-content: center;
-    margin-top: 30px;
-    width: 100%;
-    max-width: 500px;
+    margin-bottom: 20px;
 }
 
-/* Estilo para los botones de Host en VISTA-FINAL */
-#acciones-finales-final-host {
-    display: flex;
-    flex-wrap: wrap; 
-    gap: 15px;
-    justify-content: center;
-    margin-top: 30px;
-    width: 100%;
-    max-width: 500px;
-}
-
-.impostor {
-    color: var(--color-red);
-    font-weight: bold;
-}
-.tripulante {
-    color: var(--color-green);
-    font-weight: bold;
-}
-.orange {
-    color: var(--color-orange);
-    font-weight: bold;
-}
-.eliminado {
-    color: #999;
-}
-.activo {
-    color: var(--color-green);
+/* Media Queries para diseño responsivo */
+@media (max-width: 600px) {
+    .vista {
+        padding: 15px;
+        margin-top: 0;
+    }
+    h1 {
+        font-size: 1.8em;
+    }
+    .btn-grande {
+        padding: 10px 20px;
+        font-size: 1em;
+    }
+    .categoria-item label {
+        padding: 6px 12px;
+        font-size: 0.8em;
+    }
+    .caja-rol {
+        padding: 20px;
+    }
 }

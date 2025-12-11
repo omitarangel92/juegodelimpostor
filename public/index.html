@@ -5,36 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego del Impostor 🕵️</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
     </head>
 <body>
-
-    <div id="modal-categorias" class="modal-juego" style="display: none;">
-        <div class="modal-contenido modal-categorias-custom">
-            <h2 class="modal-titulo">Elegir Categorías para la Partida</h2>
-            <p>Selecciona al menos 1 categoría para que el juego pueda iniciar.</p>
-            
-            <div id="categorias-container-modal" class="grid-categorias">
-                </div>
-
-            <div class="modal-acciones">
-                <button onclick="manejarModalCategorias(false)" class="btn-secundario">← Cerrar (Sin Guardar)</button>
-                <button onclick="guardarCategorias()" class="btn-principal">💾 Guardar y Aplicar</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="modal-confirmacion" class="modal-juego" style="display: none;">
-        <div class="modal-contenido modal-confirmacion-custom">
-            <h2 id="confirm-titulo" class="modal-titulo">⚠️ Confirmación</h2>
-            <p id="confirm-mensaje" class="aviso-eliminado">¿Estás seguro de realizar esta acción?</p>
-            
-            <div class="modal-acciones">
-                <button onclick="cancelarConfirmacion()" class="btn-secundario">❌ Cancelar</button>
-                <button id="btn-confirm-ok" class="btn-danger">Sí, Confirmar</button>
-            </div>
-        </div>
-    </div>
-
 
     <div id="vista-inicio" class="vista activa">
         <h1>🕵️ <br>
@@ -61,106 +36,95 @@
     </div>
 
     <div id="vista-lobby" class="vista">
-        <h1 class="titulo-sala">Sala <span id="codigo-lobby-display">ABCD</span></h1>
-        
-        <h2>Jugadores Conectados (<span id="contador-jugadores">0</span>/<span id="max-jugadores">10</span>)</h2>
-        <ul id="lista-jugadores-host" class="lista-jugadores">
-            </ul>
-        
-        <div id="configuracion-host" class="config-host">
-            <h2>⚙️ Configuración del Juego</h2>
-            <form id="form-configuracion">
-                
-                <div class="opciones-categorias">
-                    <button type="button" onclick="manejarModalCategorias(true)" class="btn-secundario btn-grande">
-                        Elegir Categorías 
-                        <span id="categorias-seleccionadas-display">(0 seleccionadas)</span>
-                    </button>
-                </div>
-                
-                <label class="checkbox-label" style="margin-top: 20px;">
-                    <input type="checkbox" id="checkbox-agente-doble">
-                    Incluir Agente Doble (Rol extra)
-                </label>
-            </form>
+        <h1>Sala: <span id="codigo-lobby-display">----</span></h1>
 
-            <button id="btn-iniciar-juego" class="btn-principal" disabled>
-                ▶️ Asignar Roles y Palabra
+        <div id="configuracion-host" class="configuracion-host">
+            <h2>⚙️ Configuración (Solo HOST)</h2>
+            
+            <div class="opcion-simple">
+                <input type="checkbox" id="checkbox-agente-doble">
+                <label for="checkbox-agente-doble">Incluir Agente Doble (Recomendado para 4+)</label>
+            </div>
+            
+            <div class="tema-selector-box">
+                <h4>Seleccionar Categorías:</h4>
+                <p id="aviso-categoria" style="color: var(--color-red); font-weight: bold; display: none;">¡Selecciona al menos 1 categoría!</p>
+                <div id="categorias-container" class="categorias-container">
+                    </div>
+            </div>
+
+            <button id="btn-iniciar-juego" class="btn-principal btn-grande" disabled>
+                🚀 Iniciar Juego
             </button>
-            <p id="min-jugadores-aviso" class="aviso-min-jugadores" style="display: none;">Se requieren 3 jugadores para iniciar.</p>
+            <p id="min-jugadores-aviso" class="aviso-min" style="display: none;"></p>
         </div>
 
-        <button onclick="abandonarSala()" class="btn-danger">🚪 Abandonar Sala</button>
+        <h2>Jugadores (<span id="contador-jugadores">0</span>/<span id="max-jugadores-display">10</span>)</h2>
+        <ul id="lista-jugadores-host" class="lista-jugadores">
+            </ul>
+
+        <button onclick="abandonarSala()" class="btn-volver">← Abandonar Sala</button>
     </div>
-    
+
     <div id="vista-revelacion" class="vista">
         <div class="caja-rol">
-            <h1 id="rol-revelacion-display">Preparando tu misión...</h1>
+            <h1 id="revelacion-titulo">¡Tu Rol Secreto!</h1>
+            <h2 id="rol-revelacion-display">Cargando...</h2>
             
-            <p class="tema-display">Tema: <span id="tema-valor-revelacion"></span></p>
+            <div id="revelacion-detalle">
+                <h3>Categoría: <span id="tema-valor-revelacion">---</span></h3>
+                <p id="palabra-revelacion-display" class="palabra-revelacion">Cargando palabra...</p>
+            </div>
 
-            <p class="instrucciones-juego">
-                <span id="palabra-revelacion-display" class="palabra-secreta">[PALABRA O INSTRUCCIÓN]</span>
-            </p>
-            
-            <p class="aviso-ronda">Memoriza tu información. Solo el Host puede iniciar la discusión.</p>
-
-            <button id="btn-iniciar-discusion" class="btn-principal" style="display: none;">
+            <button id="btn-iniciar-discusion" class="btn-principal btn-grande" style="margin-top: 30px; display: none;">
                 ▶️ Iniciar Discusión
             </button>
         </div>
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-juego" class="vista">
-        <h1 id="rol-juego-display">Tu Rol: ¡Tripulante!</h1>
-        <p class="instrucciones-juego">
-            <span id="palabra-secreta-display" class="palabra-secreta">[PALABRA SECRETA]</span>
-        </p>
-        <p id="tema-display" class="tema-display">Tema: <span id="tema-valor"></span></p>
-
+        <h1>Discusión en Curso</h1>
+        
+        <div class="info-juego">
+            <h3 id="rol-juego-display">Tu Rol:</h3>
+            <h3>Categoría: <span id="tema-valor">---</span></h3>
+            <p id="palabra-secreta-display" class="palabra-juego">La palabra secreta es: ---</p>
+        </div>
+        
         <h2>Jugadores Activos (<span id="jugadores-activos-contador">0</span>)</h2>
         <ul id="lista-jugadores-juego" class="lista-jugadores">
             </ul>
         
-        <button id="btn-forzar-votacion" class="btn-principal btn-grande" style="display: none;">
-            🗳️ Forzar Votación (Host)
+        <button id="btn-forzar-votacion" class="btn-danger btn-grande" style="margin-top: 20px; display: none;">
+            🚨 ¡Forzar Votación!
         </button>
-        
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-votacion" class="vista">
-        <h1>🗳️ FASE DE ELIMINACIÓN</h1>
-        <p class="aviso-ronda">¿Quién es el impostor? Solo puedes votar una vez.</p>
+        <h1>Votación en Curso 🗳️</h1>
+        <p>¿Quién crees que es el impostor?</p>
         
-        <div id="opciones-votacion" class="opciones-votacion grid-jugadores-voto">
+        <div id="opciones-votacion" class="opciones-votacion">
             </div>
 
         <div id="estado-voto" class="estado-voto">
-            <p id="voto-confirmado-display">Esperando tu voto...</p>
-            <p id="votos-emitidos-display">Votos recibidos: 0/0</p>
+            Tu voto: <span id="voto-actual-display">⚠️ Nadie (Abstenerse)</span>
         </div>
         
+        <p class="aviso-min">Esperando que todos los jugadores activos voten para continuar...</p>
     </div>
-
+        
     <div id="vista-resultado" class="vista">
         <h1>✅ Resultados de la Votación</h1>
-        
+        <div id="detalles-votacion-container" class="detalles-votacion-container">
+            </div>
+
         <p id="jugador-eliminado-display" class="aviso-eliminado">
             [RESULTADO]
         </p>
         
-        <div id="detalles-votacion-container" class="detalles-votacion-container">
-            </div>
-
-        
-        <div id="acciones-finales-host" style="display: none;">
-            <button id="btn-continuar-discusion" class="btn-principal btn-grande">
-                ▶️ Continuar Discusión
-            </button>
-            
-            <button id="btn-reiniciar-partida-resultado" class="btn-secundario btn-grande" style="display: none;">
+        <div id="acciones-finales-host" style="display: none; gap: 15px; margin-top: 30px; justify-content: center;">
+            <button id="btn-reiniciar-partida-resultado" class="btn-secundario btn-grande">
                 🔄 Reiniciar Partida (Ir a Lobby)
             </button>
             <button id="btn-finalizar-juego-resultado" class="btn-danger btn-grande" style="display: none;">
@@ -177,7 +141,7 @@
         <ul id="lista-roles-final" class="lista-jugadores lista-final">
             </ul>
         
-        <div id="acciones-finales-final-host" style="display: none;">
+        <div id="acciones-finales-final-host" style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
              <button id="btn-reiniciar-partida-final" class="btn-secundario btn-grande">
                 🔄 Reiniciar Partida (Ir a Lobby)
             </button>
@@ -186,16 +150,12 @@
             </button>
         </div>
         
-        <button onclick="abandonarSala()" class="btn-principal" style="margin-top: 20px;">
-            ← Abandonar Sala
+        <button onclick="window.location.reload()" class="btn-principal" style="margin-top: 20px;">
+            Volver a la Pantalla de Inicio
         </button>
     </div>
 
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    
     <script src="cliente.js"></script>
-
 </body>
 </html>

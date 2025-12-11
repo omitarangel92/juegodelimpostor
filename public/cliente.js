@@ -23,7 +23,26 @@ const PALABRAS_POR_TEMA = {
     'Países 🌎': ['España', 'México', 'Colombia', 'Japón', 'Francia', 'Canadá', 'Brasil', 'Alemania'],
     'Profesiones 💼': ['Médico', 'Maestro', 'Ingeniero', 'Cocinero', 'Policía', 'Bombero', 'Abogado', 'Piloto'],
     'Objetos Cotidianos 💡': ['Teléfono', 'Taza', 'Llaves', 'Reloj', 'Libro', 'Silla', 'Mesa', 'Ventana'],
-    'Picante 🔥': ['Lencería', 'Gemidos', 'Cama', 'Beso', 'Noche', 'Latido', 'Pasión', 'Prohibido']
+    'Videojuegos 🎮': ['Mario', 'Zelda', 'Fortnite', 'Minecraft', 'Pacman', 'Tetris', 'Ajedrez', 'Póker'],
+    'Música 🎵': ['Guitarra', 'Batería', 'Piano', 'Voz', 'Pop', 'Rock', 'Jazz', 'Clásica'],
+    'Deportes ⚽': ['Fútbol', 'Baloncesto', 'Tenis', 'Natación', 'Correr', 'Golf', 'Voleibol', 'Boxeo'],
+    'Series/Películas 🎬': ['Drama', 'Comedia', 'Terror', 'Western', 'Ciencia Ficción', 'Documental', 'Musical', 'Anime'],
+    'Transporte 🚗': ['Avión', 'Tren', 'Bicicleta', 'Barco', 'Moto', 'Bus', 'Metro', 'Patineta'],
+    'Herramientas 🔧': ['Martillo', 'Destornillador', 'Sierra', 'Clavo', 'Tornillo', 'Taladro', 'Cinta', 'Lija'],
+    'Frutas/Verduras 🥦': ['Banana', 'Fresa', 'Pera', 'Zanahoria', 'Brócoli', 'Lechuga', 'Cebolla', 'Tomate'],
+    'Marcas Famosas 🏷️': ['Nike', 'Adidas', 'Apple', 'Samsung', 'Google', 'Coca-Cola', 'Zara', 'Toyota'],
+    'Partes del Cuerpo 💪': ['Mano', 'Pie', 'Cabeza', 'Ojo', 'Nariz', 'Boca', 'Corazón', 'Pulmón'],
+    'Planetas 🪐': ['Marte', 'Tierra', 'Júpiter', 'Saturno', 'Sol', 'Luna', 'Estrella', 'Cometa'],
+    'Ropa 👗': ['Camiseta', 'Pantalón', 'Calcetín', 'Abrigo', 'Bufanda', 'Gorro', 'Guante', 'Zapatos'],
+    'Dibujos Animados 📺': ['Pikachu', 'Homero', 'Mickey', 'Bob Esponja', 'Scooby', 'Bugs Bunny', 'Popeye', 'Doraemon'],
+    'Lugares Típicos 🏛️': ['Playa', 'Montaña', 'Desierto', 'Ciudad', 'Pueblo', 'Bosque', 'Lago', 'Río'],
+    'Clima ☀️': ['Lluvia', 'Nieve', 'Viento', 'Sol', 'Tormenta', 'Arcoíris', 'Nube', 'Niebla'],
+    'Sentimientos 💖': ['Felicidad', 'Tristeza', 'Enojo', 'Miedo', 'Amor', 'Sorpresa', 'Calma', 'Aburrimiento'],
+    'Tecnología 💻': ['Computadora', 'Mouse', 'Teclado', 'Cámara', 'Internet', 'Robot', 'Cable', 'Chip'],
+    'Mitología 👹': ['Dragón', 'Sirena', 'Duende', 'Vampiro', 'Fantasma', 'Ángel', 'Ogro', 'Hada'],
+    
+    // Categoría explícita y malpensada:
+    'Caliente +18 🔥': ['Cama', 'Gemidos', 'Noche', 'Latido', 'Pasión', 'Prohibido', 'Lencería', 'Beso'] 
 };
 const TEMAS_DISPONIBLES = Object.keys(PALABRAS_POR_TEMA);
 const MIN_JUGADORES = 3; 
@@ -212,14 +231,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 const checkboxId = `tema-${tema.replace(/[^a-zA-Z0-9]/g, '-')}`;
                 const div = document.createElement('div');
                 div.classList.add('categoria-item'); 
-                const esPicante = tema.includes('Picante');
+                const esCaliente = tema.includes('Caliente +18');
                 
                 div.innerHTML = `
                     <input type="checkbox" id="${checkboxId}" value="${tema}" name="tema-selector" ${configuracionActual.temasSeleccionados.includes(tema) ? 'checked' : ''}>
                     <label for="${checkboxId}">${tema}</label>
                 `;
-                if (esPicante) {
-                    div.querySelector('label').style.color = 'var(--color-red)';
+                if (esCaliente) {
+                    div.querySelector('label').classList.add('categoria-hot');
                 }
                 
                 categoriasContainer.appendChild(div);
@@ -493,7 +512,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                listaRoles.appendChild(li);
            });
 
-           // **CORRECCIÓN 1 & 2: Muestra botones de Reiniciar/Cerrar SOLO al Host**
+           // Muestra botones de Reiniciar/Cerrar SOLO al Host
            const accionesFinalesFinalHost = document.getElementById('acciones-finales-final-host');
            if (accionesFinalesFinalHost) {
                  accionesFinalesFinalHost.style.display = esHost ? 'flex' : 'none';
@@ -647,7 +666,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
 
         if (rolDisplay && palabraDisplay && temaDisplay) {
-            // [MODIFICADO] Ocultar tema al impostor
+            // Ocultar tema al impostor en vista revelación
             if (miRolActual === 'Impostor') {
                  temaDisplay.textContent = '???'; // Ocultar el tema al Impostor
             } else {
@@ -695,7 +714,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const misDatos = jugadoresActuales.find(j => j.id === miId);
         const esHost = misDatos?.esHost;
 
-        // [MODIFICADO] Ocultar tema al impostor
+        // Ocultar tema al impostor en vista de juego
         const temaValorElement = document.getElementById('tema-valor');
         if (temaValorElement) {
              if (miRolActual === 'Impostor') {
@@ -737,10 +756,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function manejarInicioVotacion(sala) {
         cambiarVista('vista-votacion');
         
-        const misDatos = jugadoresActuales.find(j => j.id === miId);
-        const jugadoresActivos = jugadoresActuales.filter(j => !j.eliminado);
-
-        // ... lógica de votación (no estaba en el snippet anterior, pero se asume que sigue)
+        // La actualización de la lista de votación se maneja en actualizarListaJugadores,
+        // la cual se llama al inicio del listener de sala.
     }
 
     // ----------------------------------------------------
@@ -749,8 +766,108 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function manejarResultadoVotacion(sala) {
         cambiarVista('vista-resultado');
 
-        // ... lógica de resultados (no estaba en el snippet anterior, pero se asume que sigue)
+        const misDatos = jugadoresActuales.find(j => j.id === miId);
+        const esHost = misDatos?.esHost;
+        const resultado = sala.ultimoResultado;
+        
+        // 1. Mostrar quién fue eliminado y su rol (o empate)
+        const eliminadoDisplay = document.getElementById('jugador-eliminado-display');
+        if (resultado.jugadorEliminadoId) {
+             const jugador = jugadoresActuales.find(j => j.id === resultado.jugadorEliminadoId);
+             eliminadoDisplay.textContent = `¡${jugador.nombre} ha sido eliminado! Su rol era: ${jugador.rol}`;
+             eliminadoDisplay.style.backgroundColor = (jugador.rol === 'Impostor' ? 'var(--color-green)' : 'var(--color-red)');
+             eliminadoDisplay.style.color = (jugador.rol === 'Impostor' ? 'var(--color-bg)' : 'var(--color-text)');
+        } else if (resultado.ganador) {
+             eliminadoDisplay.textContent = `¡FIN DE JUEGO! Ganan los ${resultado.ganador}`;
+             eliminadoDisplay.style.backgroundColor = 'var(--color-secondary)';
+             eliminadoDisplay.style.color = 'var(--color-bg)';
+        } else {
+             eliminadoDisplay.textContent = 'Nadie fue eliminado (Empate o Abstención mayoritaria).';
+             eliminadoDisplay.style.backgroundColor = '#555';
+             eliminadoDisplay.style.color = 'var(--color-text)';
+        }
+
+        // 2. Mostrar conteo de votos
+        const conteoContainer = document.getElementById('detalles-votacion-container');
+        conteoContainer.innerHTML = '<h4>Conteo de Votos:</h4>';
+        
+        const conteoArray = Object.keys(resultado.conteo || {}).map(id => {
+            const jugador = jugadoresActuales.find(j => j.id === id);
+            const nombre = id === 'none' ? '⚠️ Nadie' : (jugador ? jugador.nombre : 'Jugador Desconocido');
+            return { nombre, votos: resultado.conteo[id] };
+        }).sort((a, b) => b.votos - a.votos);
+
+        conteoArray.forEach(item => {
+             const p = document.createElement('p');
+             p.textContent = `${item.nombre}: ${item.votos} voto(s)`;
+             conteoContainer.appendChild(p);
+        });
+        
+        // 3. Botones de Host (Continuar o Finalizar)
+        const accionesHost = document.getElementById('acciones-finales-host');
+        const btnReiniciar = document.getElementById('btn-reiniciar-partida-resultado');
+        const btnFinalizar = document.getElementById('btn-finalizar-juego-resultado');
+        
+        if (accionesHost) accionesHost.style.display = esHost ? 'flex' : 'none';
+        
+        if (resultado.ganador) {
+            // Si el juego terminó (hay ganador), el host solo puede finalizar o reiniciar todo
+            if (btnReiniciar) btnReiniciar.textContent = '🔄 Reiniciar TODO (Ir a Lobby)';
+            if (btnFinalizar) btnFinalizar.style.display = 'block';
+            
+            if (esHost) manejarFinDeJuego(sala); // Forzar la vista final para el Host
+        } else {
+             // Si el juego continúa
+             if (btnReiniciar) {
+                 btnReiniciar.textContent = '▶️ Continuar (Nueva Discusión)';
+                 btnReiniciar.onclick = () => iniciarNuevaDiscusionHost();
+             }
+             if (btnFinalizar) btnFinalizar.style.display = 'none';
+        }
     }
+    
+    // FUNCIONES DE CONTROL DE JUEGO (HOST)
+    async function iniciarNuevaDiscusionHost() {
+           const misDatos = jugadoresActuales.find(j => j.id === miId);
+           if (!misDatos?.esHost || !codigoSalaActual) return;
+           
+           await db.ref('salas/' + codigoSalaActual).update({ 
+               rondaEstado: 'discutiendo',
+               ultimoResultado: null,
+               votos: {}
+           });
+    }
+
+    document.getElementById('btn-reiniciar-partida-final').addEventListener('click', async () => {
+           const misDatos = jugadoresActuales.find(j => j.id === miId);
+           if (!misDatos?.esHost || !codigoSalaActual) return;
+           
+           // Reiniciar el estado de la sala al lobby
+           await db.ref('salas/' + codigoSalaActual).update({
+               estado: 'esperando',
+               rondaEstado: 'noIniciada',
+               configuracion: configuracionActual, // mantiene la config anterior
+               votos: {},
+               ultimoResultado: null
+           });
+           
+           // Reiniciar el estado de los jugadores (roles y eliminado)
+           const updates = {};
+           jugadoresActuales.forEach(j => {
+               updates[j.id] = { ...j, rol: 'Tripulante', eliminado: false, palabraSecreta: null, tema: null };
+           });
+           await db.ref('salas/' + codigoSalaActual + '/jugadores').update(updates);
+    });
+
+    document.getElementById('btn-finalizar-juego-final').addEventListener('click', async () => {
+        const misDatos = jugadoresActuales.find(j => j.id === miId);
+        if (!misDatos?.esHost || !codigoSalaActual) return;
+        
+        if (confirm('¿Estás seguro de que quieres CERRAR la sala? Esto expulsará a todos los jugadores.')) {
+            await db.ref('salas/' + codigoSalaActual).remove();
+            window.location.reload(); 
+        }
+    });
 
     // ----------------------------------------------------
     // *** LÓGICA DE FIREBASE (CREAR Y UNIRSE A SALA) ***
@@ -856,12 +973,4 @@ document.addEventListener('DOMContentLoaded', (event) => {
             alert(`🔴 ERROR AL UNIRSE: ${error.message}`);
         }
     });
-
-    // El resto de funciones (manejarInicioVotacion, votarJugador, chequearFinDeJuego, manejarFinDeJuego, etc.)...
-    // Se asume que el resto de funciones necesarias para el juego están en el archivo, o se agregarían.
 });
-
-// Nota: La función manejarResultadoVotacion() y el resto de la lógica de botones
-// para las vistas de resultado y final deben estar definidas si el código
-// original de 1025 líneas las incluía, aunque no están en el snippet final.
-// El cliente.js asumido es la versión reducida con la corrección de roles.
