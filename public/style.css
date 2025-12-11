@@ -1,4 +1,4 @@
-/* style.css (CÓDIGO COMPLETO DE ESTILOS) */
+/* style.css (CÓDIGO COMPLETO DE ESTILOS - MODALES Y CATEGORÍAS) */
 
 /* Definición de Variables (Paleta de Colores Dark Mode Base) */
 :root {
@@ -169,34 +169,167 @@ input[type="text"], input[type="number"], select {
     border-radius: var(--radius);
     width: 90%;
 }
-.categorias-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 15px 0;
-    justify-content: center;
-}
-.categoria-item {
-    display: flex;
-    align-items: center;
-    background-color: #33364f;
-    padding: 8px 12px;
-    border-radius: 6px;
-}
-.categoria-item input[type="checkbox"] {
-    width: auto;
-    margin-right: 8px;
-}
-.categoria-item label {
-    cursor: pointer;
-    font-size: 0.95em;
-}
+
 .checkbox-label {
     display: flex;
     align-items: center;
     justify-content: center;
     margin-top: 10px;
 }
+
+/* --- ESTILOS DE CATEGORÍAS (MODAL) --- */
+
+.opciones-categorias {
+    margin: 15px 0;
+}
+.opciones-categorias button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    max-width: 350px;
+}
+#categorias-seleccionadas-display {
+    margin-left: 10px;
+    font-size: 0.9em;
+    color: var(--color-text);
+}
+
+
+/* --- MODAL GENERAL --- */
+.modal-juego {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-contenido {
+    background-color: var(--color-card);
+    padding: 30px;
+    border-radius: var(--radius);
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    width: 650px;
+    transform: scale(0.95);
+    animation: scaleUp 0.3s ease-out forwards;
+}
+.modal-titulo {
+    color: var(--color-primary);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+.modal-acciones {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 25px;
+    gap: 10px;
+}
+
+/* Estilos Específicos para Modal de Categorías */
+.modal-categorias-custom {
+    text-align: left;
+}
+.grid-categorias {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+    padding: 10px;
+}
+
+.categoria-card {
+    background-color: #242735;
+    border: 2px solid #33364f;
+    border-radius: var(--radius);
+    padding: 15px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    font-size: 0.95em;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.categoria-card:hover {
+    background-color: #33364f;
+    transform: translateY(-3px);
+}
+
+.categoria-card.seleccionada {
+    background-color: var(--color-green);
+    border-color: var(--color-secondary);
+    box-shadow: 0 0 15px rgba(0, 188, 212, 0.5);
+    color: var(--color-bg);
+}
+
+.categoria-card.picante {
+    border-color: var(--color-red);
+}
+.categoria-card.picante .categoria-icono {
+    color: var(--color-red);
+}
+.categoria-card.seleccionada.picante {
+    background-color: var(--color-red);
+    box-shadow: 0 0 15px rgba(255, 69, 96, 0.5);
+}
+
+
+.categoria-icono {
+    font-size: 2.2em;
+    margin-bottom: 5px;
+    color: var(--color-primary);
+}
+
+.categoria-card.seleccionada .checkbox-ui {
+    opacity: 1;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 1.2em;
+    color: var(--color-bg);
+}
+.categoria-card:not(.seleccionada) .checkbox-ui {
+    opacity: 0;
+}
+
+
+/* Estilos Específicos para Modal de Confirmación */
+.modal-confirmacion-custom {
+    max-width: 450px;
+    text-align: center;
+}
+.modal-confirmacion-custom .aviso-eliminado {
+    border-color: var(--color-primary); 
+    color: var(--color-secondary);
+    background-color: #242735;
+    margin: 20px 0;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+    from { transform: scale(0.9); }
+    to { transform: scale(1); }
+}
+
+/* --- RESTO DE ESTILOS DE VISTAS --- */
 
 /* Revelación */
 .caja-rol {
@@ -207,6 +340,12 @@ input[type="text"], input[type="number"], select {
     width: 90%;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     text-align: center;
+}
+.tema-display {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--color-secondary);
+    margin: 15px 0;
 }
 .palabra-secreta {
     display: block;
@@ -289,7 +428,6 @@ input[type="text"], input[type="number"], select {
 
 /* Estilo para los botones de Host en VISTA-FINAL */
 #acciones-finales-final-host {
-    /* Aquí se define el layout por si JS lo muestra */
     display: flex;
     flex-wrap: wrap; 
     gap: 15px;

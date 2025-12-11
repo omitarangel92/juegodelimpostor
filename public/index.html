@@ -8,6 +8,34 @@
     </head>
 <body>
 
+    <div id="modal-categorias" class="modal-juego" style="display: none;">
+        <div class="modal-contenido modal-categorias-custom">
+            <h2 class="modal-titulo">Elegir Categorías para la Partida</h2>
+            <p>Selecciona al menos 1 categoría para que el juego pueda iniciar.</p>
+            
+            <div id="categorias-container-modal" class="grid-categorias">
+                </div>
+
+            <div class="modal-acciones">
+                <button onclick="manejarModalCategorias(false)" class="btn-secundario">← Cerrar (Sin Guardar)</button>
+                <button onclick="guardarCategorias()" class="btn-principal">💾 Guardar y Aplicar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-confirmacion" class="modal-juego" style="display: none;">
+        <div class="modal-contenido modal-confirmacion-custom">
+            <h2 id="confirm-titulo" class="modal-titulo">⚠️ Confirmación</h2>
+            <p id="confirm-mensaje" class="aviso-eliminado">¿Estás seguro de realizar esta acción?</p>
+            
+            <div class="modal-acciones">
+                <button onclick="cancelarConfirmacion()" class="btn-secundario">❌ Cancelar</button>
+                <button id="btn-confirm-ok" class="btn-danger">Sí, Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+
     <div id="vista-inicio" class="vista activa">
         <h1>🕵️ <br>
         ¿Quién es el impostor?</h1>
@@ -43,15 +71,18 @@
             <h2>⚙️ Configuración del Juego</h2>
             <form id="form-configuracion">
                 
-                <label>Selecciona las categorías que deseas incluir:</label>
-                <div id="categorias-container" class="categorias-container"></div>
+                <div class="opciones-categorias">
+                    <button type="button" onclick="manejarModalCategorias(true)" class="btn-secundario btn-grande">
+                        Elegir Categorías 
+                        <span id="categorias-seleccionadas-display">(0 seleccionadas)</span>
+                    </button>
+                </div>
                 
-                <label class="checkbox-label">
+                <label class="checkbox-label" style="margin-top: 20px;">
                     <input type="checkbox" id="checkbox-agente-doble">
                     Incluir Agente Doble (Rol extra)
                 </label>
             </form>
-            <p id="aviso-categoria" class="aviso-min-jugadores" style="display: none;">Selecciona al menos 1 categoría.</p>
 
             <button id="btn-iniciar-juego" class="btn-principal" disabled>
                 ▶️ Asignar Roles y Palabra
@@ -66,7 +97,7 @@
         <div class="caja-rol">
             <h1 id="rol-revelacion-display">Preparando tu misión...</h1>
             
-            <p id="tema-revelacion-display" class="tema-display">Tema: <span id="tema-valor-revelacion"></span></p>
+            <p class="tema-display">Tema: <span id="tema-valor-revelacion"></span></p>
 
             <p class="instrucciones-juego">
                 <span id="palabra-revelacion-display" class="palabra-secreta">[PALABRA O INSTRUCCIÓN]</span>
