@@ -38,90 +38,83 @@
     </div>
 
     <div id="vista-lobby" class="vista">
-        <h1>Sala: <span id="codigo-lobby-display">----</span></h1>
+        <h1>Sala <strong id="codigo-lobby-display">...</strong></h1>
+        <h2 id="host-display">Host: [NOMBRE HOST]</h2>
+        <h3 id="jugadores-conectados-count">Jugadores Conectados: 0</h3>
 
-        <div id="configuracion-host" class="configuracion-host">
-            <h2>⚙️ Configuración (Solo HOST)</h2>
-
-            <div class="opcion-simple">
-                <input type="checkbox" id="checkbox-agente-doble">
-                <label for="checkbox-agente-doble">Incluir Agente Doble (Recomendado para 4+)</label>
-            </div>
-
-            <div class="tema-selector-box">
-                <h4>Seleccionar Categoría:</h4>
-                <p id="aviso-categoria" style="color: var(--color-red); font-weight: bold; display: none;">¡Selecciona 1
-                    categoría!</p>
-                <div id="categorias-container" class="categorias-container">
-                </div>
-            </div>
-
-            <button id="btn-iniciar-juego" class="btn-principal btn-grande" disabled>
-                🚀 Iniciar Juego
-            </button>
-            <p id="min-jugadores-aviso" class="aviso-min" style="display: none;"></p>
-        </div>
-
-        <h2>Jugadores (<span id="contador-jugadores">0</span>):</h2>
-        <ul id="lista-jugadores-host" class="lista-jugadores">
+        <ul id="lista-jugadores-lobby" class="lista-jugadores">
         </ul>
+
+        <div id="configuracion-host" class="configuracion-host" style="display: none;">
+            <h4>Opciones de la Partida</h4>
+            <div class="opcion-simple">
+                <label for="check-agente-doble">Incluir Doble Agente (Espía)</label>
+                <input type="checkbox" id="check-agente-doble" checked>
+            </div>
+            <p class="min-jugadores-aviso" style="display: none;">Mínimo 3 jugadores para iniciar.</p>
+            
+            <h4>Temas de Palabras Secretas</h4>
+            <div id="categorias-container" class="categorias-container">
+                </div>
+            
+            <button id="btn-iniciar-juego" class="btn-principal btn-grande">
+                ▶️ Iniciar Juego
+            </button>
+        </div>
 
         <button onclick="abandonarSala()" class="btn-volver">← Abandonar Sala</button>
     </div>
 
     <div id="vista-revelacion" class="vista">
-        <h1>¡Mira tu Rol Secreto!</h1>
         <div class="caja-rol">
-            <h2 id="rol-revelacion-display">Tu Rol: [ROL]</h2>
-            <p class="etiqueta-pequena">Tema de la Partida:</p>
-            <h3 id="tema-valor-revelacion"></h3>
-            <p id="palabra-revelacion-display" class="palabra-revelacion"></p>
-
-            <button id="btn-iniciar-discusion" class="btn-principal btn-grande"
-                style="margin-top: 30px; display: none;">
-                ▶️ Iniciar Discusión
-            </button>
-            <p class="aviso-espera" style="margin-top: 15px;">Esperando al Host para iniciar la discusión...</p>
+            <h2>Tu Rol Secreto es...</h2>
+            <p id="revelacion-titulo">***</p>
+            <div id="revelacion-detalle">
+                [DETALLE DEL ROL]
+            </div>
         </div>
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
+        <button id="btn-entendido" class="btn-principal btn-grande" style="margin-top: 40px;">
+            ¡Entendido! Ir a Discusión ▶️
+        </button>
     </div>
 
     <div id="vista-juego" class="vista">
-        <h1>🎤 Discusión Abierta</h1>
-
+        <h1>💬 Ronda de Discusión</h1>
+        
+        <div id="seccion-adivinanza-impostor" class="caja-impostor-adivinar" style="display: none;">
+            <h2>🤫 ¡Tu Misión: Adivinar!</h2>
+            <p class="aviso-impostor">Si crees saber la palabra, ¡adivina ahora para ganar!</p>
+            <form id="form-adivinar-palabra">
+                <input type="text" id="input-palabra-adivinar" placeholder="Escribe la palabra secreta aquí" required maxlength="20">
+                <button type="submit" class="btn-danger btn-grande">ADIVINAR Y GANAR 🏆</button>
+            </form>
+        </div>
         <div class="info-jugador-juego">
-            <p class="etiqueta-pequena">Tema:</p>
-            <h3 id="tema-valor"></h3>
-            <h2 id="rol-juego-display">Tu Rol: [ROL]</h2>
-            <p id="palabra-secreta-display" class="palabra-revelacion"></p>
+            <p><strong>Tu Tema:</strong> <span id="tema-valor">[TEMA]</span></p>
+            <p><strong>Tu Palabra:</strong> <span id="palabra-secreta-display">[PALABRA]</span></p>
+            <p><strong>Tu Rol:</strong> <span id="rol-juego-display">[ROL]</span></p>
         </div>
 
-        <h3 style="color: var(--color-secondary);">Jugadores Activos (<span id="jugadores-activos-contador">0</span>):
-        </h3>
-        <ul id="lista-jugadores-juego" class="lista-jugadores">
-        </ul>
+        <p id="ronda-info-display">Ronda [X] - Votos restantes: [Y]</p>
 
-        <button id="btn-forzar-votacion" class="btn-danger" style="margin-top: 20px; display: none;">
-            🚨 Forzar Votación (HOST)
+        <button id="btn-iniciar-votacion" class="btn-secundario btn-grande" style="display: none;">
+            🗳️ Iniciar Votación
         </button>
-        <p class="aviso-espera" style="margin-top: 15px;">Esperando que el Host inicie la votación...</p>
-
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
     <div id="vista-votacion" class="vista">
-        <h1>🗳️ ¡Vota por el Impostor!</h1>
+        <h1>🗳️ Momento de Votación</h1>
+        <p>Selecciona un jugador para eliminar.</p>
 
-        <p class="aviso-votacion">
-            Selecciona un jugador para acusar. Si todos votan, la ronda terminará automáticamente.
+        <div id="opciones-votacion">
+            </div>
+
+        <p id="aviso-estado-voto" class="aviso-estado-voto">
+            Esperando tu voto...
         </p>
-
-        <div id="opciones-votacion" class="opciones-votacion-container">
-        </div>
-
-        <p class="estado-voto" id="estado-voto-display" style="display: none;">Tu voto ya fue registrado.</p>
-
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
+        <p id="esperando-votos-display" style="display: none;">
+            Esperando votos de otros jugadores...
+        </p>
     </div>
 
     <div id="vista-resultado" class="vista">
@@ -133,7 +126,7 @@
             [RESULTADO]
         </p>
 
-        <div id="acciones-finales-host" style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
+        <div id="acciones-finales-host" style="display: none;">
             <button id="btn-reiniciar-partida-resultado" class="btn-secundario btn-grande">
                 ▶️ Continuar (Nueva Discusión)
             </button>
@@ -168,7 +161,6 @@
 
 
     <script src="cliente.js"></script>
-
 </body>
 
 </html>

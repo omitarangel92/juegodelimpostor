@@ -37,6 +37,9 @@ h1 {
     font-size: 3em;
     text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
 }
+.h1-impostor {
+    color: var(--color-red);
+}
 
 .vista {
     display: none;
@@ -58,9 +61,9 @@ form, .opciones-sala, .configuracion-host {
     padding: 25px;
     border-radius: var(--radius);
     margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     width: 95%; /* FIX: Usar 95% para un pequeño margen en móviles */
     max-width: 450px; /* Ajuste para uniformidad en contenedores principales */
-    justify-items: center;
 }
 .configuracion-host {
      max-width: 600px; /* Más ancho para categorías */
@@ -262,7 +265,7 @@ button:disabled {
 }
 
 /* --- ESTILOS PARA LA REVELACIÓN DE ROL --- */
-#vista-revelacion { /* Corregido de #vista-revelacion-rol */
+#vista-revelacion { 
     min-height: 90vh; 
     justify-content: center;
     align-items: center;
@@ -313,7 +316,7 @@ button:disabled {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     width: 95%;
     max-width: 450px;
-    text-align: center;
+    text-align: left;
 }
 
 .info-jugador-juego p {
@@ -446,10 +449,47 @@ button:disabled {
     color: var(--color-green);
     font-weight: bold;
 }
-.lista-final .agentedoble { /* Corregido de .orange a .agentedoble */
+.lista-final .agentedoble { 
     color: var(--color-orange);
     font-weight: bold;
 }
 .lista-final .eliminado {
     opacity: 0.6;
+}
+
+/* --- NUEVOS ESTILOS PARA LA SECCIÓN DE ADIVINANZA DEL IMPOSITOR --- */
+.caja-impostor-adivinar {
+    background-color: var(--color-red);
+    color: white;
+    padding: 20px;
+    border-radius: var(--radius);
+    margin-bottom: 25px;
+    box-shadow: 0 0 15px rgba(255, 69, 96, 0.7); /* Sombra roja para destacarse */
+    width: 90%;
+    max-width: 450px;
+}
+.caja-impostor-adivinar h2 {
+    color: white;
+    font-size: 1.5em;
+    margin-top: 0;
+}
+.aviso-impostor {
+    font-style: italic;
+    margin-bottom: 15px;
+}
+.caja-impostor-adivinar input[type="text"] {
+    background-color: #f7f7f7;
+    color: var(--color-bg);
+    border: 2px solid var(--color-primary);
+    width: 100%;
+    box-shadow: none;
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: bold;
+    box-sizing: border-box; /* Crucial para adaptabilidad */
+}
+.caja-impostor-adivinar .btn-danger {
+    margin-top: 15px;
+    background-color: var(--color-primary); /* Usar el primario para acción final */
+    border: 2px solid white;
 }
