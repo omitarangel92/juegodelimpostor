@@ -21,6 +21,10 @@
     --color-tripulante: #33ff90;    /* Verde (Seguro) */
     --color-agente: #ffc107;        /* Naranja (Doble) */
     
+    /* Brillos de Rol (Para la revelación) */
+    --glow-impostor: 0 0 15px 5px rgba(255, 77, 110, 0.7);
+    --glow-tripulante: 0 0 15px 5px rgba(51, 255, 144, 0.7);
+    
     --font-heading: 'Aldrich', sans-serif;
     --font-body: 'Rajdhani', sans-serif;
     --radius-soft: 8px;
@@ -36,6 +40,7 @@ body {
     margin: 0;
     min-height: 100vh;
     padding-top: 20px;
+    /* Fondo de patrón sutil para atmósfera futurista */
     background-image: radial-gradient(circle at center, #1b233a 1px, transparent 1px);
     background-size: 30px 30px;
     transition: background-color 0.3s;
@@ -45,6 +50,7 @@ h1 {
     font-family: var(--font-heading);
     color: var(--color-secondary-glow);
     font-size: 3.5em;
+    /* Efecto Neón en el título */
     text-shadow: 0 0 10px var(--color-secondary-glow), 0 0 20px rgba(0, 229, 255, 0.4);
     letter-spacing: 2px;
     margin-bottom: 25px;
@@ -60,17 +66,13 @@ h2 {
     display: none;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
-    justify-content: center;
+    justify-content: flex-start;
+    padding: 30px 15px;
+    min-height: 95vh;
 }
 
 .vista.activa {
     display: flex;
-}
-
-.h1-impostor {
-    color: red;
-    text-shadow: 0 0 20px red;
 }
 
 /* 3. Contenedores y Formularios (Paneles de Control) */
@@ -79,7 +81,8 @@ form, .opciones-sala, .configuracion-host, .info-jugador-juego, .caja-rol, .deta
     padding: 30px 20px;
     border-radius: var(--radius-soft);
     margin-bottom: 20px;
-    box-shadow: 0 0 15px rgba(103, 58, 183, 0.2); /* Sombra púrpura sutil */
+    /* Sombra púrpura sutil */
+    box-shadow: 0 0 15px rgba(103, 58, 183, 0.2); 
     border: 1px solid #2e3b50;
     width: 90%;
     max-width: 450px;
@@ -105,6 +108,7 @@ input[type="text"] {
     color: var(--color-text);
     font-size: 1.1em;
     box-sizing: border-box;
+    /* Borde izquierdo para efecto tecnológico */
     border-left: 3px solid var(--color-primary-neon);
     transition: border-left-color 0.3s, box-shadow 0.3s;
 }
@@ -144,7 +148,6 @@ button:disabled {
     background-color: var(--color-primary-neon);
     color: var(--color-bg);
     box-shadow: 0 0 5px var(--color-primary-glow);
-    margin-bottom: 2rem;
 }
 .btn-principal:hover:not(:disabled) {
     background-color: var(--color-primary-glow);
@@ -224,7 +227,7 @@ button:disabled {
 .opcion-simple {
     display: flex;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: space-between;
     margin-bottom: 15px;
     background-color: #1a2333;
     padding: 10px 15px;
@@ -271,7 +274,7 @@ button:disabled {
     color: var(--color-impostor);
     font-weight: bold;
     font-family: var(--font-heading);
-    margin: 0;
+    margin-top: -10px;
     text-shadow: 0 0 5px rgba(255, 77, 110, 0.5);
 }
 
@@ -337,6 +340,7 @@ button:disabled {
     border: 2px solid var(--color-primary-neon);
     padding: 40px;
     margin-top: 30px;
+    transition: all 0.5s ease-in-out; /* Transición para cuando cambie de rol */
 }
 
 .palabra-revelacion {
@@ -348,6 +352,36 @@ button:disabled {
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
     border: 1px solid; /* Se define el color en JS */
     text-transform: uppercase;
+}
+
+/* --- ESTILOS ESPECÍFICOS PARA LA REVELACIÓN DE ROL --- */
+
+/* Estilo para el Impostor (Rojo Neón) */
+.caja-rol.rol-impostor {
+    border-color: var(--color-impostor);
+    box-shadow: var(--glow-impostor);
+}
+.caja-rol.rol-impostor h2 {
+    color: var(--color-impostor);
+}
+.caja-rol.rol-impostor .palabra-revelacion {
+    color: var(--color-impostor);
+    border-color: var(--color-impostor);
+    text-shadow: 0 0 10px var(--color-impostor);
+}
+
+/* Estilo para el Tripulante (Verde Neón) */
+.caja-rol.rol-tripulante {
+    border-color: var(--color-tripulante);
+    box-shadow: var(--glow-tripulante);
+}
+.caja-rol.rol-tripulante h2 {
+    color: var(--color-tripulante);
+}
+.caja-rol.rol-tripulante .palabra-revelacion {
+    color: var(--color-tripulante);
+    border-color: var(--color-tripulante);
+    text-shadow: 0 0 10px var(--color-tripulante);
 }
 
 .etiqueta-pequena {
