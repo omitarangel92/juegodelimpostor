@@ -7,8 +7,6 @@ const app = express();
 const server = http.createServer(app);
 
 // Configuración de Express para servir archivos de la carpeta 'public'
-// Nota: Asume que index.html, cliente.js, style.css están en una carpeta llamada 'public'
-// Si no tienes una carpeta 'public', deberás ajustar esta línea.
 app.use(express.static('public')); 
 
 const PORT = process.env.PORT || 8080;
