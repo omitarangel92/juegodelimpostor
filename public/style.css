@@ -1,27 +1,26 @@
-/* style.css - Versión 1.3.0 (Full Neon Optimization) */
-
-/* 1. Variables y Reset */
-:root {
-    --color-bg: #151720;
-    --color-card: #1c1f2b;
-    --color-text: #e0e0e0;
-    --color-primary: #8a2be2;
-    --color-secondary: #00bcd4;
-    --color-red: #ff4560;
-    --color-green: #00b386;
-    --color-orange: #ff9800;
-    --font-heading: 'Exo 2', sans-serif;
-    --font-body: 'Rajdhani', sans-serif;
-    --radius: 12px;
-    
-    /* Efectos de Resplandor Neón */
-    --glow-red: 0 0 20px rgba(255, 69, 96, 0.7);
-    --glow-green: 0 0 20px rgba(0, 179, 134, 0.7);
-    --glow-white: 0 0 20px rgba(255, 255, 255, 0.5);
+/* FIX: Asegurar que padding y border se incluyan en el cálculo del ancho y alto */
+* {
+    box-sizing: border-box;
 }
 
-* { box-sizing: border-box; }
+/* style.css (CÓDIGO COMPLETO DE ESTILOS) */
 
+/* Definición de Variables (Paleta de Colores Dark Mode Base) */
+:root {
+    --color-bg: #151720;        /* Fondo oscuro */
+    --color-card: #1c1f2b;      /* Fondo de tarjeta/vista */
+    --color-text: #e0e0e0;      /* Texto claro */
+    --color-primary: #8a2be2;   /* Azul violeta (Principal) */
+    --color-secondary: #00bcd4; /* Cian (Secundario) */
+    --color-red: #ff4560;       /* Rojo (Alerta/Impostor) */
+    --color-green: #00b386;     /* Verde (Éxito/Tripulante) */
+    --color-orange: #ff9800;    /* Naranja (Doble Agente) */
+    --font-heading: 'Exo 2', sans-serif;    /* Fuentes de impacto (Títulos) */
+    --font-body: 'Rajdhani', sans-serif;    /* Fuentes de cuerpo (General) */
+    --radius: 12px;
+}
+
+/* Estilos Globales */
 body {
     font-family: var(--font-body);
     text-align: center;
@@ -29,78 +28,531 @@ body {
     color: var(--color-text);
     margin: 0;
     min-height: 100vh;
+    overflow-x: hidden; /* FIX: Evitar el scroll horizontal */
 }
 
-/* 2. Clases de Impacto para Roles y Palabras */
-.palabra-display {
+h1 {
+    font-family: var(--font-heading);
+    color: var(--color-primary);
+    font-size: 3em;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.vista {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 30px 20px;
+    min-height: 100vh; /* Ajuste para ocupar toda la altura visible */
+    width: 100%; /* Asegurar que ocupe todo el ancho disponible */
+}
+
+.vista.activa {
+    display: flex;
+}
+
+/* --- FORMULARIOS Y BOTONES --- */
+form, .opciones-sala, .configuracion-host {
+    background-color: var(--color-card);
+    padding: 25px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    width: 95%; /* FIX: Usar 95% para un pequeño margen en móviles */
+    max-width: 450px; /* Ajuste para uniformidad en contenedores principales */
+    justify-items: center;
+}
+.configuracion-host {
+     max-width: 600px; /* Más ancho para categorías */
+}
+
+label {
     display: block;
-    font-size: 4rem; /* Tamaño gigante solicitado */
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 5px;
-    margin: 20px 0;
-    font-family: var(--font-heading);
-    transition: all 0.4s ease;
-}
-
-.texto-rol {
-    font-size: 2rem;
+    margin-bottom: 8px;
     font-weight: bold;
-    margin-bottom: 10px;
-    font-family: var(--font-heading);
+    color: var(--color-secondary);
 }
 
-/* Colores Dinámicos */
-.rol-impostor { color: var(--color-red) !important; text-shadow: var(--glow-red); }
-.rol-tripulante { color: var(--color-green) !important; text-shadow: var(--glow-green); }
-.rol-agente { color: #ffffff !important; text-shadow: var(--glow-white); }
+input[type="text"] {
+    width: 100%; /* FIX: Cambiado de 95% a 100% para evitar desbordamiento con el padding */
+    padding: 12px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 6px;
+    background-color: #2b2e3c;
+    color: var(--color-text);
+    font-size: 1em;
+    box-sizing: border-box; /* Crucial para adaptabilidad */
+}
 
-/* 3. Estructura de Vistas */
-.vista { display: none; flex-direction: column; align-items: center; padding: 40px 20px; }
-.vista.activa { display: flex; }
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: transform 0.2s, background-color 0.2s;
+    margin: 5px;
+}
+
+button:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.btn-principal {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.btn-secundario {
+    background-color: var(--color-secondary);
+    color: var(--color-bg);
+}
+
+.btn-danger {
+    background-color: var(--color-red);
+    color: white;
+}
+
+.btn-volver {
+    background: none;
+    color: var(--color-text);
+    border: 1px solid #444;
+    padding: 8px 15px;
+    font-size: 0.9em;
+    margin-top: 20px;
+}
+
+.btn-grande {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    margin: 10px 0;
+    width: 100%;
+}
+
+.btn-small {
+    padding: 5px 10px;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
+
+.btn-expulsar {
+    background-color: var(--color-red);
+    color: white;
+    margin-left: 15px;
+}
+
+/* --- LISTAS DE JUGADORES --- */
+.lista-jugadores {
+    list-style: none;
+    padding: 0;
+    width: 95%; /* FIX: Usar 95% en mobile */
+    max-width: 450px;
+    margin-bottom: 30px;
+}
+
+.lista-jugadores li {
+    background-color: #242735;
+    padding: 10px 20px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid var(--color-secondary);
+    font-size: 1.1em;
+    word-break: break-word; /* FIX: Evitar desbordamiento de nombres largos */
+}
+
+.lista-jugadores li.eliminado {
+    opacity: 0.6;
+    text-decoration: line-through;
+    border-left-color: var(--color-red);
+}
+
+/* --- CONFIGURACIÓN HOST (LOBBY) --- */
+.configuracion-host h2 {
+    color: var(--color-green);
+    margin-top: 0;
+} 
+.configuracion-host h4 { 
+    color: var(--color-secondary); 
+    margin: 15px 0 10px; 
+    border-bottom: 1px dashed #333; 
+    padding-bottom: 5px; 
+} 
+.opcion-simple { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin-bottom: 15px; 
+    background-color: #242735; 
+    padding: 8px; 
+    border-radius: 6px; 
+} 
+.opcion-simple label { 
+    margin: 0 0 0 10px; 
+    color: var(--color-text); 
+    font-weight: normal; 
+} 
+.opcion-simple input[type="checkbox"] { 
+    width: 20px; 
+    height: 20px; 
+    cursor: pointer; 
+} 
+.min-jugadores-aviso { 
+    color: var(--color-red); 
+    font-weight: bold; 
+    margin-top: -10px; 
+    margin-bottom: 20px; 
+} 
+
+/* --- ESTILOS PARA LA SELECCIÓN DE CATEGORÍAS (RADIO BUTTONS) --- */
+.categorias-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+    max-width: 100%; /* Asegurar que no se desborde del padre */
+} 
+.categoria-item { 
+    position: relative; 
+} 
+.categoria-item input[type="radio"] { 
+    position: absolute; 
+    opacity: 0; 
+    width: 0; 
+    height: 0; 
+} 
+.categoria-item label { 
+    display: block; 
+    cursor: pointer; 
+    padding: 8px 15px; 
+    border: 2px solid #444; 
+    border-radius: 20px; 
+    background-color: #2b2e3c; 
+    color: var(--color-text); 
+    font-weight: normal; 
+    transition: all 0.2s; 
+    font-size: 0.9em; 
+    margin: 0; 
+} 
+.categoria-item input[type="radio"]:checked + label { 
+    border-color: var(--color-primary); 
+    background-color: var(--color-primary); 
+    color: white; 
+    box-shadow: 0 0 8px var(--color-primary); 
+}
+.categoria-item label.categoria-hot {
+    color: var(--color-red);
+}
+.categoria-item input[type="radio"]:checked + label.categoria-hot {
+     border-color: var(--color-red); 
+    background-color: var(--color-red); 
+    color: white; 
+    box-shadow: 0 0 8px var(--color-red); 
+}
+
+/* --- ESTILOS PARA LA REVELACIÓN DE ROL --- */
+#vista-revelacion { /* Corregido de #vista-revelacion-rol */
+    min-height: 90vh; 
+    justify-content: center;
+    align-items: center;
+}
 
 .caja-rol {
-    background: var(--color-card);
+    background-color: var(--color-card);
     padding: 40px;
     border-radius: var(--radius);
-    border: 2px solid #333;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
     max-width: 600px;
-    width: 100%;
+    width: 90%;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
 }
 
-/* 4. UI General (Botones e Inputs) */
-button {
-    padding: 15px 25px;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    border: none;
+.caja-rol h2 {
+    color: var(--color-secondary);
+    font-size: 1.5em;
+    margin-bottom: 10px;
+}
+
+#revelacion-titulo {
+    font-size: 3em !important;
     font-family: var(--font-heading);
-    transition: transform 0.2s;
+    margin-top: 0;
+    margin-bottom: 20px;
+    transition: color 0.5s;
+    font-weight: 900;
 }
-button:active { transform: scale(0.95); }
-.btn-principal { background: var(--color-primary); color: white; }
-.btn-danger { background: var(--color-red); color: white; }
 
-input[type="text"], textarea {
-    width: 100%;
+#revelacion-detalle {
+    margin-top: 30px;
     padding: 15px;
     border-radius: 8px;
-    background: #2b2e3c;
-    color: white;
-    border: 1px solid #444;
-    margin-bottom: 15px;
-    font-size: 1.1rem;
+    font-size: 1.4em;
+    font-weight: bold;
+    display: inline-block; /* Ajustar el tamaño al contenido */
+    max-width: 95%; /* Asegurar que no se desborde */
+    word-break: break-word; /* FIX: Evitar desbordamiento de texto */
 }
 
-/* Modal */
+/* --- ESTILOS PARA LA VISTA DE JUEGO (DISCUSIÓN) --- */
+.info-jugador-juego {
+    background-color: var(--color-card);
+    padding: 20px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    width: 95%;
+    max-width: 450px;
+    text-align: center;
+}
+
+.info-jugador-juego p {
+    margin: 10px 0;
+}
+
+#rol-juego-display {
+    font-size: 1.2em;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+#palabra-secreta-display {
+    font-size: 1.5em;
+    font-weight: bold;
+    word-break: break-word; /* FIX: Evitar desbordamiento de palabras largas */
+}
+
+/* --- ESTILOS PARA VOTACIÓN --- */
+#opciones-votacion {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 15px;
+    background-color: #242735;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    width: 95%;
+    max-width: 650px; /* Más espacio para los botones de voto */
+}
+
+.btn-votar {
+    background-color: var(--color-secondary);
+    color: var(--color-bg);
+    padding: 12px 20px;
+    font-size: 1.1em;
+    flex-grow: 1; /* Permite que los botones se estiren */
+    min-width: 120px; /* Asegura un tamaño mínimo legible */
+    margin: 5px; /* Pequeño margen para la separación */
+}
+
+.btn-votar.votado {
+    border: 3px solid var(--color-primary);
+    box-shadow: 0 0 10px var(--color-primary);
+}
+
+/* --- RESULTADOS Y VISTA FINAL --- */
+.detalles-votacion-container {
+    background-color: #242735;
+    padding: 15px;
+    border-radius: var(--radius);
+    margin: 20px 0;
+    width: 95%;
+    max-width: 450px;
+    text-align: center;
+}
+.detalles-votacion-container h4 {
+    color: var(--color-secondary);
+    margin-top: 0;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+
+.aviso-eliminado {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: var(--color-red);
+    padding: 10px;
+    border: 2px solid var(--color-red);
+    border-radius: 8px;
+    margin-bottom: 25px; 
+    width: 95%; /* FIX: Usar 95% para márgenes */
+    max-width: 450px;
+    margin-left: auto; /* Centrar */
+    margin-right: auto; /* Centrar */
+    word-break: break-word; /* Evitar desbordamiento de texto */
+}
+
+/* FIX: Ajustar el comportamiento de los botones grandes en las acciones finales para responsividad */
+#acciones-finales-host, #acciones-finales-final-host {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 15px;
+    justify-content: center;
+    width: 95%; /* Asegurar que no exceda el 95% del padre */
+    max-width: 650px; /* Limitar el ancho en desktop */
+    margin: 20px auto; /* Centrar el contenedor de acciones */
+}
+
+/* Lógica para que los botones se muestren lado a lado en desktop y se apilen en mobile */
+#acciones-finales-host .btn-grande, 
+#acciones-finales-final-host .btn-grande {
+    width: auto; /* Anula el width: 100% de .btn-grande, dejando que flexbox decida */
+    flex-grow: 1; 
+    min-width: 45%; /* Cada botón toma al menos el 45% del espacio del contenedor padre */
+}
+
+@media (max-width: 550px) {
+     /* Forzar el apilamiento y el 100% del ancho en pantallas móviles para que los botones sean grandes */
+    #acciones-finales-host .btn-grande, 
+    #acciones-finales-final-host .btn-grande {
+        width: 100%; 
+        min-width: 100%; 
+    }
+    
+    h1 {
+        font-size: 2.5em; /* Reducir títulos en móvil */
+    }
+    
+    .caja-rol, .info-jugador-juego {
+        padding: 25px 15px; /* Reducir padding en móvil */
+    }
+}
+
+.lista-final li {
+    background-color: #242735;
+    border-left: 4px solid var(--color-primary);
+    text-align: left; /* Mantener la alineación izquierda para la lista */
+    line-height: 1.5; /* Mejorar legibilidad */
+}
+
+.lista-final .impostor {
+    color: var(--color-red);
+    font-weight: bold;
+}
+.lista-final .tripulante {
+    color: var(--color-green);
+    font-weight: bold;
+}
+.lista-final .agentedoble { /* Corregido de .orange a .agentedoble */
+    color: var(--color-orange);
+    font-weight: bold;
+}
+.lista-final .eliminado {
+    opacity: 0.6;
+}
+
+/* Estilos para el Modal Personalizado */
 .modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9); display: flex; justify-content: center;
-    align-items: center; z-index: 10000; backdrop-filter: blur(8px);
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
 }
+
 .modal-contenido {
-    background: var(--color-card); padding: 30px; border-radius: var(--radius);
-    border: 2px solid var(--color-primary); text-align: center; max-width: 400px;
+    background: var(--color-card);
+    padding: 30px;
+    border-radius: var(--radius);
+    border: 2px solid var(--color-primary);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
 }
+
+.modal-contenido h2 {
+    font-family: var(--font-heading);
+    color: var(--color-primary);
+    margin-bottom: 15px;
+}
+
+.modal-contenido p {
+    font-size: 1.2em;
+    margin-bottom: 25px;
+}
+
+.modal-botones {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+
+/* ÉNFASIS EN LA PALABRA SECRETA (LA CARD) */
+.palabra-display {
+    display: block;
+    font-size: 3.5rem; /* Tamaño gigante solicitado */
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin: 15px 0;
+    font-family: var(--font-heading);
+    transition: all 0.3s ease;
+}
+
+/* ESTADOS DE ROL PARA LA CARD */
+.rol-impostor {
+    color: var(--color-red) !important;
+    text-shadow: var(--glow-red);
+}
+
+.rol-tripulante {
+    color: var(--color-green) !important;
+    text-shadow: var(--glow-green);
+}
+
+.rol-agente {
+    color: #ffffff !important; /* Blanco resaltado */
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+/* Optimización de la Card de Revelación */
+.caja-rol {
+    background-color: var(--color-card);
+    padding: 30px;
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 500px;
+    border: 2px solid #333;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.texto-informativo {
+    font-size: 1.2rem;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+/* Botón de adivinanza mejorado */
+#contenedor-adivinanza-impostor {
+    border: 2px solid var(--color-red);
+    padding: 20px;
+    border-radius: var(--radius);
+    margin-top: 20px;
+    background: rgba(255, 69, 96, 0.05);
+}
+
+/* (Siguen tus otros estilos de botones y vistas de antes...) */
+.vista { display: none; flex-direction: column; align-items: center; padding: 20px; }
+.vista.activa { display: flex; }
+button { padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; margin: 5px; }
+.btn-principal { background: var(--color-primary); color: white; }
+input[type="text"] { width: 100%; padding: 12px; border-radius: 6px; background: #2b2e3c; color: white; border: none; }
