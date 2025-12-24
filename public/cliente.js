@@ -1,5 +1,4 @@
-// cliente.js - VERSIÓN FINAL CORREGIDA (IDs VINCULADOS AL HTML)
-
+// cliente.js - VERSIÓN RESTAURADA Y SINCRONIZADA
 const firebaseConfig = {
     apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0",
     authDomain: "juego-impostor-firebase.firebaseapp.com",
@@ -54,13 +53,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (vista) vista.classList.add('activa');
     };
 
+    // --- GENERAR CATEGORÍAS (ID: contenedor-temas) ---
+    function generarCategoriasUI() {
+        const contenedor = document.getElementById('contenedor-temas');
+        if (!contenedor) return;
+        contenedor.innerHTML = '';
+        Object.keys(PALABRAS_POR_TEMA).forEach((tema, index) => {
+            const div = document.createElement('div');
+            div.className = 'tema-option';
+            div.innerHTML = `
+                <input type="radio" name="tema-selector" id="tema-${index}" value="${tema}" ${index === 0 ? 'checked' : ''}>
+                <label for="tema-${index}">${tema}</label>
+            `;
+            contenedor.appendChild(div);
+        });
+    }
+
     function configurarEscuchadorSala(cod) {
         codigoSalaActual = cod;
         db.ref('salas/' + cod).on('value', snap => {
-            if (!snap.exists()) {
-                window.location.reload();
-                return;
-            }
+            if (!snap.exists()) { window.location.reload(); return; }
             const sala = snap.val();
             const lista = Object.keys(sala.jugadores || {}).map(k => ({ ...sala.jugadores[k], id: k }));
             jugadoresActuales = lista;
@@ -104,11 +116,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             listaUI.appendChild(li);
         });
-        document.getElementById('btn-iniciar-juego').style.display = soyHost ? 'block' : 'none';
-        document.getElementById('configuracion-host').style.display = soyHost ? 'block' : 'none';
+
+        const configHost = document.getElementById('configuracion-host');
+        const btnIniciar = document.getElementById('btn-iniciar-juego');
+        
+        if (soyHost) {
+            configHost.style.display = 'block';
+            btnIniciar.style.display = 'block';
+            if (!document.querySelector('input[name="tema-selector"]')) {
+                generarCategoriasUI();
+            }
+        } else {
+            configHost.style.display = 'none';
+            btnIniciar.style.display = 'none';
+        }
         document.getElementById('codigo-lobby-display').textContent = codigoSalaActual;
     }
 
+    // --- REVELACIÓN Y ROLES ---
     function manejarRevelacion() {
         cambiarVista('vista-revelacion');
         const rolDisp = document.getElementById('rol-revelacion-display');
@@ -124,12 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
             palDisp.textContent = "????";
             palDisp.classList.add('rol-impostor');
             temaDisp.textContent = "???";
-        } else if (miRolActual === 'Agente Doble') {
-            rolDisp.textContent = "TU ERES EL AGENTE DOBLE";
-            rolDisp.classList.add('rol-agente');
-            palDisp.textContent = miPalabraSecreta;
-            palDisp.classList.add('rol-tripulante');
-            temaDisp.textContent = miTemaActual;
         } else {
             rolDisp.textContent = "ERES TRIPULANTE";
             rolDisp.classList.add('rol-tripulante');
@@ -146,19 +165,16 @@ document.addEventListener('DOMContentLoaded', () => {
         cambiarVista('vista-juego');
         const palJuego = document.getElementById('palabra-secreta-display');
         const rolJuego = document.getElementById('rol-juego-display');
-        palJuego.className = 'palabra-display';
-
+        
         if (miRolActual === 'Impostor') {
             rolJuego.textContent = "TU ERES EL IMPOSTOR";
             rolJuego.className = 'rol-impostor texto-rol';
             palJuego.textContent = "????";
-            palJuego.classList.add('rol-impostor');
             document.getElementById('contenedor-adivinanza-impostor').style.display = 'block';
         } else {
-            rolJuego.textContent = miRolActual === 'Agente Doble' ? "AGENTE DOBLE" : "ERES TRIPULANTE";
-            rolJuego.className = miRolActual === 'Agente Doble' ? 'rol-agente texto-rol' : 'rol-tripulante texto-rol';
+            rolJuego.textContent = "ERES TRIPULANTE";
+            rolJuego.className = 'rol-tripulante texto-rol';
             palJuego.textContent = miPalabraSecreta;
-            palJuego.classList.add('rol-tripulante');
             document.getElementById('contenedor-adivinanza-impostor').style.display = 'none';
         }
     }
@@ -167,14 +183,11 @@ document.addEventListener('DOMContentLoaded', () => {
         cambiarVista('vista-final');
         document.getElementById('ganador-display').textContent = `🏆 GANAN LOS ${sala.ultimoResultado?.ganador || '---'}`;
         const soyHost = sala.hostId === miId;
-        // CORRECCIÓN DE IDS DE BOTONES FINALES SEGÚN TU HTML
         document.getElementById('btn-reiniciar-partida-final').style.display = soyHost ? 'inline-block' : 'none';
         document.getElementById('btn-finalizar-juego-final').style.display = soyHost ? 'inline-block' : 'none';
     }
 
-    // --- ACCIONES DE BOTONES (VINCULADOS A TU HTML) ---
-
-    // Vista Inicio
+    // --- EVENTOS DE BOTONES ---
     document.getElementById('form-inicio').onsubmit = (e) => {
         e.preventDefault();
         nombreJugador = document.getElementById('input-nombre').value.trim();
@@ -184,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Vista Selección
     document.getElementById('btn-crear-sala').onclick = async () => {
         const cod = Math.random().toString(36).substring(2, 6).toUpperCase();
         await db.ref('salas/' + cod).set({
@@ -201,18 +213,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const cod = document.getElementById('input-codigo').value.toUpperCase();
         if (!cod) return;
         const snap = await db.ref('salas/' + cod).once('value');
-        if (!snap.exists()) return alert("La sala no existe");
+        if (!snap.exists()) return alert("Sala no encontrada");
         await db.ref(`salas/${cod}/jugadores/${miId}`).set({
             id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante'
         });
         configurarEscuchadorSala(cod);
     };
 
-    // Lobby
     document.getElementById('btn-iniciar-juego').onclick = async () => {
-        const tema = document.querySelector('input[name="tema-selector"]:checked')?.value || 'Animales 🐾';
-        const palabras = PALABRAS_POR_TEMA[tema];
-        const palabra = palabras[Math.floor(Math.random() * palabras.length)];
+        const temaRadio = document.querySelector('input[name="tema-selector"]:checked');
+        const tema = temaRadio ? temaRadio.value : 'Animales 🐾';
+        const palabra = PALABRAS_POR_TEMA[tema][Math.floor(Math.random() * PALABRAS_POR_TEMA[tema].length)];
 
         let clones = [...jugadoresActuales];
         const impIdx = Math.floor(Math.random() * clones.length);
@@ -233,7 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
         db.ref('salas/' + codigoSalaActual).update({ estado: 'enJuego' });
     };
 
-    // Juego
     document.getElementById('btn-enviar-adivinanza').onclick = async () => {
         const intento = document.getElementById('input-adivinar-palabra').value.trim();
         if (!intento) return;
@@ -245,19 +255,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     ultimoResultado: { ganador: 'IMPOSTORES' }
                 });
             } else {
-                await mostrarModal("❌ INCORRECTO", "Esa no es la palabra", false, "#ff4560");
+                await mostrarModal("❌ INCORRECTO", "Sigue intentando", false, "#ff4560");
             }
         }
     };
 
     document.getElementById('btn-abandonar').onclick = async () => {
-        if (await mostrarModal("🚪 SALIR", "¿Abandonar partida?", true)) {
+        if (await mostrarModal("🚪 ABANDONAR", "¿Salir?", true)) {
             await db.ref(`salas/${codigoSalaActual}/jugadores/${miId}`).remove();
             window.location.reload();
         }
     };
 
-    // Final
     document.getElementById('btn-reiniciar-partida-final').onclick = async () => {
         const updates = { estado: 'esperando', ultimoResultado: null };
         jugadoresActuales.forEach(j => {
@@ -274,10 +283,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-// --- UTILIDADES ---
 function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A2BE2') {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-personalizado');
+        if (!modal) return resolve(true);
         modal.querySelector('.modal-contenido').style.borderColor = colorBorde;
         document.getElementById('modal-titulo').textContent = titulo;
         document.getElementById('modal-mensaje').textContent = mensaje;
@@ -291,6 +300,5 @@ function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A
 }
 
 function normalizarPalabra(t) {
-    if (!t) return "";
     return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/s$/, "");
 }
