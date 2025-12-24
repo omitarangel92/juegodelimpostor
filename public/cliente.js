@@ -824,35 +824,31 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // *** MANEJAR INICIO DE DISCUSIÓN (VISTA DE JUEGO) ***
     // ----------------------------------------------------
     function manejarInicioDiscusion(sala) {
-        cambiarVista('vista-juego');
-
-        const displayPalabraJuego = document.getElementById('palabra-secreta-display');
-        const displayTemaJuego = document.getElementById('tema-valor');
-        const displayRolJuego = document.getElementById('rol-juego-display');
-
-        // Reset de estilos
-        displayPalabraJuego.className = 'palabra-display';
-
-        if (miRolActual === 'Impostor') {
-            displayRolJuego.textContent = "IMPOSTOR";
-            displayRolJuego.style.color = "var(--color-red)";
-
-            displayPalabraJuego.textContent = "????";
-            displayPalabraJuego.classList.add('rol-impostor');
-            displayTemaJuego.textContent = "???";
-
-            document.getElementById('contenedor-adivinanza-impostor').style.display = 'block';
-        } else {
-            displayRolJuego.textContent = miRolActual === 'Agente Doble' ? "AGENTE DOBLE" : "TRIPULANTE";
-            displayRolJuego.style.color = miRolActual === 'Agente Doble' ? "white" : "var(--color-green)";
-
-            displayPalabraJuego.textContent = miPalabraSecreta;
-            displayPalabraJuego.classList.add('rol-tripulante');
-            displayTemaJuego.textContent = miTemaActual;
-
-            document.getElementById('contenedor-adivinanza-impostor').style.display = 'none';
-        }
+    cambiarVista('vista-juego');
+    
+    // 1. Mostrar el botón de forzar votación SOLO al Host
+    const yo = jugadoresActuales.find(j => j.id === miId);
+    if (yo && yo.esHost) {
+        document.getElementById('btn-forzar-votacion').style.display = 'block';
+        document.getElementById('btn-forzar-votacion').onclick = () => finalizarVotacionManual();
+    } else {
+        document.getElementById('btn-forzar-votacion').style.display = 'none';
     }
+
+    // 2. Hacer que la lista de jugadores sea clicable para votar
+    const listaVoto = document.getElementById('lista-jugadores-juego');
+    listaVoto.innerHTML = '';
+    jugadoresActuales.forEach(j => {
+        const li = document.createElement('li');
+        li.textContent = j.nombre;
+        li.style.cursor = 'pointer';
+        li.onclick = () => {
+            db.ref(`salas/${codigoSalaActual}/votos/${miId}`).set(j.id);
+            mostrarModal("✅ VOTO", "Has votado por " + j.nombre, false, "var(--color-green)");
+        };
+        listaVoto.appendChild(li);
+    });
+}
 
     // ----------------------------------------------------
     // *** MANEJAR INICIO DE VOTACIÓN (TODOS) ***
@@ -1085,31 +1081,29 @@ document.addEventListener('DOMContentLoaded', (event) => {
 function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A2BE2') {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-personalizado');
-        if (!modal) {
-            console.error("No se encontró el HTML del modal");
-            resolve(true); // Para que no bloquee si el HTML no está
-            return;
-        }
         const contenido = modal.querySelector('.modal-contenido');
+        
+        // Aplicar color de borde dinámico
         contenido.style.borderColor = colorBorde;
-
+        
         document.getElementById('modal-titulo').textContent = titulo;
         document.getElementById('modal-mensaje').textContent = mensaje;
-
-        const btnConfirmar = document.getElementById('modal-btn-confirmar');
-        const btnCancelar = document.getElementById('modal-btn-cancelar');
-
-        btnCancelar.style.display = esConfirmacion ? 'block' : 'none';
-        btnConfirmar.textContent = esConfirmacion ? 'Confirmar' : 'Entendido';
-
+        
+        const btnC = document.getElementById('modal-btn-confirmar');
+        const btnX = document.getElementById('modal-btn-cancelar');
+        
+        // Configurar botones
+        btnX.style.display = esConfirmacion ? 'block' : 'none';
+        btnC.textContent = esConfirmacion ? 'Confirmar' : 'Entendido';
+        
         modal.style.display = 'flex';
-
-        btnConfirmar.onclick = () => {
+        
+        btnC.onclick = () => {
             modal.style.display = 'none';
             resolve(true);
         };
-
-        btnCancelar.onclick = () => {
+        
+        btnX.onclick = () => {
             modal.style.display = 'none';
             resolve(false);
         };
@@ -1124,4 +1118,37 @@ function normalizarPalabra(texto) {
         .replace(/[\u0300-\u036f]/g, "") // Quita tildes
         .trim()
         .replace(/s$/, ""); // Quita la 's' al final
+}
+
+async function finalizarVotacionManual() {
+    const confirmar = await mostrarModal("⌛ FINALIZAR", "¿Quieres cerrar la votación y ver quién sale?", true, "var(--color-primary)");
+    if (!confirmar) return;
+
+    const snap = await db.ref(`salas/${codigoSalaActual}`).once('value');
+    const sala = snap.val();
+    const votos = sala.votos || {};
+    
+    // Contar votos
+    let conteo = {};
+    Object.values(votos).forEach(id => conteo[id] = (conteo[id] || 0) + 1);
+    
+    let expulsadoId = null;
+    let maxVotos = 0;
+    for (const id in conteo) {
+        if (conteo[id] > maxVotos) {
+            maxVotos = conteo[id];
+            expulsadoId = id;
+        }
+    }
+
+    const jugExp = sala.jugadores[expulsadoId];
+    const ganoPueblo = jugExp && jugExp.rol === 'Impostor';
+
+    db.ref(`salas/${codigoSalaActual}`).update({
+        estado: 'finalizado',
+        ultimoResultado: {
+            ganador: ganoPueblo ? 'TRIPULANTES' : 'IMPOSTORES',
+            expulsado: jugExp ? jugExp.nombre : "Nadie"
+        }
+    });
 }
