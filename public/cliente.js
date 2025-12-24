@@ -392,15 +392,23 @@ document.addEventListener('DOMContentLoaded', (event) => {
         renderConfiguracion();
     }
 
-    window.expulsarJugador = async function (jugadorId) {
-        const misDatos = jugadoresActuales.find(j => j.id === miId);
-        if (!misDatos?.esHost || !codigoSalaActual) return;
+    // Dentro de la función que crea la lista de jugadores:
+    btnExpulsar.onclick = async () => {
+        // Usamos await para esperar la respuesta del modal
+        const quiereExpulsar = await mostrarModal(
+            "⚠️ EXPULSAR JUGADOR",
+            `¿Estás seguro de que quieres echar a ${jugador.nombre}?`,
+            true,
+            "#ff4560"
+        );
 
-        const quiereExpulsar = await mostrarModal("⚠️ EXPULSAR JUGADOR", `¿Estás seguro de que quieres echar a ${jugador.nombre}?`, true);
         if (quiereExpulsar) {
-            db.ref('salas/' + codigoSalaActual + '/jugadores/' + jugador.id).remove();
+            console.log("Expulsando a:", jugador.id);
+            db.ref('salas/' + codigoSalaActual + '/jugadores/' + jugador.id).remove()
+                .then(() => console.log("Jugador eliminado de Firebase"))
+                .catch(err => console.error("Error al eliminar:", err));
         }
-    }
+    };
 
     async function procesarVotacionHost(sala) {
         if (!jugadoresActuales.find(j => j.id === miId)?.esHost) return;
@@ -494,50 +502,38 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // Lógica para que el Impostor adivine la palabra (ACTUALIZADO CON MODAL)
     document.getElementById('btn-enviar-adivinanza').addEventListener('click', async () => {
         const inputAdivinar = document.getElementById('input-adivinar-palabra');
-        const palabraIntento = inputAdivinar.value.trim().toLowerCase();
+        const intentoRaw = inputAdivinar.value.trim();
 
-        if (!palabraIntento || !codigoSalaActual) return;
+        if (!intentoRaw || !codigoSalaActual) return;
 
-        // REEMPLAZO DE confirm: Usamos el modal en modo confirmación (true)
-        const confirmarAdivinanza = await mostrarModal(
-            "🎯 ADIVINAR PALABRA",
-            `¿Estás seguro de que la palabra es "${palabraIntento.toUpperCase()}"? Si fallas podrías delatarte ante los demás.`,
-            true,
-            "#8A2BE2" // Color violeta (principal)
-        );
-
-        if (!confirmarAdivinanza) return;
+        const confirmar = await mostrarModal("🎯 ADIVINAR PALABRA", `¿Confirmas que la palabra es "${intentoRaw.toUpperCase()}"?`, true, "#8A2BE2");
+        if (!confirmar) return;
 
         try {
-            const salaRef = db.ref('salas/' + codigoSalaActual);
-            const snapshot = await salaRef.once('value');
+            const snapshot = await db.ref('salas/' + codigoSalaActual).once('value');
             const sala = snapshot.val();
 
-            // Obtenemos la palabra real guardada en la configuración por el Host
-            const palabraReal = sala.configuracion.palabra.toLowerCase();
+            // NORMALIZAMOS AMBAS PALABRAS PARA COMPARAR
+            const intentoLimpio = normalizarPalabra(intentoRaw);
+            const palabraRealLimpia = normalizarPalabra(sala.configuracion.palabra);
 
-            if (palabraIntento === palabraReal) {
-                // ¡EL IMPOSTOR GANA!
-                await salaRef.update({
+            console.log("Comparando:", intentoLimpio, "vs", palabraRealLimpia);
+
+            if (intentoLimpio === palabraRealLimpia) {
+                // GANAR (Igual que antes...)
+                await db.ref('salas/' + codigoSalaActual).update({
                     estado: 'finalizado',
                     ultimoResultado: {
                         ganador: 'Impostores',
-                        motivo: `¡El Impostor adivinó la palabra secreta: ${sala.configuracion.palabra.toUpperCase()}!`
+                        motivo: `¡El Impostor adivinó: ${sala.configuracion.palabra.toUpperCase()}!`
                     }
                 });
             } else {
-                // REEMPLAZO DE alert: Usamos el modal en modo aviso (false)
-                await mostrarModal(
-                    "❌ INCORRECTO",
-                    "Esa no es la palabra secreta. ¡Sigue escuchando con cuidado!",
-                    false,
-                    "#ff4560" // Color rojo (error)
-                );
-                inputAdivinar.value = ''; // Limpiar para el siguiente intento
+                await mostrarModal("❌ INCORRECTO", "Esa no es la palabra. ¡Sigue intentando!", false, "#ff4560");
+                inputAdivinar.value = '';
             }
         } catch (error) {
-            console.error("Error al enviar adivinanza:", error);
-            mostrarModal("ERROR", "Hubo un problema al conectar con el servidor.", false, "#ff4560");
+            console.error(error);
         }
     });
 
@@ -1136,4 +1132,12 @@ function mostrarModal(titulo, mensaje, esConfirmacion = false) {
             resolve(false);
         };
     });
+}
+
+function normalizarPalabra(texto) {
+    return texto
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita tildes
+        .trim()
+        .replace(/s$/, ""); // Quita la 's' al final si existe (manejo básico de plural)
 }
