@@ -824,31 +824,45 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // *** MANEJAR INICIO DE DISCUSIÓN (VISTA DE JUEGO) ***
     // ----------------------------------------------------
     function manejarInicioDiscusion(sala) {
-    cambiarVista('vista-juego');
-    
-    // 1. Mostrar el botón de forzar votación SOLO al Host
-    const yo = jugadoresActuales.find(j => j.id === miId);
-    if (yo && yo.esHost) {
-        document.getElementById('btn-forzar-votacion').style.display = 'block';
-        document.getElementById('btn-forzar-votacion').onclick = () => finalizarVotacionManual();
-    } else {
-        document.getElementById('btn-forzar-votacion').style.display = 'none';
-    }
+        cambiarVista('vista-juego');
 
-    // 2. Hacer que la lista de jugadores sea clicable para votar
-    const listaVoto = document.getElementById('lista-jugadores-juego');
-    listaVoto.innerHTML = '';
-    jugadoresActuales.forEach(j => {
-        const li = document.createElement('li');
-        li.textContent = j.nombre;
-        li.style.cursor = 'pointer';
-        li.onclick = () => {
-            db.ref(`salas/${codigoSalaActual}/votos/${miId}`).set(j.id);
-            mostrarModal("✅ VOTO", "Has votado por " + j.nombre, false, "var(--color-green)");
-        };
-        listaVoto.appendChild(li);
-    });
-}
+        const yo = Object.values(sala.jugadores).find(j => j.id === miId);
+        if (!yo) return;
+
+        // Mostrar Rol y Palabra (o ???? para impostor)
+        document.getElementById('rol-juego-display').textContent = yo.rol;
+        document.getElementById('palabra-secreta-display').textContent =
+            (yo.rol === 'Impostor') ? "????" : yo.palabraSecreta;
+
+        // Habilitar panel de adivinanza solo si es Impostor
+        const panelAdivinar = document.getElementById('contenedor-adivinanza-impostor');
+        if (panelAdivinar) {
+            panelAdivinar.style.display = (yo.rol === 'Impostor') ? 'block' : 'none';
+        }
+
+        // Botón de Votación solo para el Host
+        const btnForzar = document.getElementById('btn-forzar-votacion');
+        if (yo.esHost) {
+            btnForzar.style.display = 'block';
+            btnForzar.onclick = () => finalizarVotacionManual();
+        } else {
+            btnForzar.style.display = 'none';
+        }
+
+        // Lista de votación clicable
+        const listaVoto = document.getElementById('lista-jugadores-juego');
+        listaVoto.innerHTML = '';
+        jugadoresActuales.forEach(j => {
+            const li = document.createElement('li');
+            li.textContent = j.nombre;
+            li.style.cursor = 'pointer';
+            li.onclick = () => {
+                db.ref(`salas/${codigoSalaActual}/votos/${miId}`).set(j.id);
+                mostrarModal("✅ VOTO", "Votaste por " + j.nombre, false, "var(--color-green)");
+            };
+            listaVoto.appendChild(li);
+        });
+    }
 
     // ----------------------------------------------------
     // *** MANEJAR INICIO DE VOTACIÓN (TODOS) ***
@@ -1082,27 +1096,27 @@ function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-personalizado');
         const contenido = modal.querySelector('.modal-contenido');
-        
+
         // Aplicar color de borde dinámico
         contenido.style.borderColor = colorBorde;
-        
+
         document.getElementById('modal-titulo').textContent = titulo;
         document.getElementById('modal-mensaje').textContent = mensaje;
-        
+
         const btnC = document.getElementById('modal-btn-confirmar');
         const btnX = document.getElementById('modal-btn-cancelar');
-        
+
         // Configurar botones
         btnX.style.display = esConfirmacion ? 'block' : 'none';
         btnC.textContent = esConfirmacion ? 'Confirmar' : 'Entendido';
-        
+
         modal.style.display = 'flex';
-        
+
         btnC.onclick = () => {
             modal.style.display = 'none';
             resolve(true);
         };
-        
+
         btnX.onclick = () => {
             modal.style.display = 'none';
             resolve(false);
@@ -1121,17 +1135,21 @@ function normalizarPalabra(texto) {
 }
 
 async function finalizarVotacionManual() {
-    const confirmar = await mostrarModal("⌛ FINALIZAR", "¿Quieres cerrar la votación y ver quién sale?", true, "var(--color-primary)");
-    if (!confirmar) return;
+    btn.onclick = async () => {
+        const confirmar = await mostrarModal("⚠️ EXPULSAR", `¿Deseas expulsar a ${j.nombre}?`, true, "var(--color-red)");
+        if (confirmar) {
+            db.ref(`salas/${codigoSalaActual}/jugadores/${j.id}`).remove();
+        }
+    };
 
     const snap = await db.ref(`salas/${codigoSalaActual}`).once('value');
     const sala = snap.val();
     const votos = sala.votos || {};
-    
+
     // Contar votos
     let conteo = {};
     Object.values(votos).forEach(id => conteo[id] = (conteo[id] || 0) + 1);
-    
+
     let expulsadoId = null;
     let maxVotos = 0;
     for (const id in conteo) {

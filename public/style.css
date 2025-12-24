@@ -505,7 +505,12 @@ button:disabled {
     letter-spacing: 4px;
     margin: 15px 0;
     font-family: var(--font-heading);
-    transition: all 0.3s ease;
+    transition: all 0.3s ease;word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    font-size: clamp(1.5rem, 8vw, 3.5rem); /* Tamaño fluido: mínimo 1.5rem, máximo 3.5rem */
+    line-height: 1.2;
+    padding: 10px;
 }
 
 /* ESTADOS DE ROL PARA LA CARD */
@@ -529,10 +534,12 @@ button:disabled {
     background-color: var(--color-card);
     padding: 30px;
     border-radius: var(--radius);
-    width: 90%;
     max-width: 500px;
     border: 2px solid #333;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    width: 95%;
+    margin: 0 auto;
+    overflow: hidden;
 }
 
 .texto-informativo {
