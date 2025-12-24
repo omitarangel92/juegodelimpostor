@@ -1,8 +1,4 @@
-// public/cliente.js (VERSIÓN OPTIMIZADA 1.2.0)
-
-// =================================================================
-// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
-// =================================================================
+// cliente.js - VERSIÓN FINAL INTEGRADA Y FUNCIONAL
 const firebaseConfig = {
     apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0",
     authDomain: "juego-impostor-firebase.firebaseapp.com",
@@ -13,9 +9,6 @@ const firebaseConfig = {
     appId: "1:337084843090:web:41b0ebafd8a21f1420cb8b"
 };
 
-// =================================================================
-// 2. DATOS DEL JUEGO
-// =================================================================
 const PALABRAS_POR_TEMA = {
     'Animales 🐾': ['Perro', 'Gato', 'Elefante', 'León', 'Tigre', 'Cebra', 'Oso', 'Delfín', 'Canguro', 'Jirafa', 'Pingüino', 'Camello', 'Tiburón', 'Hipopótamo', 'Rinoceronte', 'Águila', 'Pulpo', 'Mapache'],
     'Comida 🍔': ['Pizza', 'Taco', 'Hamburguesa', 'Ensalada', 'Sushi', 'Pasta', 'Helado', 'Manzana', 'Lasagna', 'Paella', 'Risotto', 'Ceviche', 'Ramen', 'Burrito', 'Falafel', 'Ratatouille', 'Brownie', 'Croissant'],
@@ -42,15 +35,7 @@ const PALABRAS_POR_TEMA = {
     'Caliente +18 🔥': ['Sexo', 'Gemidos', 'Verga', 'Cuca', 'Tetas', 'Semen', 'Squirt', 'Lencería', 'Masturbación', 'Condón', 'Vibrador', 'Orgasmo', 'Kamasutra', 'Lubricante', 'Azote', 'Oral', 'Anal', 'Posición']
 };
 
-const TEMAS_DISPONIBLES = Object.keys(PALABRAS_POR_TEMA);
-const MIN_JUGADORES = 3;
-const MAX_JUGADORES = 10;
-const VERSION_JUEGO = "1.2.0";
-
-// =================================================================
-// 3. INICIALIZACIÓN
-// =================================================================
-document.addEventListener('DOMContentLoaded', (event) => {
+document.addEventListener('DOMContentLoaded', () => {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -58,248 +43,32 @@ document.addEventListener('DOMContentLoaded', (event) => {
     let codigoSalaActual = '';
     let miId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     let jugadoresActuales = [];
-    let configuracionActual = {
-        temaSeleccionado: TEMAS_DISPONIBLES[Math.floor(Math.random() * TEMAS_DISPONIBLES.length)],
-        incluirAgenteDoble: false
-    };
     let miRolActual = '';
     let miPalabraSecreta = '';
     let miTemaActual = '';
-    let miVotoSeleccionadoId = 'none';
-    let listenerSala = null;
 
-    // =================================================================
-    // 4. FUNCIONES DE LÓGICA Y UI
-    // =================================================================
-
-    function generarCodigoSala() {
-        let result = '';
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        for (let i = 0; i < 4; i++) result += characters.charAt(Math.floor(Math.random() * characters.length));
-        return result;
-    }
-
-    function asignarRoles(jugadores, configuracion) {
-        const numJugadores = jugadores.length;
-        let numImpostores = (numJugadores <= 5) ? 1 : (numJugadores <= 10) ? 2 : 3;
-
-        jugadores.forEach(j => { j.rol = 'Tripulante'; j.eliminado = false; });
-
-        if (configuracion.incluirAgenteDoble && numJugadores >= 4) {
-            const tripulantes = jugadores.filter(j => j.rol === 'Tripulante');
-            const agente = tripulantes[Math.floor(Math.random() * tripulantes.length)];
-            jugadores.find(j => j.id === agente.id).rol = 'Agente Doble';
-        }
-
-        const candidatos = jugadores.filter(j => j.rol === 'Tripulante');
-        let asignados = 0;
-        while (asignados < numImpostores && candidatos.length > 0) {
-            const idx = Math.floor(Math.random() * candidatos.length);
-            const imp = candidatos.splice(idx, 1)[0];
-            jugadores.find(j => j.id === imp.id).rol = 'Impostor';
-            asignados++;
-        }
-        return jugadores;
-    }
-
-    window.cambiarVista = function (vistaId) {
+    window.cambiarVista = (id) => {
         document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
-        const nueva = document.getElementById(vistaId);
-        if (nueva) nueva.classList.add('activa');
-        if (vistaId === 'vista-lobby') { actualizarBotonInicioJuego(); renderConfiguracion(); }
-    }
+        document.getElementById(id).classList.add('activa');
+    };
 
-    function actualizarListaJugadores(jugadores) {
-        jugadoresActuales = jugadores;
-        const listaHost = document.getElementById('lista-jugadores-host');
-        const listaJuego = document.getElementById('lista-jugadores-juego');
-        const listaVotos = document.getElementById('opciones-votacion');
-
-        listaHost.innerHTML = '';
-        listaJuego.innerHTML = '';
-        listaVotos.innerHTML = `<button class="btn-votar" data-voto-id="none" style="background-color: #888;" onclick="votarJugador('none')">⚠️ Nadie (Abstenerse)</button>`;
-
-        let contadorActivos = 0;
-        const soyHost = jugadores.find(p => p.id === miId)?.esHost;
-
-        jugadores.forEach(j => {
-            const esHost = j.hostId === j.id;
-            const esMiJugador = j.id === miId;
-            const esEliminado = j.eliminado;
-
-            const liLobby = document.createElement('li');
-            liLobby.textContent = j.nombre + (esHost ? ' (HOST)' : '') + (esMiJugador ? ' (Tú)' : '');
-
-            if (soyHost && !esMiJugador && !esEliminado) {
-                const btnExp = document.createElement('button');
-                btnExp.textContent = 'Expulsar';
-                btnExp.classList.add('btn-expulsar', 'btn-small');
-                btnExp.onclick = async () => {
-                    const ok = await mostrarModal("⚠️ EXPULSAR", `¿Echar a ${j.nombre}?`, true, "#ff4560");
-                    if (ok) db.ref(`salas/${codigoSalaActual}/jugadores/${j.id}`).remove();
-                };
-                liLobby.appendChild(btnExp);
-            }
-            listaHost.appendChild(liLobby);
-
-            if (!esEliminado) {
-                contadorActivos++;
-                const liJuego = document.createElement('li');
-                liJuego.textContent = j.nombre + (esMiJugador ? ' (Tú)' : '');
-                listaJuego.appendChild(liJuego);
-
-                if (!esMiJugador) {
-                    const btnV = document.createElement('button');
-                    btnV.textContent = j.nombre;
-                    btnV.classList.add('btn-votar');
-                    btnV.setAttribute('data-voto-id', j.id);
-                    btnV.onclick = () => votarJugador(j.id);
-                    listaVotos.appendChild(btnV);
-                }
-            }
+    function generarCategoriasUI() {
+        const contenedor = document.getElementById('contenedor-temas');
+        contenedor.innerHTML = '';
+        Object.keys(PALABRAS_POR_TEMA).forEach((tema, idx) => {
+            const div = document.createElement('div');
+            div.className = 'tema-option';
+            div.innerHTML = `<input type="radio" name="tema-selector" id="tema-${idx}" value="${tema}" ${idx===0?'checked':''}>
+                             <label for="tema-${idx}">${tema}</label>`;
+            contenedor.appendChild(div);
         });
-        document.getElementById('contador-jugadores').textContent = jugadores.length;
-        document.getElementById('jugadores-activos-contador').textContent = contadorActivos;
-        actualizarBotonInicioJuego();
     }
 
-    function renderConfiguracion() {
-        const container = document.getElementById('categorias-container');
-        const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
-        document.getElementById('configuracion-host').style.display = soyHost ? 'block' : 'none';
-
-        if (!soyHost) return;
-
-        if (container.children.length === 0) {
-            TEMAS_DISPONIBLES.forEach(tema => {
-                const div = document.createElement('div');
-                div.classList.add('categoria-item');
-                div.innerHTML = `
-                    <input type="radio" id="tema-${tema}" value="${tema}" name="tema-selector" ${configuracionActual.temaSeleccionado === tema ? 'checked' : ''}>
-                    <label for="tema-${tema}" ${tema.includes('Caliente') ? 'class="categoria-hot"' : ''}>${tema}</label>
-                `;
-                container.appendChild(div);
-            });
-            container.addEventListener('change', actualizarConfiguracionHost);
-        }
-    }
-
-    function actualizarBotonInicioJuego() {
-        const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
-        const btn = document.getElementById('btn-iniciar-juego');
-        const aviso = document.getElementById('min-jugadores-aviso');
-        if (soyHost && btn) {
-            const listo = jugadoresActuales.length >= MIN_JUGADORES && configuracionActual.temaSeleccionado;
-            btn.disabled = !listo;
-            aviso.style.display = listo ? 'none' : 'block';
-            if (jugadoresActuales.length < MIN_JUGADORES) aviso.textContent = `Faltan jugadores (mín. ${MIN_JUGADORES})`;
-        }
-    }
-
-    async function actualizarConfiguracionHost() {
-        const tema = document.querySelector('input[name="tema-selector"]:checked')?.value;
-        const doble = document.getElementById('checkbox-agente-doble').checked;
-        configuracionActual = { temaSeleccionado: tema, incluirAgenteDoble: doble };
-        await db.ref('salas/' + codigoSalaActual + '/configuracion').update(configuracionActual);
-    }
-
-    // =================================================================
-    // 5. EVENTOS PRINCIPALES
-    // =================================================================
-
-    document.getElementById('btn-crear-sala').onclick = async () => {
-        if (!nombreJugador) return alert('Ingresa tu nombre');
-        let cod = generarCodigoSala();
-        await db.ref('salas/' + cod).set({
-            estado: 'esperando',
-            hostId: miId,
-            jugadores: { [miId]: { id: miId, nombre: nombreJugador, esHost: true, rol: 'Tripulante', eliminado: false } },
-            configuracion: configuracionActual
-        });
-        configurarEscuchadorSala(cod);
-    };
-
-    document.getElementById('form-unirse-sala').onsubmit = async (e) => {
-        e.preventDefault();
-        const cod = document.getElementById('input-codigo').value.toUpperCase();
-        const snap = await db.ref('salas/' + cod).once('value');
-        if (!snap.exists()) return alert('No existe');
-        await db.ref(`salas/${cod}/jugadores/${miId}`).set({ id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante', eliminado: false });
-        configurarEscuchadorSala(cod);
-    };
-
-    document.getElementById('btn-iniciar-juego').onclick = async () => {
-        const tema = configuracionActual.temaSeleccionado;
-        const palabras = PALABRAS_POR_TEMA[tema];
-        const elegida = palabras[Math.floor(Math.random() * palabras.length)];
-        const roles = asignarRoles(jugadoresActuales, configuracionActual);
-
-        const updates = {};
-        roles.forEach(j => {
-            updates[`jugadores/${j.id}`] = { ...j, palabraSecreta: j.rol === 'Impostor' ? 'NINGUNA' : elegida, tema: tema };
-        });
-        updates.estado = 'revelacion';
-        updates['configuracion/palabra'] = elegida;
-        await db.ref('salas/' + codigoSalaActual).update(updates);
-    };
-
-    document.getElementById('btn-enviar-adivinanza').onclick = async () => {
-        const intento = document.getElementById('input-adivinar-palabra').value.trim();
-        const ok = await mostrarModal("🎯 ADIVINAR", `¿Es "${intento.toUpperCase()}"?`, true);
-        if (!ok) return;
-
-        const snap = await db.ref('salas/' + codigoSalaActual).once('value');
-        if (normalizarPalabra(intento) === normalizarPalabra(snap.val().configuracion.palabra)) {
-            await db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado', ultimoResultado: { ganador: 'Impostores', motivo: `Adivinó: ${intento.toUpperCase()}` } });
-        } else {
-            await mostrarModal("❌ FALLO", "Incorrecto", false, "#ff4560");
-        }
-    };
-
-    // ==========================================
-    // FUNCIÓN PARA REINICIAR Y VOLVER AL LOBBY
-    // ==========================================
-    const btnReiniciar = document.getElementById('btn-reiniciar-partida-final');
-
-    if (btnReiniciar) {
-        btnReiniciar.onclick = async () => {
-            // 1. Confirmación para el Host
-            const confirmar = await mostrarModal("🔄 REINICIAR", "¿Quieres volver al lobby con los mismos jugadores?", true);
-
-            if (confirmar) {
-                const updates = {};
-
-                // 2. Limpiamos roles y palabras de cada jugador para la nueva partida
-                jugadoresActuales.forEach(jugador => {
-                    updates[`jugadores/${jugador.id}/rol`] = 'Tripulante';
-                    updates[`jugadores/${jugador.id}/palabraSecreta`] = null;
-                    updates[`jugadores/${jugador.id}/tema`] = null;
-                });
-
-                // 3. Cambiamos el estado de la sala a 'esperando' y borramos el resultado anterior
-                updates['estado'] = 'esperando';
-                updates['ultimoResultado'] = null;
-
-                // 4. Ejecutamos la actualización en Firebase
-                try {
-                    await db.ref('salas/' + codigoSalaActual).update(updates);
-                } catch (error) {
-                    console.error("Error al reiniciar:", error);
-                }
-            }
-        };
-    }
-
-    // =================================================================
-    // 6. ESCUCHADOR DE FIREBASE
-    // =================================================================
     function configurarEscuchadorSala(cod) {
         codigoSalaActual = cod;
         document.getElementById('codigo-lobby-display').textContent = cod;
-
         db.ref('salas/' + cod).on('value', snap => {
             if (!snap.exists()) return window.location.reload();
-
             const sala = snap.val();
             const jugArray = Object.keys(sala.jugadores || {}).map(k => ({ ...sala.jugadores[k], id: k }));
             jugadoresActuales = jugArray;
@@ -311,121 +80,123 @@ document.addEventListener('DOMContentLoaded', (event) => {
             miPalabraSecreta = yo.palabraSecreta;
             miTemaActual = yo.tema;
 
-            if (sala.estado === 'esperando') {
-                actualizarListaJugadores(jugArray);
-                cambiarVista('vista-lobby');
+            if (sala.estado === 'esperando') { 
+                actualizarListaLobby(jugArray, sala.hostId === miId); 
+                cambiarVista('vista-lobby'); 
             }
-            else if (sala.estado === 'revelacion') {
-                manejarRevelacion(sala);
-            }
-            else if (sala.estado === 'enJuego') {
-                manejarInicioDiscusion(sala);
-
-                // LÓGICA PARA FORZAR VOTACIÓN (Solo Host)
-                const btnForzar = document.getElementById('btn-forzar-votacion');
-                if (yo.esHost) {
-                    btnForzar.style.display = 'block';
-                    btnForzar.onclick = () => finalizarVotacionManual();
-                } else {
-                    btnForzar.style.display = 'none';
-                }
-            }
-            else if (sala.estado === 'finalizado') {
-                manejarFinDeJuego(sala);
-            }
+            else if (sala.estado === 'revelacion') { manejarRevelacion(); }
+            else if (sala.estado === 'enJuego') { manejarInicioDiscusion(sala); }
+            else if (sala.estado === 'finalizado') { manejarFinDeJuego(sala); }
         });
     }
 
-    async function finalizarVotacionManual() {
-        const confirmar = await mostrarModal("⌛ FINALIZAR", "¿Terminar la discusión y ver resultados?", true);
-        if (confirmar) {
-            // Aquí enviamos a todos a la pantalla final
-            // Puedes cambiar 'TRIPULANTES' por el ganador que decidan manualmente o por lógica
-            db.ref('salas/' + codigoSalaActual).update({
-                estado: 'finalizado',
-                ultimoResultado: { ganador: 'DISCUSIÓN FINALIZADA' }
-            });
-        }
+    function actualizarListaLobby(jugadores, soyHost) {
+        const lista = document.getElementById('lista-jugadores-host');
+        lista.innerHTML = '';
+        jugadores.forEach(j => {
+            const li = document.createElement('li');
+            li.textContent = j.nombre + (j.esHost ? ' (HOST)' : '');
+            if (soyHost && j.id !== miId) {
+                const btn = document.createElement('button');
+                btn.textContent = 'Expulsar';
+                btn.className = 'btn-danger btn-small';
+                btn.onclick = () => db.ref(`salas/${codigoSalaActual}/jugadores/${j.id}`).remove();
+                li.appendChild(btn);
+            }
+            lista.appendChild(li);
+        });
+        document.getElementById('configuracion-host').style.display = soyHost ? 'block' : 'none';
+        document.getElementById('btn-iniciar-juego').style.display = soyHost ? 'block' : 'none';
+        if (soyHost && !document.querySelector('input[name="tema-selector"]')) generarCategoriasUI();
     }
 
-    function manejarRevelacion(sala) {
+    function manejarRevelacion() {
         cambiarVista('vista-revelacion');
-
-        const displayRol = document.getElementById('rol-revelacion-display');
-        const displayPalabra = document.getElementById('palabra-revelacion-display');
-        const displayTema = document.getElementById('tema-valor-revelacion');
-
-        displayRol.className = 'texto-rol';
-        displayPalabra.className = 'palabra-display';
+        const rolD = document.getElementById('rol-revelacion-display');
+        const palD = document.getElementById('palabra-revelacion-display');
+        const temaD = document.getElementById('tema-valor-revelacion');
+        
+        rolD.className = 'texto-rol';
+        palD.className = 'palabra-display';
 
         if (miRolActual === 'Impostor') {
-            displayRol.textContent = "¡TU ERES EL IMPOSTOR!";
-            displayRol.classList.add('rol-impostor');
-            displayPalabra.textContent = "????";
-            displayPalabra.classList.add('rol-impostor');
-            displayTema.textContent = "???";
-        }
-        else {
-            const esAgente = miRolActual === 'Agente Doble';
-            displayRol.textContent = esAgente ? "TU ERES EL AGENTE DOBLE" : "ERES TRIPULANTE";
-            displayRol.classList.add(esAgente ? 'rol-agente' : 'rol-tripulante');
-            displayPalabra.textContent = miPalabraSecreta;
-            displayPalabra.classList.add('rol-tripulante');
-            displayTema.textContent = miTemaActual;
-        }
-
-        // El host inicia la discusión
-        const yo = jugadoresActuales.find(j => j.id === miId);
-        const btnDiscusion = document.getElementById('btn-iniciar-discusion');
-
-        if (yo && yo.esHost) {
-            btnDiscusion.style.display = 'block';
-            btnDiscusion.onclick = () => {
-                db.ref('salas/' + codigoSalaActual).update({ estado: 'enJuego' });
-            };
+            rolD.textContent = "¡ERES EL IMPOSTOR!";
+            rolD.classList.add('rol-impostor');
+            palD.textContent = "????";
+            temaD.textContent = "???";
         } else {
-            btnDiscusion.style.display = 'none';
+            const esAgente = miRolActual === 'Agente Doble';
+            rolD.textContent = esAgente ? "ERES EL AGENTE DOBLE" : "ERES TRIPULANTE";
+            rolD.classList.add(esAgente ? 'rol-agente' : 'rol-tripulante');
+            palD.textContent = miPalabraSecreta;
+            temaD.textContent = miTemaActual;
         }
-    }
 
-    document.getElementById('btn-iniciar-discusion').onclick = () => db.ref(`salas/${codigoSalaActual}`).update({ estado: 'enJuego', rondaEstado: 'discutiendo' });
+        const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        document.getElementById('btn-iniciar-discusion').style.display = soyHost ? 'block' : 'none';
+    }
 
     function manejarInicioDiscusion(sala) {
         cambiarVista('vista-juego');
+        document.getElementById('rol-juego-display').textContent = miRolActual;
+        document.getElementById('palabra-secreta-display').textContent = (miRolActual === 'Impostor') ? "????" : miPalabraSecreta;
+        document.getElementById('contenedor-adivinanza-impostor').style.display = (miRolActual === 'Impostor') ? 'block' : 'none';
 
-        const displayPalabraJuego = document.getElementById('palabra-secreta-display');
-        const displayTemaJuego = document.getElementById('tema-valor');
-        const displayRolJuego = document.getElementById('rol-juego-display');
+        // Lista para votación
+        const listaVoto = document.getElementById('lista-jugadores-juego');
+        listaVoto.innerHTML = '';
+        jugadoresActuales.forEach(j => {
+            const li = document.createElement('li');
+            li.textContent = j.nombre;
+            li.onclick = () => emitirVoto(j.id);
+            listaVoto.appendChild(li);
+        });
 
-        // Reset de estilos
-        displayPalabraJuego.className = 'palabra-display';
+        const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        document.getElementById('btn-forzar-votacion').style.display = soyHost ? 'block' : 'none';
+    }
 
-        if (miRolActual === 'Impostor') {
-            displayRolJuego.textContent = "IMPOSTOR";
-            displayRolJuego.style.color = "var(--color-red)";
+    function emitirVoto(idVotado) {
+        db.ref(`salas/${codigoSalaActual}/votos/${miId}`).set(idVotado);
+        mostrarModal("✅ VOTO", "Voto registrado correctamente", false);
+    }
 
-            displayPalabraJuego.textContent = "????";
-            displayPalabraJuego.classList.add('rol-impostor');
-            displayTemaJuego.textContent = "???";
+    async function finalizarVotacionManual() {
+        const snap = await db.ref(`salas/${codigoSalaActual}`).once('value');
+        const sala = snap.val();
+        const votos = sala.votos || {};
+        const conteo = {};
+        Object.values(votos).forEach(id => conteo[id] = (conteo[id] || 0) + 1);
 
-            document.getElementById('contenedor-adivinanza-impostor').style.display = 'block';
-        } else {
-            displayRolJuego.textContent = miRolActual === 'Agente Doble' ? "AGENTE DOBLE" : "TRIPULANTE";
-            displayRolJuego.style.color = miRolActual === 'Agente Doble' ? "white" : "var(--color-green)";
+        let expulsadoId = null; let max = 0;
+        for (const id in conteo) { if (conteo[id] > max) { max = conteo[id]; expulsadoId = id; } }
 
-            displayPalabraJuego.textContent = miPalabraSecreta;
-            displayPalabraJuego.classList.add('rol-tripulante');
-            displayTemaJuego.textContent = miTemaActual;
-
-            document.getElementById('contenedor-adivinanza-impostor').style.display = 'none';
-        }
+        const jugadorExpulsado = sala.jugadores[expulsadoId];
+        let ganador = (jugadorExpulsado?.rol === 'Impostor') ? 'TRIPULANTES' : 'IMPOSTORES';
+        
+        db.ref(`salas/${codigoSalaActual}`).update({
+            estado: 'finalizado',
+            ultimoResultado: { ganador: ganador, expulsado: jugadorExpulsado?.nombre || 'Nadie' }
+        });
     }
 
     function manejarFinDeJuego(sala) {
         cambiarVista('vista-final');
-        document.getElementById('ganador-display').textContent = `🏆 Ganan los ${sala.ultimoResultado?.ganador || 'Tripulantes'} 🏆`;
+        document.getElementById('ganador-display').textContent = "🏆 GANAN LOS " + sala.ultimoResultado.ganador;
+        const listaF = document.getElementById('lista-roles-final');
+        listaF.innerHTML = '';
+        Object.values(sala.jugadores).forEach(j => {
+            const li = document.createElement('li');
+            li.textContent = `${j.nombre}: ${j.rol}`;
+            listaF.appendChild(li);
+        });
+
+        const soyHost = sala.hostId === miId;
+        document.getElementById('btn-reiniciar-partida-final').style.display = soyHost ? 'block' : 'none';
+        document.getElementById('btn-finalizar-juego-final').style.display = soyHost ? 'block' : 'none';
     }
 
+    // --- EVENTOS BOTONES ---
     document.getElementById('form-inicio').onsubmit = (e) => {
         e.preventDefault();
         nombreJugador = document.getElementById('input-nombre').value.trim();
@@ -434,29 +205,63 @@ document.addEventListener('DOMContentLoaded', (event) => {
             cambiarVista('vista-seleccion');
         }
     };
+
+    document.getElementById('btn-crear-sala').onclick = async () => {
+        const cod = Math.random().toString(36).substring(2, 6).toUpperCase();
+        await db.ref('salas/' + cod).set({
+            estado: 'esperando', hostId: miId,
+            jugadores: { [miId]: { id: miId, nombre: nombreJugador, esHost: true, rol: 'Tripulante' } }
+        });
+        configurarEscuchadorSala(cod);
+    };
+
+    document.getElementById('form-unirse-sala').onsubmit = async (e) => {
+        e.preventDefault();
+        const cod = document.getElementById('input-codigo').value.toUpperCase();
+        const snap = await db.ref('salas/' + cod).once('value');
+        if (snap.exists()) {
+            await db.ref(`salas/${cod}/jugadores/${miId}`).set({ id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante' });
+            configurarEscuchadorSala(cod);
+        }
+    };
+
+    document.getElementById('btn-iniciar-juego').onclick = async () => {
+        const tema = document.querySelector('input[name="tema-selector"]:checked').value;
+        const palabras = PALABRAS_POR_TEMA[tema];
+        const palabra = palabras[Math.floor(Math.random() * palabras.length)];
+        const updates = { estado: 'revelacion', votos: null, 'configuracion/palabra': palabra };
+        
+        const impIdx = Math.floor(Math.random() * jugadoresActuales.length);
+        jugadoresActuales.forEach((j, i) => {
+            const rol = (i === impIdx) ? 'Impostor' : 'Tripulante';
+            updates[`jugadores/${j.id}/rol`] = rol;
+            updates[`jugadores/${j.id}/palabraSecreta`] = (rol === 'Impostor') ? '????' : palabra;
+            updates[`jugadores/${j.id}/tema`] = tema;
+        });
+        await db.ref('salas/' + codigoSalaActual).update(updates);
+    };
+
+    document.getElementById('btn-iniciar-discusion').onclick = () => db.ref('salas/' + codigoSalaActual).update({ estado: 'enJuego' });
+    document.getElementById('btn-forzar-votacion').onclick = () => finalizarVotacionManual();
+
+    document.getElementById('btn-enviar-adivinanza').onclick = async () => {
+        const intento = document.getElementById('input-adivinar-palabra').value.trim();
+        const snap = await db.ref(`salas/${codigoSalaActual}`).once('value');
+        if (normalizarPalabra(intento) === normalizarPalabra(snap.val().configuracion.palabra)) {
+            db.ref(`salas/${codigoSalaActual}`).update({ estado: 'finalizado', ultimoResultado: { ganador: 'IMPOSTORES' } });
+        } else {
+            mostrarModal("❌ ERROR", "Esa no es la palabra", false);
+        }
+    };
+
+    document.getElementById('btn-reiniciar-partida-final').onclick = () => {
+        const updates = { estado: 'esperando', ultimoResultado: null, votos: null };
+        jugadoresActuales.forEach(j => { updates[`jugadores/${j.id}/rol`] = 'Tripulante'; });
+        db.ref('salas/' + codigoSalaActual).update(updates);
+    };
+
+    document.getElementById('btn-finalizar-juego-final').onclick = () => db.ref('salas/' + codigoSalaActual).remove();
 });
 
-// =================================================================
-// 7. FUNCIONES DE UTILIDAD (FUERA DEL DOM PARA ACCESO GLOBAL)
-// =================================================================
-function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A2BE2') {
-    return new Promise((resolve) => {
-        const modal = document.getElementById('modal-personalizado');
-        if (!modal) return resolve(true);
-        modal.querySelector('.modal-contenido').style.borderColor = colorBorde;
-        document.getElementById('modal-titulo').textContent = titulo;
-        document.getElementById('modal-mensaje').textContent = mensaje;
-        const btnC = document.getElementById('modal-btn-confirmar');
-        const btnX = document.getElementById('modal-btn-cancelar');
-        btnX.style.display = esConfirmacion ? 'block' : 'none';
-        btnC.textContent = esConfirmacion ? 'Confirmar' : 'Entendido';
-        modal.style.display = 'flex';
-        btnC.onclick = () => { modal.style.display = 'none'; resolve(true); };
-        btnX.onclick = () => { modal.style.display = 'none'; resolve(false); };
-    });
-}
-
-function normalizarPalabra(texto) {
-    if (!texto) return "";
-    return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/s$/, "");
-}
+// --- UTILIDADES ---
+function normalizarPalabra(t) { return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); }
