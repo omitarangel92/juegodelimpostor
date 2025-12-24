@@ -1,4 +1,4 @@
-// cliente.js - Versión 1.3.1 (Corrección de Reinicio y Cierre de Sala)
+// cliente.js - VERSIÓN FINAL CORREGIDA (IDs VINCULADOS AL HTML)
 
 const firebaseConfig = {
     apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0",
@@ -51,20 +51,20 @@ document.addEventListener('DOMContentLoaded', () => {
     window.cambiarVista = (id) => {
         document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
         const vista = document.getElementById(id);
-        if(vista) vista.classList.add('activa');
+        if (vista) vista.classList.add('activa');
     };
 
     function configurarEscuchadorSala(cod) {
         codigoSalaActual = cod;
         db.ref('salas/' + cod).on('value', snap => {
             if (!snap.exists()) {
-                window.location.reload(); // Si el host borra la sala, todos vuelven al inicio
+                window.location.reload();
                 return;
             }
             const sala = snap.val();
-            const lista = Object.keys(sala.jugadores || {}).map(k => ({...sala.jugadores[k], id: k}));
+            const lista = Object.keys(sala.jugadores || {}).map(k => ({ ...sala.jugadores[k], id: k }));
             jugadoresActuales = lista;
-            
+
             const yo = lista.find(j => j.id === miId);
             if (!yo) return;
 
@@ -109,55 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('codigo-lobby-display').textContent = codigoSalaActual;
     }
 
-    function manejarFinDeJuego(sala) {
-        cambiarVista('vista-final');
-        document.getElementById('ganador-display').textContent = `🏆 GANAN LOS ${sala.ultimoResultado?.ganador || '---'}`;
-        
-        const soyHost = sala.hostId === miId;
-        // Solo el host ve los botones de gestión de sala al final
-        document.getElementById('btn-ir-lobby').style.display = soyHost ? 'inline-block' : 'none';
-        document.getElementById('btn-finalizar-partida').style.display = soyHost ? 'inline-block' : 'none';
-    }
-
-    // --- LÓGICA DE BOTONES DE ACCIÓN ---
-
-    // BOTÓN: VOLVER AL LOBBY (REINICIAR)
-    document.getElementById('btn-ir-lobby').onclick = async () => {
-        const ok = await mostrarModal("🔄 REINICIAR", "¿Quieres volver al lobby para jugar otra partida?", true);
-        if (!ok) return;
-
-        const updates = {};
-        jugadoresActuales.forEach(j => {
-            updates[`jugadores/${j.id}/rol`] = 'Tripulante';
-            updates[`jugadores/${j.id}/palabraSecreta`] = null;
-            updates[`jugadores/${j.id}/tema`] = null;
-        });
-        updates.estado = 'esperando';
-        updates.ultimoResultado = null;
-        
-        await db.ref('salas/' + codigoSalaActual).update(updates);
-    };
-
-    // BOTÓN: FINALIZAR PARTIDA (CERRAR SALA)
-    document.getElementById('btn-finalizar-partida').onclick = async () => {
-        const ok = await mostrarModal("🚪 CERRAR SALA", "¿Estás seguro de que quieres cerrar la sala para todos?", true, "#ff4560");
-        if (ok) {
-            await db.ref('salas/' + codigoSalaActual).remove();
-        }
-    };
-
-    // BOTÓN: ABANDONAR PARTIDA (INDIVIDUAL)
-    document.getElementById('btn-abandonar').onclick = async () => {
-        const ok = await mostrarModal("🚪 ABANDONAR", "¿Quieres salir de la partida?", true);
-        if (ok) {
-            await db.ref(`salas/${codigoSalaActual}/jugadores/${miId}`).remove();
-            window.location.reload();
-        }
-    };
-
-    // --- EL RESTO DE TUS FUNCIONES (MANEJARREVELACION, INICIAR JUEGO, ETC) ---
-    // (Mantenemos la lógica de colores y tamaños que pediste antes)
-
     function manejarRevelacion() {
         cambiarVista('vista-revelacion');
         const rolDisp = document.getElementById('rol-revelacion-display');
@@ -173,6 +124,12 @@ document.addEventListener('DOMContentLoaded', () => {
             palDisp.textContent = "????";
             palDisp.classList.add('rol-impostor');
             temaDisp.textContent = "???";
+        } else if (miRolActual === 'Agente Doble') {
+            rolDisp.textContent = "TU ERES EL AGENTE DOBLE";
+            rolDisp.classList.add('rol-agente');
+            palDisp.textContent = miPalabraSecreta;
+            palDisp.classList.add('rol-tripulante');
+            temaDisp.textContent = miTemaActual;
         } else {
             rolDisp.textContent = "ERES TRIPULANTE";
             rolDisp.classList.add('rol-tripulante');
@@ -180,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             palDisp.classList.add('rol-tripulante');
             temaDisp.textContent = miTemaActual;
         }
-        
+
         const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         document.getElementById('btn-iniciar-discusion').style.display = soyHost ? 'block' : 'none';
     }
@@ -190,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const palJuego = document.getElementById('palabra-secreta-display');
         const rolJuego = document.getElementById('rol-juego-display');
         palJuego.className = 'palabra-display';
-        
+
         if (miRolActual === 'Impostor') {
             rolJuego.textContent = "TU ERES EL IMPOSTOR";
             rolJuego.className = 'rol-impostor texto-rol';
@@ -198,46 +155,68 @@ document.addEventListener('DOMContentLoaded', () => {
             palJuego.classList.add('rol-impostor');
             document.getElementById('contenedor-adivinanza-impostor').style.display = 'block';
         } else {
-            rolJuego.textContent = "ERES TRIPULANTE";
-            rolJuego.className = 'rol-tripulante texto-rol';
+            rolJuego.textContent = miRolActual === 'Agente Doble' ? "AGENTE DOBLE" : "ERES TRIPULANTE";
+            rolJuego.className = miRolActual === 'Agente Doble' ? 'rol-agente texto-rol' : 'rol-tripulante texto-rol';
             palJuego.textContent = miPalabraSecreta;
             palJuego.classList.add('rol-tripulante');
             document.getElementById('contenedor-adivinanza-impostor').style.display = 'none';
         }
     }
 
-    document.getElementById('btn-crear-sala').onclick = async () => {
+    function manejarFinDeJuego(sala) {
+        cambiarVista('vista-final');
+        document.getElementById('ganador-display').textContent = `🏆 GANAN LOS ${sala.ultimoResultado?.ganador || '---'}`;
+        const soyHost = sala.hostId === miId;
+        // CORRECCIÓN DE IDS DE BOTONES FINALES SEGÚN TU HTML
+        document.getElementById('btn-reiniciar-partida-final').style.display = soyHost ? 'inline-block' : 'none';
+        document.getElementById('btn-finalizar-juego-final').style.display = soyHost ? 'inline-block' : 'none';
+    }
+
+    // --- ACCIONES DE BOTONES (VINCULADOS A TU HTML) ---
+
+    // Vista Inicio
+    document.getElementById('form-inicio').onsubmit = (e) => {
+        e.preventDefault();
         nombreJugador = document.getElementById('input-nombre').value.trim();
-        if (!nombreJugador) return alert("Pon tu nombre");
+        if (nombreJugador) {
+            document.getElementById('nombre-jugador-display').textContent = nombreJugador;
+            cambiarVista('vista-seleccion');
+        }
+    };
+
+    // Vista Selección
+    document.getElementById('btn-crear-sala').onclick = async () => {
         const cod = Math.random().toString(36).substring(2, 6).toUpperCase();
         await db.ref('salas/' + cod).set({
             estado: 'esperando',
             hostId: miId,
             configuracion: { temaSeleccionado: 'Animales 🐾' },
-            jugadores: { [miId]: { id: miId, nombre: nombreJugador, esHost: true, rol: 'Tripulante', eliminado: false } }
+            jugadores: { [miId]: { id: miId, nombre: nombreJugador, esHost: true, rol: 'Tripulante' } }
         });
         configurarEscuchadorSala(cod);
     };
 
     document.getElementById('form-unirse-sala').onsubmit = async (e) => {
         e.preventDefault();
-        nombreJugador = document.getElementById('input-nombre').value.trim();
         const cod = document.getElementById('input-codigo').value.toUpperCase();
-        if (!nombreJugador || !cod) return;
-        
-        await db.ref(`salas/${cod}/jugadores/${miId}`).set({ 
-            id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante', eliminado: false 
+        if (!cod) return;
+        const snap = await db.ref('salas/' + cod).once('value');
+        if (!snap.exists()) return alert("La sala no existe");
+        await db.ref(`salas/${cod}/jugadores/${miId}`).set({
+            id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante'
         });
         configurarEscuchadorSala(cod);
     };
 
+    // Lobby
     document.getElementById('btn-iniciar-juego').onclick = async () => {
         const tema = document.querySelector('input[name="tema-selector"]:checked')?.value || 'Animales 🐾';
-        const palabra = PALABRAS_POR_TEMA[tema][Math.floor(Math.random() * PALABRAS_POR_TEMA[tema].length)];
-        
+        const palabras = PALABRAS_POR_TEMA[tema];
+        const palabra = palabras[Math.floor(Math.random() * palabras.length)];
+
         let clones = [...jugadoresActuales];
         const impIdx = Math.floor(Math.random() * clones.length);
-        
+
         const updates = {};
         clones.forEach((j, i) => {
             const rol = i === impIdx ? 'Impostor' : 'Tripulante';
@@ -254,6 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
         db.ref('salas/' + codigoSalaActual).update({ estado: 'enJuego' });
     };
 
+    // Juego
     document.getElementById('btn-enviar-adivinanza').onclick = async () => {
         const intento = document.getElementById('input-adivinar-palabra').value.trim();
         if (!intento) return;
@@ -262,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (normalizarPalabra(intento) === normalizarPalabra(snap.val().configuracion.palabra)) {
                 await db.ref('salas/' + codigoSalaActual).update({
                     estado: 'finalizado',
-                    ultimoResultado: { ganador: 'IMPOSTORES', motivo: '¡Adivinó la palabra!' }
+                    ultimoResultado: { ganador: 'IMPOSTORES' }
                 });
             } else {
                 await mostrarModal("❌ INCORRECTO", "Esa no es la palabra", false, "#ff4560");
@@ -270,16 +250,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    document.getElementById('form-inicio').onsubmit = (e) => {
-        e.preventDefault();
-        nombreJugador = document.getElementById('input-nombre').value.trim();
-        if (nombreJugador) {
-            document.getElementById('nombre-jugador-display').textContent = nombreJugador;
-            cambiarVista('vista-seleccion');
+    document.getElementById('btn-abandonar').onclick = async () => {
+        if (await mostrarModal("🚪 SALIR", "¿Abandonar partida?", true)) {
+            await db.ref(`salas/${codigoSalaActual}/jugadores/${miId}`).remove();
+            window.location.reload();
+        }
+    };
+
+    // Final
+    document.getElementById('btn-reiniciar-partida-final').onclick = async () => {
+        const updates = { estado: 'esperando', ultimoResultado: null };
+        jugadoresActuales.forEach(j => {
+            updates[`jugadores/${j.id}/rol`] = 'Tripulante';
+            updates[`jugadores/${j.id}/palabraSecreta`] = null;
+        });
+        await db.ref('salas/' + codigoSalaActual).update(updates);
+    };
+
+    document.getElementById('btn-finalizar-juego-final').onclick = async () => {
+        if (await mostrarModal("🚪 CERRAR", "¿Cerrar sala?", true, "#ff4560")) {
+            await db.ref('salas/' + codigoSalaActual).remove();
         }
     };
 });
 
+// --- UTILIDADES ---
 function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A2BE2') {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-personalizado');
@@ -296,5 +291,6 @@ function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A
 }
 
 function normalizarPalabra(t) {
+    if (!t) return "";
     return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/s$/, "");
 }
