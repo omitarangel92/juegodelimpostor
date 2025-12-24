@@ -1141,3 +1141,49 @@ function normalizarPalabra(texto) {
         .trim()
         .replace(/s$/, ""); // Quita la 's' al final si existe (manejo básico de plural)
 }
+
+// --- FUNCIONES DE UTILIDAD (AL FINAL DEL ARCHIVO) ---
+
+function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A2BE2') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('modal-personalizado');
+        if (!modal) {
+            console.error("No se encontró el HTML del modal");
+            resolve(true); // Para que no bloquee si el HTML no está
+            return;
+        }
+        const contenido = modal.querySelector('.modal-contenido');
+        contenido.style.borderColor = colorBorde;
+
+        document.getElementById('modal-titulo').textContent = titulo;
+        document.getElementById('modal-mensaje').textContent = mensaje;
+
+        const btnConfirmar = document.getElementById('modal-btn-confirmar');
+        const btnCancelar = document.getElementById('modal-btn-cancelar');
+
+        btnCancelar.style.display = esConfirmacion ? 'block' : 'none';
+        btnConfirmar.textContent = esConfirmacion ? 'Confirmar' : 'Entendido';
+
+        modal.style.display = 'flex';
+
+        btnConfirmar.onclick = () => {
+            modal.style.display = 'none';
+            resolve(true);
+        };
+
+        btnCancelar.onclick = () => {
+            modal.style.display = 'none';
+            resolve(false);
+        };
+    });
+}
+
+function normalizarPalabra(texto) {
+    if (!texto) return "";
+    return texto
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Quita tildes
+        .trim()
+        .replace(/s$/, ""); // Quita la 's' al final
+}
