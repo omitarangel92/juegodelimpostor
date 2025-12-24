@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     let jugadoresActuales = [];
     // Inicializar configuracionActual con el primer tema como seleccionado por defecto
+    // Cambia esto en la línea 144 aprox.
     let configuracionActual = {
         // Selecciona un tema al azar de la lista al cargar el juego
         temaSeleccionado: TEMAS_DISPONIBLES[Math.floor(Math.random() * TEMAS_DISPONIBLES.length)],
@@ -163,9 +164,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             numImpostores = 1;
         } else if (numJugadores >= 6 && numJugadores <= 10) {
             numImpostores = 2;
-        }
-        else if (numJugadores >= 11 && numJugadores <= 15) {
-            numImpostores = 3;
         }
 
         jugadores.forEach(j => {
@@ -392,23 +390,53 @@ document.addEventListener('DOMContentLoaded', (event) => {
         renderConfiguracion();
     }
 
-    // Dentro de la función que crea la lista de jugadores:
-    btnExpulsar.onclick = async () => {
-        // Usamos await para esperar la respuesta del modal
-        const quiereExpulsar = await mostrarModal(
-            "⚠️ EXPULSAR JUGADOR",
-            `¿Estás seguro de que quieres echar a ${jugador.nombre}?`,
-            true,
-            "#ff4560"
-        );
+    window.expulsarJugador = async function (jugadorId) {
+        const misDatos = jugadoresActuales.find(j => j.id === miId);
+        if (!misDatos?.esHost || !codigoSalaActual) return;
 
-        if (quiereExpulsar) {
-            console.log("Expulsando a:", jugador.id);
-            db.ref('salas/' + codigoSalaActual + '/jugadores/' + jugador.id).remove()
-                .then(() => console.log("Jugador eliminado de Firebase"))
-                .catch(err => console.error("Error al eliminar:", err));
+        if (confirm(`¿Estás seguro de que quieres expulsar al jugador con ID ${jugadorId}?`)) {
+            await db.ref(`salas/${codigoSalaActual}/jugadores/${jugadorId}`).remove();
+            alert('Jugador expulsado.');
         }
-    };
+    }
+
+    // Lógica para que el Impostor adivine la palabra (ACTUALIZADO CON MODAL)
+    document.getElementById('btn-enviar-adivinanza').addEventListener('click', async () => {
+        const inputAdivinar = document.getElementById('input-adivinar-palabra');
+        const intentoRaw = inputAdivinar.value.trim();
+
+        if (!intentoRaw || !codigoSalaActual) return;
+
+        const confirmar = await mostrarModal("🎯 ADIVINAR PALABRA", `¿Confirmas que la palabra es "${intentoRaw.toUpperCase()}"?`, true, "#8A2BE2");
+        if (!confirmar) return;
+
+        try {
+            const snapshot = await db.ref('salas/' + codigoSalaActual).once('value');
+            const sala = snapshot.val();
+
+            // NORMALIZAMOS AMBAS PALABRAS PARA COMPARAR
+            const intentoLimpio = normalizarPalabra(intentoRaw);
+            const palabraRealLimpia = normalizarPalabra(sala.configuracion.palabra);
+
+            console.log("Comparando:", intentoLimpio, "vs", palabraRealLimpia);
+
+            if (intentoLimpio === palabraRealLimpia) {
+                // GANAR (Igual que antes...)
+                await db.ref('salas/' + codigoSalaActual).update({
+                    estado: 'finalizado',
+                    ultimoResultado: {
+                        ganador: 'Impostores',
+                        motivo: `¡El Impostor adivinó: ${sala.configuracion.palabra.toUpperCase()}!`
+                    }
+                });
+            } else {
+                await mostrarModal("❌ INCORRECTO", "Esa no es la palabra. ¡Sigue intentando!", false, "#ff4560");
+                inputAdivinar.value = '';
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    });
 
     async function procesarVotacionHost(sala) {
         if (!jugadoresActuales.find(j => j.id === miId)?.esHost) return;
@@ -498,44 +526,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
         miVotoSeleccionadoId = 'none';
     });
-
-    // Lógica para que el Impostor adivine la palabra (ACTUALIZADO CON MODAL)
-    document.getElementById('btn-enviar-adivinanza').addEventListener('click', async () => {
-    const inputAdivinar = document.getElementById('input-adivinar-palabra');
-    const intentoRaw = inputAdivinar.value.trim();
-
-    if (!intentoRaw || !codigoSalaActual) return;
-
-    const confirmar = await mostrarModal("🎯 ADIVINAR PALABRA", `¿Confirmas que la palabra es "${intentoRaw.toUpperCase()}"?`, true, "#8A2BE2");
-    if (!confirmar) return;
-
-    try {
-        const snapshot = await db.ref('salas/' + codigoSalaActual).once('value');
-        const sala = snapshot.val();
-        
-        // NORMALIZAMOS AMBAS PALABRAS PARA COMPARAR
-        const intentoLimpio = normalizarPalabra(intentoRaw);
-        const palabraRealLimpia = normalizarPalabra(sala.configuracion.palabra);
-
-        console.log("Comparando:", intentoLimpio, "vs", palabraRealLimpia);
-
-        if (intentoLimpio === palabraRealLimpia) {
-            // GANAR (Igual que antes...)
-            await db.ref('salas/' + codigoSalaActual).update({
-                estado: 'finalizado',
-                ultimoResultado: {
-                    ganador: 'Impostores',
-                    motivo: `¡El Impostor adivinó: ${sala.configuracion.palabra.toUpperCase()}!`
-                }
-            });
-        } else {
-            await mostrarModal("❌ INCORRECTO", "Esa no es la palabra. ¡Sigue intentando!", false, "#ff4560");
-            inputAdivinar.value = '';
-        }
-    } catch (error) {
-        console.error(error);
-    }
-});
 
     window.abandonarSala = async function () {
         if (!codigoSalaActual || !miId) {
@@ -773,50 +763,48 @@ document.addEventListener('DOMContentLoaded', (event) => {
             ultimoResultado: null,
         });
     });
-
     // ----------------------------------------------------
     // *** MANEJAR REVELACIÓN ***
     // ----------------------------------------------------
     function manejarRevelacion(sala) {
         cambiarVista('vista-revelacion');
 
-        const misDatos = jugadoresActuales.find(j => j.id === miId);
-        const esHost = misDatos?.esHost;
+        const displayRol = document.getElementById('rol-revelacion-display');
+        const displayPalabra = document.getElementById('palabra-revelacion-display');
+        const displayTema = document.getElementById('tema-valor-revelacion');
 
-        const rolDisplay = document.getElementById('rol-revelacion-display');
-        const palabraDisplay = document.getElementById('palabra-revelacion-display');
-        const temaDisplay = document.getElementById('tema-valor-revelacion');
-        const btnDiscusion = document.getElementById('btn-iniciar-discusion');
+        // Limpiar clases previas
+        displayRol.className = 'palabra-display';
+        displayPalabra.className = 'palabra-display';
 
-        if (btnDiscusion) {
-            btnDiscusion.style.display = esHost ? 'block' : 'none';
+        if (miRolActual === 'Impostor') {
+            displayRol.textContent = "¡ERES EL IMPOSTOR!";
+            displayRol.classList.add('rol-impostor');
+
+            displayPalabra.textContent = "????";
+            displayPalabra.classList.add('rol-impostor');
+            displayTema.textContent = "???"; // Misterio total
+        }
+        else if (miRolActual === 'Agente Doble') {
+            displayRol.textContent = "ERES EL AGENTE DOBLE";
+            displayRol.classList.add('rol-agente');
+
+            displayPalabra.textContent = miPalabraSecreta;
+            displayPalabra.classList.add('rol-tripulante'); // La palabra se ve verde/normal
+            displayTema.textContent = miTemaActual;
+        }
+        else {
+            displayRol.textContent = "ERES TRIPULANTE";
+            displayRol.classList.add('rol-tripulante');
+
+            displayPalabra.textContent = miPalabraSecreta;
+            displayPalabra.classList.add('rol-tripulante');
+            displayTema.textContent = miTemaActual;
         }
 
-        if (rolDisplay && palabraDisplay && temaDisplay) {
-            // Ocultar tema al impostor en vista revelación
-            if (miRolActual === 'Impostor') {
-                temaDisplay.textContent = '???'; // Ocultar el tema al Impostor
-            } else {
-                temaDisplay.textContent = miTemaActual; // Mostrar a Tripulantes y Agente Doble
-            }
-
-            if (miRolActual === 'Impostor') {
-                rolDisplay.textContent = 'Tu Rol: ¡IMPOSTOR!';
-                palabraDisplay.textContent = "No conoces la palabra secreta. Tu objetivo es no ser descubierto.";
-                palabraDisplay.style.backgroundColor = 'var(--color-red)';
-                palabraDisplay.style.color = 'var(--color-text)';
-            } else if (miRolActual === 'Agente Doble') {
-                rolDisplay.textContent = 'Tu Rol: ¡AGENTE DOBLE!';
-                palabraDisplay.textContent = `La palabra secreta es: ${misDatos.palabraSecreta}`;
-                palabraDisplay.style.backgroundColor = 'var(--color-orange)';
-                palabraDisplay.style.color = 'var(--color-bg)';
-            } else {
-                rolDisplay.textContent = 'Tu Rol: ¡TRIPULANTE!';
-                palabraDisplay.textContent = `La palabra secreta es: ${misDatos.palabraSecreta}`;
-                palabraDisplay.style.backgroundColor = 'var(--color-green)';
-                palabraDisplay.style.color = 'var(--color-bg)';
-            }
-        }
+        // El host controla el paso a la discusión
+        const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        document.getElementById('btn-iniciar-discusion').style.display = soyHost ? 'block' : 'none';
     }
 
     // ----------------------------------------------------
@@ -838,47 +826,32 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function manejarInicioDiscusion(sala) {
         cambiarVista('vista-juego');
 
-        const misDatos = jugadoresActuales.find(j => j.id === miId);
-        const esHost = misDatos?.esHost;
-        const contenedorAdivinanza = document.getElementById('contenedor-adivinanza-impostor');
-        if (contenedorAdivinanza) {
-            contenedorAdivinanza.style.display = (miRolActual === 'Impostor') ? 'block' : 'none';
+        const displayPalabraJuego = document.getElementById('palabra-secreta-display');
+        const displayTemaJuego = document.getElementById('tema-valor');
+        const displayRolJuego = document.getElementById('rol-juego-display');
+
+        // Reset de estilos
+        displayPalabraJuego.className = 'palabra-display';
+
+        if (miRolActual === 'Impostor') {
+            displayRolJuego.textContent = "IMPOSTOR";
+            displayRolJuego.style.color = "var(--color-red)";
+
+            displayPalabraJuego.textContent = "????";
+            displayPalabraJuego.classList.add('rol-impostor');
+            displayTemaJuego.textContent = "???";
+
+            document.getElementById('contenedor-adivinanza-impostor').style.display = 'block';
+        } else {
+            displayRolJuego.textContent = miRolActual === 'Agente Doble' ? "AGENTE DOBLE" : "TRIPULANTE";
+            displayRolJuego.style.color = miRolActual === 'Agente Doble' ? "white" : "var(--color-green)";
+
+            displayPalabraJuego.textContent = miPalabraSecreta;
+            displayPalabraJuego.classList.add('rol-tripulante');
+            displayTemaJuego.textContent = miTemaActual;
+
+            document.getElementById('contenedor-adivinanza-impostor').style.display = 'none';
         }
-
-        // Ocultar tema al impostor en vista de juego
-        const temaValorElement = document.getElementById('tema-valor');
-        if (temaValorElement) {
-            if (miRolActual === 'Impostor') {
-                temaValorElement.textContent = '???'; // Ocultar el tema al Impostor
-            } else {
-                temaValorElement.textContent = miTemaActual; // Mostrar a Tripulantes y Agente Doble
-            }
-        }
-
-        const palabraDisplay = document.getElementById('palabra-secreta-display');
-        const rolDisplay = document.getElementById('rol-juego-display');
-
-        if (palabraDisplay && rolDisplay) {
-            if (miRolActual === 'Impostor') {
-                rolDisplay.textContent = 'Tu Rol: ¡IMPOSTOR!';
-                palabraDisplay.textContent = "Eres el IMPOSTOR. ¡Cuidado con tus palabras!";
-                palabraDisplay.style.backgroundColor = 'var(--color-red)';
-                palabraDisplay.style.color = 'var(--color-text)';
-            } else if (miRolActual === 'Agente Doble') {
-                rolDisplay.textContent = 'Tu Rol: ¡AGENTE DOBLE!';
-                palabraDisplay.textContent = `La palabra secreta es: ${misDatos.palabraSecreta}`;
-                palabraDisplay.style.backgroundColor = 'var(--color-orange)';
-                palabraDisplay.style.color = 'var(--color-bg)';
-            } else {
-                rolDisplay.textContent = 'Tu Rol: ¡TRIPULANTE!';
-                palabraDisplay.textContent = `La palabra secreta es: ${misDatos.palabraSecreta}`;
-                palabraDisplay.style.backgroundColor = 'var(--color-green)';
-                palabraDisplay.style.color = 'var(--color-bg)';
-            }
-        }
-
-        const btnForzar = document.getElementById('btn-forzar-votacion');
-        if (btnForzar) btnForzar.style.display = esHost ? 'block' : 'none';
     }
 
     // ----------------------------------------------------
@@ -1107,16 +1080,25 @@ document.addEventListener('DOMContentLoaded', (event) => {
     });
 });
 
-function mostrarModal(titulo, mensaje, esConfirmacion = false) {
+// --- FUNCIONES DE UTILIDAD (AL FINAL DEL ARCHIVO) ---
+
+function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A2BE2') {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-personalizado');
-        const btnConfirmar = document.getElementById('modal-btn-confirmar');
-        const btnCancelar = document.getElementById('modal-btn-cancelar');
+        if (!modal) {
+            console.error("No se encontró el HTML del modal");
+            resolve(true); // Para que no bloquee si el HTML no está
+            return;
+        }
+        const contenido = modal.querySelector('.modal-contenido');
+        contenido.style.borderColor = colorBorde;
 
         document.getElementById('modal-titulo').textContent = titulo;
         document.getElementById('modal-mensaje').textContent = mensaje;
 
-        // Mostrar u ocultar botón cancelar
+        const btnConfirmar = document.getElementById('modal-btn-confirmar');
+        const btnCancelar = document.getElementById('modal-btn-cancelar');
+
         btnCancelar.style.display = esConfirmacion ? 'block' : 'none';
         btnConfirmar.textContent = esConfirmacion ? 'Confirmar' : 'Entendido';
 
@@ -1135,9 +1117,11 @@ function mostrarModal(titulo, mensaje, esConfirmacion = false) {
 }
 
 function normalizarPalabra(texto) {
+    if (!texto) return "";
     return texto
         .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita tildes
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Quita tildes
         .trim()
-        .replace(/s$/, ""); // Quita la 's' al final si existe (manejo básico de plural)
+        .replace(/s$/, ""); // Quita la 's' al final
 }
