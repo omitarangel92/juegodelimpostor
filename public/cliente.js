@@ -113,7 +113,7 @@ const PALABRAS_POR_TEMA = {
 };
 const TEMAS_DISPONIBLES = Object.keys(PALABRAS_POR_TEMA);
 const MIN_JUGADORES = 3;
-const MAX_JUGADORES = 10;
+const MAX_JUGADORES = 15;
 
 // =================================================================
 // 3. INICIO DE LA APLICACIÓN (DESPUÉS DEL DOM)
@@ -164,7 +164,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
             numImpostores = 1;
         } else if (numJugadores >= 6 && numJugadores <= 10) {
             numImpostores = 2;
+        } else if (numJugadores >=11 && numJugadores <= 15) {
+            numImpostores = 3;
         }
+
 
         jugadores.forEach(j => {
             j.rol = 'Tripulante';
