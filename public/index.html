@@ -96,6 +96,16 @@
             <p id="palabra-secreta-display" class="palabra-revelacion"></p>
         </div>
 
+        <div id="contenedor-adivinanza-impostor"
+            style="display: none; margin-top: 20px; border: 2px solid var(--color-red); padding: 15px; border-radius: 10px; background-color: rgba(255, 69, 96, 0.1);">
+            <h4 style="color: var(--color-red); margin-bottom: 10px;">🕵️ ¡Adivina la Palabra!</h4>
+            <p style="font-size: 0.9em; margin-bottom: 10px;">Si sabes la palabra secreta de los tripulantes, escríbela
+                aquí para ganar la partida.</p>
+            <textarea id="input-adivinar-palabra" placeholder="Escribe la palabra secreta..."
+                style="width: 100%; padding: 10px; border-radius: 5px; background: var(--color-bg); color: white; border: 1px solid #444; margin-bottom: 10px; font-family: inherit;"></textarea>
+            <button id="btn-enviar-adivinanza" class="btn-danger btn-grande">🎯 Enviar Palabra</button>
+        </div>
+
         <h3 style="color: var(--color-secondary);">Jugadores Activos (<span id="jugadores-activos-contador">0</span>):
         </h3>
         <ul id="lista-jugadores-juego" class="lista-jugadores">

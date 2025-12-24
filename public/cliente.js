@@ -131,11 +131,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     let jugadoresActuales = [];
     // Inicializar configuracionActual con el primer tema como seleccionado por defecto
-    let configuracionActual = { 
-    // Selecciona un tema al azar de la lista al cargar el juego
-    temaSeleccionado: TEMAS_DISPONIBLES[Math.floor(Math.random() * TEMAS_DISPONIBLES.length)], 
-    incluirAgenteDoble: false 
-};
+    let configuracionActual = {
+        // Selecciona un tema al azar de la lista al cargar el juego
+        temaSeleccionado: TEMAS_DISPONIBLES[Math.floor(Math.random() * TEMAS_DISPONIBLES.length)],
+        incluirAgenteDoble: false
+    };
     let miRolActual = '';
     let miPalabraSecreta = '';
     let miTemaActual = '';
@@ -491,6 +491,42 @@ document.addEventListener('DOMContentLoaded', (event) => {
         miVotoSeleccionadoId = 'none';
     });
 
+    // Lógica para que el Impostor adivine la palabra
+    document.getElementById('btn-enviar-adivinanza').addEventListener('click', async () => {
+        const inputAdivinar = document.getElementById('input-adivinar-palabra');
+        const palabraIntento = inputAdivinar.value.trim().toLowerCase();
+
+        if (!palabraIntento || !codigoSalaActual) return;
+
+        if (!confirm(`¿Estás seguro de que la palabra es "${palabraIntento}"? Si fallas podrías delatarte.`)) return;
+
+        try {
+            const salaRef = db.ref('salas/' + codigoSalaActual);
+            const snapshot = await salaRef.once('value');
+            const sala = snapshot.val();
+
+            // Obtenemos la palabra real guardada en la configuración por el Host
+            const palabraReal = sala.configuracion.palabra.toLowerCase();
+
+            if (palabraIntento === palabraReal) {
+                // ¡EL IMPOSTOR GANA!
+                await salaRef.update({
+                    estado: 'finalizado',
+                    ultimoResultado: {
+                        ganador: 'Impostores',
+                        motivo: `¡El Impostor adivinó la palabra secreta: ${sala.configuracion.palabra.toUpperCase()}!`
+                    }
+                });
+            } else {
+                // Fallo (puedes decidir si darle un error o simplemente avisarle)
+                alert('❌ ¡Palabra incorrecta! Sigue escuchando con cuidado.');
+                inputAdivinar.value = ''; // Limpiar para el siguiente intento
+            }
+        } catch (error) {
+            console.error("Error al enviar adivinanza:", error);
+        }
+    });
+
     window.abandonarSala = async function () {
         if (!codigoSalaActual || !miId) {
             // Si no hay sala, recargar para volver al inicio
@@ -794,6 +830,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
         const misDatos = jugadoresActuales.find(j => j.id === miId);
         const esHost = misDatos?.esHost;
+        const contenedorAdivinanza = document.getElementById('contenedor-adivinanza-impostor');
+        if (contenedorAdivinanza) {
+            contenedorAdivinanza.style.display = (miRolActual === 'Impostor') ? 'block' : 'none';
+        }
 
         // Ocultar tema al impostor en vista de juego
         const temaValorElement = document.getElementById('tema-valor');
