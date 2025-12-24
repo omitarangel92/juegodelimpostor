@@ -311,7 +311,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             miPalabraSecreta = yo.palabraSecreta;
             miTemaActual = yo.tema;
 
-            // Gestión de Vistas según el estado de Firebase
             if (sala.estado === 'esperando') {
                 actualizarListaJugadores(jugArray);
                 cambiarVista('vista-lobby');
@@ -321,11 +320,32 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
             else if (sala.estado === 'enJuego') {
                 manejarInicioDiscusion(sala);
+
+                // LÓGICA PARA FORZAR VOTACIÓN (Solo Host)
+                const btnForzar = document.getElementById('btn-forzar-votacion');
+                if (yo.esHost) {
+                    btnForzar.style.display = 'block';
+                    btnForzar.onclick = () => finalizarVotacionManual();
+                } else {
+                    btnForzar.style.display = 'none';
+                }
             }
             else if (sala.estado === 'finalizado') {
                 manejarFinDeJuego(sala);
             }
         });
+    }
+
+    async function finalizarVotacionManual() {
+        const confirmar = await mostrarModal("⌛ FINALIZAR", "¿Terminar la discusión y ver resultados?", true);
+        if (confirmar) {
+            // Aquí enviamos a todos a la pantalla final
+            // Puedes cambiar 'TRIPULANTES' por el ganador que decidan manualmente o por lógica
+            db.ref('salas/' + codigoSalaActual).update({
+                estado: 'finalizado',
+                ultimoResultado: { ganador: 'DISCUSIÓN FINALIZADA' }
+            });
+        }
     }
 
     function manejarRevelacion(sala) {
@@ -335,8 +355,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const displayPalabra = document.getElementById('palabra-revelacion-display');
         const displayTema = document.getElementById('tema-valor-revelacion');
 
-        // Limpiar clases previas para evitar conflictos de colores
-        displayRol.className = 'texto-rol'; // Usamos tu clase base para roles
+        displayRol.className = 'texto-rol';
         displayPalabra.className = 'palabra-display';
 
         if (miRolActual === 'Impostor') {
@@ -346,22 +365,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
             displayPalabra.classList.add('rol-impostor');
             displayTema.textContent = "???";
         }
-        else if (miRolActual === 'Agente Doble') {
-            displayRol.textContent = "TU ERES EL AGENTE DOBLE";
-            displayRol.classList.add('rol-agente');
-            displayPalabra.textContent = miPalabraSecreta;
-            displayPalabra.classList.add('rol-tripulante');
-            displayTema.textContent = miTemaActual;
-        }
         else {
-            displayRol.textContent = "ERES TRIPULANTE";
-            displayRol.classList.add('rol-tripulante');
+            const esAgente = miRolActual === 'Agente Doble';
+            displayRol.textContent = esAgente ? "TU ERES EL AGENTE DOBLE" : "ERES TRIPULANTE";
+            displayRol.classList.add(esAgente ? 'rol-agente' : 'rol-tripulante');
             displayPalabra.textContent = miPalabraSecreta;
             displayPalabra.classList.add('rol-tripulante');
             displayTema.textContent = miTemaActual;
         }
 
-        // Lógica del Botón de Inicio de Discusión (Solo para el Host)
+        // El host inicia la discusión
         const yo = jugadoresActuales.find(j => j.id === miId);
         const btnDiscusion = document.getElementById('btn-iniciar-discusion');
 
