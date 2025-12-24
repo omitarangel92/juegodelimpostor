@@ -296,8 +296,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function configurarEscuchadorSala(cod) {
         codigoSalaActual = cod;
         document.getElementById('codigo-lobby-display').textContent = cod;
+
         db.ref('salas/' + cod).on('value', snap => {
             if (!snap.exists()) return window.location.reload();
+
             const sala = snap.val();
             const jugArray = Object.keys(sala.jugadores || {}).map(k => ({ ...sala.jugadores[k], id: k }));
             jugadoresActuales = jugArray;
@@ -309,14 +311,23 @@ document.addEventListener('DOMContentLoaded', (event) => {
             miPalabraSecreta = yo.palabraSecreta;
             miTemaActual = yo.tema;
 
-            if (sala.estado === 'esperando') { actualizarListaJugadores(jugArray); cambiarVista('vista-lobby'); }
-            else if (sala.estado === 'revelacion') { manejarRevelacion(sala); }
-            else if (sala.estado === 'enJuego') { manejarInicioDiscusion(sala); }
-            else if (sala.estado === 'finalizado') { manejarFinDeJuego(sala); }
+            // Gestión de Vistas según el estado de Firebase
+            if (sala.estado === 'esperando') {
+                actualizarListaJugadores(jugArray);
+                cambiarVista('vista-lobby');
+            }
+            else if (sala.estado === 'revelacion') {
+                manejarRevelacion(sala);
+            }
+            else if (sala.estado === 'enJuego') {
+                manejarInicioDiscusion(sala);
+            }
+            else if (sala.estado === 'finalizado') {
+                manejarFinDeJuego(sala);
+            }
         });
     }
 
-    // Funciones faltantes de manejo de estados (simplificadas)
     function manejarRevelacion(sala) {
         cambiarVista('vista-revelacion');
 
@@ -324,38 +335,44 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const displayPalabra = document.getElementById('palabra-revelacion-display');
         const displayTema = document.getElementById('tema-valor-revelacion');
 
-        // Limpiar clases previas
-        displayRol.className = 'palabra-display';
+        // Limpiar clases previas para evitar conflictos de colores
+        displayRol.className = 'texto-rol'; // Usamos tu clase base para roles
         displayPalabra.className = 'palabra-display';
 
         if (miRolActual === 'Impostor') {
-            displayRol.textContent = "¡ERES EL IMPOSTOR!";
+            displayRol.textContent = "¡TU ERES EL IMPOSTOR!";
             displayRol.classList.add('rol-impostor');
-
             displayPalabra.textContent = "????";
             displayPalabra.classList.add('rol-impostor');
-            displayTema.textContent = "???"; // Misterio total
+            displayTema.textContent = "???";
         }
         else if (miRolActual === 'Agente Doble') {
-            displayRol.textContent = "ERES EL AGENTE DOBLE";
+            displayRol.textContent = "TU ERES EL AGENTE DOBLE";
             displayRol.classList.add('rol-agente');
-
             displayPalabra.textContent = miPalabraSecreta;
-            displayPalabra.classList.add('rol-tripulante'); // La palabra se ve verde/normal
+            displayPalabra.classList.add('rol-tripulante');
             displayTema.textContent = miTemaActual;
         }
         else {
             displayRol.textContent = "ERES TRIPULANTE";
             displayRol.classList.add('rol-tripulante');
-
             displayPalabra.textContent = miPalabraSecreta;
             displayPalabra.classList.add('rol-tripulante');
             displayTema.textContent = miTemaActual;
         }
 
-        // El host controla el paso a la discusión
-        const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
-        document.getElementById('btn-iniciar-discusion').style.display = soyHost ? 'block' : 'none';
+        // Lógica del Botón de Inicio de Discusión (Solo para el Host)
+        const yo = jugadoresActuales.find(j => j.id === miId);
+        const btnDiscusion = document.getElementById('btn-iniciar-discusion');
+
+        if (yo && yo.esHost) {
+            btnDiscusion.style.display = 'block';
+            btnDiscusion.onclick = () => {
+                db.ref('salas/' + codigoSalaActual).update({ estado: 'enJuego' });
+            };
+        } else {
+            btnDiscusion.style.display = 'none';
+        }
     }
 
     document.getElementById('btn-iniciar-discusion').onclick = () => db.ref(`salas/${codigoSalaActual}`).update({ estado: 'enJuego', rondaEstado: 'discutiendo' });
