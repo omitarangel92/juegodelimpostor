@@ -569,3 +569,23 @@ input[type="text"] { width: 100%; padding: 12px; border-radius: 6px; background:
     height: auto;
     width: 12rem;
 }
+
+/* Ajuste para que los textos largos en el modal no se corten */
+#modal-mensaje {
+    white-space: pre-line; /* Respeta los saltos de línea */
+    text-align: left;      /* Mejor para leer instrucciones */
+    max-height: 60vh;      /* Altura máxima */
+    overflow-y: auto;      /* Permite scroll si es muy largo */
+    padding-right: 10px;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* Estilo para el scrollbar del modal (opcional, para que se vea neón) */
+#modal-mensaje::-webkit-scrollbar {
+    width: 5px;
+}
+#modal-mensaje::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 10px;
+}

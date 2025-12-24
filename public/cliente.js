@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             numImpostores = 1;
         } else if (numJugadores >= 6 && numJugadores <= 10) {
             numImpostores = 2;
-        } else if (numJugadores >=11 && numJugadores <= 15) {
+        } else if (numJugadores >= 11 && numJugadores <= 15) {
             numImpostores = 3;
         }
 
@@ -719,7 +719,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // ----------------------------------------------------
     // *** ASIGNAR ROLES Y PALABRA (Host) - INICIO DEL JUEGO ***
     // ----------------------------------------------------
-    // Busca esta sección en la línea 597 aprox.
     document.getElementById('btn-iniciar-juego').addEventListener('click', async () => {
         const misDatos = jugadoresActuales.find(j => j.id === miId);
         if (!misDatos?.esHost || !codigoSalaActual) return;
@@ -728,24 +727,29 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const temaElegido = configuracionActual.temaSeleccionado;
 
         if (!temaElegido || !PALABRAS_POR_TEMA[temaElegido]) {
-            return alert('ERROR: Debes seleccionar una categoría válida.');
+            return mostrarModal("❌ ERROR", "Debes seleccionar una categoría válida.", false, "var(--color-red)");
         }
 
+        // 1. Asignar roles (Tripulante, Impostor, Agente Doble)
         const jugadoresConRoles = asignarRoles(jugadoresActuales, configuracionActual);
 
-        // --- ESTA ES LA CORRECCIÓN CLAVE PARA LA ALEATORIEDAD ---
+        // 2. Seleccionar la palabra aleatoria del tema elegido
         const palabras = PALABRAS_POR_TEMA[temaElegido];
         const palabraElegida = palabras[Math.floor(Math.random() * palabras.length)];
-        // -------------------------------------------------------
 
         const jugadoresParaFirebase = {};
+
+        // 3. Procesar qué información ve cada jugador según su rol
         jugadoresConRoles.forEach(jugador => {
             let palabraInfo = palabraElegida;
             let temaInfo = temaElegido;
 
-            if (jugador.rol === 'Impostor') {
-                palabraInfo = 'NINGUNA';
-                temaInfo = temaElegido;
+            // LÓGICA DE VISIBILIDAD:
+            // El Tripulante ve todo.
+            // El Impostor NO ve tema ni palabra (o solo tema según tu preferencia, aquí pusimos tema).
+            // El Agente Doble VE el tema pero NO la palabra.
+            if (jugador.rol === 'Impostor' || jugador.rol === 'Agente Doble') {
+                palabraInfo = '????'; // Se oculta la palabra para ambos
             }
 
             jugadoresParaFirebase[jugador.id] = {
@@ -756,13 +760,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
             };
         });
 
+        // 4. Actualizar la base de datos para que todos los teléfonos cambien de vista
         await salaRef.update({
             jugadores: jugadoresParaFirebase,
             estado: 'revelacion',
             rondaEstado: 'rolesAsignados',
             'configuracion/palabra': palabraElegida,
             'configuracion/temaElegido': temaElegido,
-            votos: {},
+            votos: {}, // Limpiamos votos de partidas anteriores
             ultimoResultado: null,
         });
     });
@@ -1173,3 +1178,27 @@ async function finalizarVotacionManual() {
         }
     });
 }
+
+document.getElementById('btn-reglas').onclick = () => {
+    const reglasTexto = `
+    🌟 ¡BIENVENIDO TRIPULANTE! 🌟
+
+    1. ELIGE UN NOMBRE: Escribe tu nombre para que todos sepan quién eres.
+    2. CREAR SALA: Puedes crear una sala nueva o unirte a la de un amigo con el código secreto.
+    3. JUGADORES: Deben haber mínimo 3 jugadores para iniciar el juego y hasta un máximo de 15 jugadores.
+    4. CATEGORÍAS: El jefe de la sala elige un tema (como Animales o Comida, videojuegos, etc).
+
+    🕵️ LOS ROLES:
+    • TRIPULANTE: Conoces la palabra secreta. ¡Debes dar pistas sin decir la palabra!
+    • AGENTE DOBLE: Sabes la palabra, pero tu misión es confundir a los demás.
+    • IMPOSTOR: ¡No sabes la palabra! Debes escuchar a los demás y tratar de adivinarla.
+
+    🚀 ACCIONES ESPECIALES:
+    • ADIVINAR: Si eres el Impostor, escribe la palabra en el cuadro mágico para ganar.
+    • VOTACIÓN: Al final, todos eligen a quien crean que es el Impostor. ¡Cuidado con no equivocarte!
+
+    ¿Estás listo para la aventura?
+    `;
+
+    mostrarModal("📜 REGLAS DEL JUEGO", reglasTexto, false, "var(--color-secondary)");
+};
