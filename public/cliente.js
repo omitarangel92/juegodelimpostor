@@ -1181,24 +1181,40 @@ async function finalizarVotacionManual() {
 
 document.getElementById('btn-reglas').onclick = () => {
     const reglasTexto = `
-    🌟 ¡BIENVENIDO TRIPULANTE! 🌟
+    🌟 ¡BIENVENIDO AL JUEGO DEL IMPOSTOR! 🌟
+    
+    Tu objetivo es sobrevivir, engañar o descubrir la verdad. Aquí tienes la guía completa:
 
-    1. ELIGE UN NOMBRE: Escribe tu nombre para que todos sepan quién eres.
-    2. CREAR SALA: Puedes crear una sala nueva o unirte a la de un amigo con el código secreto.
-    3. JUGADORES: Deben haber mínimo 3 jugadores para iniciar el juego y hasta un máximo de 15 jugadores.
-    4. CATEGORÍAS: El jefe de la sala elige un tema (como Animales o Comida, videojuegos, etc).
+    1️⃣ PREPARACIÓN:
+    • Mínimo 3 jugadores, máximo 15.
+    • El Host (creador) elige una categoría. 
+    • Al iniciar, todos verán su ROL y su TEMA.
 
-    🕵️ LOS ROLES:
-    • TRIPULANTE: Conoces la palabra secreta. ¡Debes dar pistas sin decir la palabra!
-    • AGENTE DOBLE: Sabes la palabra, pero tu misión es confundir a los demás.
-    • IMPOSTOR: ¡No sabes la palabra! Debes escuchar a los demás y tratar de adivinarla.
+    2️⃣ LOS ROLES (¿Quién eres?):
+    • 🟦 TRIPULANTE: Conoces la palabra exacta. Debes dar pistas claras para que otros tripulantes te crean, pero no tan obvias para que el Impostor no la adivine.
+    • ⬜ AGENTE DOBLE: Conoces el TEMA, pero NO la palabra (verás ????). Tu misión es fingir que la sabes. Si te confunden con el Impostor, ¡estarás ayudando al equipo rojo!
+    • 🟥 IMPOSTOR: No sabes nada. Tu misión es escuchar las pistas de los demás, deducir la palabra y pasar desapercibido.
 
-    🚀 ACCIONES ESPECIALES:
-    • ADIVINAR: Si eres el Impostor, escribe la palabra en el cuadro mágico para ganar.
-    • VOTACIÓN: Al final, todos eligen a quien crean que es el Impostor. ¡Cuidado con no equivocarte!
+    3️⃣ FASE DE CONVERSACIÓN (Rondas):
+    • Todos deben decir una palabra o pista corta por turno relacionada con lo que ven en su pantalla.
+    • Si el Impostor cree saber la palabra en cualquier momento, puede escribirla en su "Cuadro Mágico" y darle a ENVIAR. Si acierta, GANA AL INSTANTE.
 
-    ¿Estás listo para la aventura?
+    4️⃣ FASE DE VOTACIÓN:
+    • Cuando todos hayan hablado, el Host activará la VOTACIÓN.
+    • Toca el nombre de la persona que te parezca más sospechosa.
+    • Si el más votado es el IMPOSTOR: ¡Ganan los Tripulantes! 🏆
+    • Si votan a un inocente (Tripulante o Agente Doble): ¡Gana el IMPOSTOR! 🎭
+
+    5️⃣ ¿QUÉ PASA SI HAY EMPATE O NO HAY DECISIÓN?
+    • El juego debe continuar con una nueva ronda de pistas hasta que el Host decida cerrar la votación. ¡Sean observadores!
+
+    ⚠️ RECUERDA: 
+    Los Tripulantes ganan si atrapan al Impostor. 
+    El Impostor gana si adivina la palabra o si logran expulsar a un inocente.
+    El impostor gana si el número de impostores es igual o mayor al número de tripulantes.
+
+    ¿Listo para descubrir al mentiroso?
     `;
 
-    mostrarModal("📜 REGLAS DEL JUEGO", reglasTexto, false, "var(--color-secondary)");
+    mostrarModal("📜 MANUAL DE SUPERVIVENCIA", reglasTexto, false, "var(--color-secondary)");
 };
