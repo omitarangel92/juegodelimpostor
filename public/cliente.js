@@ -396,9 +396,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const misDatos = jugadoresActuales.find(j => j.id === miId);
         if (!misDatos?.esHost || !codigoSalaActual) return;
 
-        if (confirm(`¿Estás seguro de que quieres expulsar al jugador con ID ${jugadorId}?`)) {
-            await db.ref(`salas/${codigoSalaActual}/jugadores/${jugadorId}`).remove();
-            alert('Jugador expulsado.');
+        const quiereExpulsar = await mostrarModal("⚠️ EXPULSAR JUGADOR", `¿Estás seguro de que quieres echar a ${jugador.nombre}?`, true);
+        if (quiereExpulsar) {
+            db.ref('salas/' + codigoSalaActual + '/jugadores/' + jugador.id).remove();
         }
     }
 
@@ -491,14 +491,22 @@ document.addEventListener('DOMContentLoaded', (event) => {
         miVotoSeleccionadoId = 'none';
     });
 
-    // Lógica para que el Impostor adivine la palabra
+    // Lógica para que el Impostor adivine la palabra (ACTUALIZADO CON MODAL)
     document.getElementById('btn-enviar-adivinanza').addEventListener('click', async () => {
         const inputAdivinar = document.getElementById('input-adivinar-palabra');
         const palabraIntento = inputAdivinar.value.trim().toLowerCase();
 
         if (!palabraIntento || !codigoSalaActual) return;
 
-        if (!confirm(`¿Estás seguro de que la palabra es "${palabraIntento}"? Si fallas podrías delatarte.`)) return;
+        // REEMPLAZO DE confirm: Usamos el modal en modo confirmación (true)
+        const confirmarAdivinanza = await mostrarModal(
+            "🎯 ADIVINAR PALABRA",
+            `¿Estás seguro de que la palabra es "${palabraIntento.toUpperCase()}"? Si fallas podrías delatarte ante los demás.`,
+            true,
+            "#8A2BE2" // Color violeta (principal)
+        );
+
+        if (!confirmarAdivinanza) return;
 
         try {
             const salaRef = db.ref('salas/' + codigoSalaActual);
@@ -518,12 +526,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     }
                 });
             } else {
-                // Fallo (puedes decidir si darle un error o simplemente avisarle)
-                alert('❌ ¡Palabra incorrecta! Sigue escuchando con cuidado.');
+                // REEMPLAZO DE alert: Usamos el modal en modo aviso (false)
+                await mostrarModal(
+                    "❌ INCORRECTO",
+                    "Esa no es la palabra secreta. ¡Sigue escuchando con cuidado!",
+                    false,
+                    "#ff4560" // Color rojo (error)
+                );
                 inputAdivinar.value = ''; // Limpiar para el siguiente intento
             }
         } catch (error) {
             console.error("Error al enviar adivinanza:", error);
+            mostrarModal("ERROR", "Hubo un problema al conectar con el servidor.", false, "#ff4560");
         }
     });
 
@@ -1096,3 +1110,30 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     });
 });
+
+function mostrarModal(titulo, mensaje, esConfirmacion = false) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('modal-personalizado');
+        const btnConfirmar = document.getElementById('modal-btn-confirmar');
+        const btnCancelar = document.getElementById('modal-btn-cancelar');
+
+        document.getElementById('modal-titulo').textContent = titulo;
+        document.getElementById('modal-mensaje').textContent = mensaje;
+
+        // Mostrar u ocultar botón cancelar
+        btnCancelar.style.display = esConfirmacion ? 'block' : 'none';
+        btnConfirmar.textContent = esConfirmacion ? 'Confirmar' : 'Entendido';
+
+        modal.style.display = 'flex';
+
+        btnConfirmar.onclick = () => {
+            modal.style.display = 'none';
+            resolve(true);
+        };
+
+        btnCancelar.onclick = () => {
+            modal.style.display = 'none';
+            resolve(false);
+        };
+    });
+}

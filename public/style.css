@@ -453,3 +453,44 @@ button:disabled {
 .lista-final .eliminado {
     opacity: 0.6;
 }
+
+/* Estilos para el Modal Personalizado */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+}
+
+.modal-contenido {
+    background: var(--color-card);
+    padding: 30px;
+    border-radius: var(--radius);
+    border: 2px solid var(--color-primary);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
+}
+
+.modal-contenido h2 {
+    font-family: var(--font-heading);
+    color: var(--color-primary);
+    margin-bottom: 15px;
+}
+
+.modal-contenido p {
+    font-size: 1.2em;
+    margin-bottom: 25px;
+}
+
+.modal-botones {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
