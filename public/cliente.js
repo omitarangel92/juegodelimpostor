@@ -1,4 +1,8 @@
-// cliente.js - VERSIÓN RESTAURADA Y SINCRONIZADA
+// public/cliente.js (VERSIÓN OPTIMIZADA 1.2.0)
+
+// =================================================================
+// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
+// =================================================================
 const firebaseConfig = {
     apiKey: "AIzaSyBFWEizn6Nn1iDkvZr2FkN3Vfn7IWGIuG0",
     authDomain: "juego-impostor-firebase.firebaseapp.com",
@@ -9,6 +13,9 @@ const firebaseConfig = {
     appId: "1:337084843090:web:41b0ebafd8a21f1420cb8b"
 };
 
+// =================================================================
+// 2. DATOS DEL JUEGO
+// =================================================================
 const PALABRAS_POR_TEMA = {
     'Animales 🐾': ['Perro', 'Gato', 'Elefante', 'León', 'Tigre', 'Cebra', 'Oso', 'Delfín', 'Canguro', 'Jirafa', 'Pingüino', 'Camello', 'Tiburón', 'Hipopótamo', 'Rinoceronte', 'Águila', 'Pulpo', 'Mapache'],
     'Comida 🍔': ['Pizza', 'Taco', 'Hamburguesa', 'Ensalada', 'Sushi', 'Pasta', 'Helado', 'Manzana', 'Lasagna', 'Paella', 'Risotto', 'Ceviche', 'Ramen', 'Burrito', 'Falafel', 'Ratatouille', 'Brownie', 'Croissant'],
@@ -35,7 +42,15 @@ const PALABRAS_POR_TEMA = {
     'Caliente +18 🔥': ['Sexo', 'Gemidos', 'Verga', 'Cuca', 'Tetas', 'Semen', 'Squirt', 'Lencería', 'Masturbación', 'Condón', 'Vibrador', 'Orgasmo', 'Kamasutra', 'Lubricante', 'Azote', 'Oral', 'Anal', 'Posición']
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+const TEMAS_DISPONIBLES = Object.keys(PALABRAS_POR_TEMA);
+const MIN_JUGADORES = 3;
+const MAX_JUGADORES = 10;
+const VERSION_JUEGO = "1.2.0";
+
+// =================================================================
+// 3. INICIALIZACIÓN
+// =================================================================
+document.addEventListener('DOMContentLoaded', (event) => {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -43,151 +58,344 @@ document.addEventListener('DOMContentLoaded', () => {
     let codigoSalaActual = '';
     let miId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     let jugadoresActuales = [];
+    let configuracionActual = {
+        temaSeleccionado: TEMAS_DISPONIBLES[Math.floor(Math.random() * TEMAS_DISPONIBLES.length)],
+        incluirAgenteDoble: false
+    };
     let miRolActual = '';
     let miPalabraSecreta = '';
     let miTemaActual = '';
+    let miVotoSeleccionadoId = 'none';
+    let listenerSala = null;
 
-    window.cambiarVista = (id) => {
-        document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
-        const vista = document.getElementById(id);
-        if (vista) vista.classList.add('activa');
-    };
+    // =================================================================
+    // 4. FUNCIONES DE LÓGICA Y UI
+    // =================================================================
 
-    // --- GENERAR CATEGORÍAS (ID: contenedor-temas) ---
-    function generarCategoriasUI() {
-        const contenedor = document.getElementById('contenedor-temas');
-        if (!contenedor) return;
-        contenedor.innerHTML = '';
-        Object.keys(PALABRAS_POR_TEMA).forEach((tema, index) => {
-            const div = document.createElement('div');
-            div.className = 'tema-option';
-            div.innerHTML = `
-                <input type="radio" name="tema-selector" id="tema-${index}" value="${tema}" ${index === 0 ? 'checked' : ''}>
-                <label for="tema-${index}">${tema}</label>
-            `;
-            contenedor.appendChild(div);
-        });
+    function generarCodigoSala() {
+        let result = '';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        for (let i = 0; i < 4; i++) result += characters.charAt(Math.floor(Math.random() * characters.length));
+        return result;
     }
 
+    function asignarRoles(jugadores, configuracion) {
+        const numJugadores = jugadores.length;
+        let numImpostores = (numJugadores <= 5) ? 1 : (numJugadores <= 10) ? 2 : 3;
+
+        jugadores.forEach(j => { j.rol = 'Tripulante'; j.eliminado = false; });
+
+        if (configuracion.incluirAgenteDoble && numJugadores >= 4) {
+            const tripulantes = jugadores.filter(j => j.rol === 'Tripulante');
+            const agente = tripulantes[Math.floor(Math.random() * tripulantes.length)];
+            jugadores.find(j => j.id === agente.id).rol = 'Agente Doble';
+        }
+
+        const candidatos = jugadores.filter(j => j.rol === 'Tripulante');
+        let asignados = 0;
+        while (asignados < numImpostores && candidatos.length > 0) {
+            const idx = Math.floor(Math.random() * candidatos.length);
+            const imp = candidatos.splice(idx, 1)[0];
+            jugadores.find(j => j.id === imp.id).rol = 'Impostor';
+            asignados++;
+        }
+        return jugadores;
+    }
+
+    window.cambiarVista = function (vistaId) {
+        document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
+        const nueva = document.getElementById(vistaId);
+        if (nueva) nueva.classList.add('activa');
+        if (vistaId === 'vista-lobby') { actualizarBotonInicioJuego(); renderConfiguracion(); }
+    }
+
+    function actualizarListaJugadores(jugadores) {
+        jugadoresActuales = jugadores;
+        const listaHost = document.getElementById('lista-jugadores-host');
+        const listaJuego = document.getElementById('lista-jugadores-juego');
+        const listaVotos = document.getElementById('opciones-votacion');
+
+        listaHost.innerHTML = '';
+        listaJuego.innerHTML = '';
+        listaVotos.innerHTML = `<button class="btn-votar" data-voto-id="none" style="background-color: #888;" onclick="votarJugador('none')">⚠️ Nadie (Abstenerse)</button>`;
+
+        let contadorActivos = 0;
+        const soyHost = jugadores.find(p => p.id === miId)?.esHost;
+
+        jugadores.forEach(j => {
+            const esHost = j.hostId === j.id;
+            const esMiJugador = j.id === miId;
+            const esEliminado = j.eliminado;
+
+            const liLobby = document.createElement('li');
+            liLobby.textContent = j.nombre + (esHost ? ' (HOST)' : '') + (esMiJugador ? ' (Tú)' : '');
+
+            if (soyHost && !esMiJugador && !esEliminado) {
+                const btnExp = document.createElement('button');
+                btnExp.textContent = 'Expulsar';
+                btnExp.classList.add('btn-expulsar', 'btn-small');
+                btnExp.onclick = async () => {
+                    const ok = await mostrarModal("⚠️ EXPULSAR", `¿Echar a ${j.nombre}?`, true, "#ff4560");
+                    if (ok) db.ref(`salas/${codigoSalaActual}/jugadores/${j.id}`).remove();
+                };
+                liLobby.appendChild(btnExp);
+            }
+            listaHost.appendChild(liLobby);
+
+            if (!esEliminado) {
+                contadorActivos++;
+                const liJuego = document.createElement('li');
+                liJuego.textContent = j.nombre + (esMiJugador ? ' (Tú)' : '');
+                listaJuego.appendChild(liJuego);
+
+                if (!esMiJugador) {
+                    const btnV = document.createElement('button');
+                    btnV.textContent = j.nombre;
+                    btnV.classList.add('btn-votar');
+                    btnV.setAttribute('data-voto-id', j.id);
+                    btnV.onclick = () => votarJugador(j.id);
+                    listaVotos.appendChild(btnV);
+                }
+            }
+        });
+        document.getElementById('contador-jugadores').textContent = jugadores.length;
+        document.getElementById('jugadores-activos-contador').textContent = contadorActivos;
+        actualizarBotonInicioJuego();
+    }
+
+    function renderConfiguracion() {
+        const container = document.getElementById('categorias-container');
+        const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        document.getElementById('configuracion-host').style.display = soyHost ? 'block' : 'none';
+
+        if (!soyHost) return;
+
+        if (container.children.length === 0) {
+            TEMAS_DISPONIBLES.forEach(tema => {
+                const div = document.createElement('div');
+                div.classList.add('categoria-item');
+                div.innerHTML = `
+                    <input type="radio" id="tema-${tema}" value="${tema}" name="tema-selector" ${configuracionActual.temaSeleccionado === tema ? 'checked' : ''}>
+                    <label for="tema-${tema}" ${tema.includes('Caliente') ? 'class="categoria-hot"' : ''}>${tema}</label>
+                `;
+                container.appendChild(div);
+            });
+            container.addEventListener('change', actualizarConfiguracionHost);
+        }
+    }
+
+    function actualizarBotonInicioJuego() {
+        const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
+        const btn = document.getElementById('btn-iniciar-juego');
+        const aviso = document.getElementById('min-jugadores-aviso');
+        if (soyHost && btn) {
+            const listo = jugadoresActuales.length >= MIN_JUGADORES && configuracionActual.temaSeleccionado;
+            btn.disabled = !listo;
+            aviso.style.display = listo ? 'none' : 'block';
+            if (jugadoresActuales.length < MIN_JUGADORES) aviso.textContent = `Faltan jugadores (mín. ${MIN_JUGADORES})`;
+        }
+    }
+
+    async function actualizarConfiguracionHost() {
+        const tema = document.querySelector('input[name="tema-selector"]:checked')?.value;
+        const doble = document.getElementById('checkbox-agente-doble').checked;
+        configuracionActual = { temaSeleccionado: tema, incluirAgenteDoble: doble };
+        await db.ref('salas/' + codigoSalaActual + '/configuracion').update(configuracionActual);
+    }
+
+    // =================================================================
+    // 5. EVENTOS PRINCIPALES
+    // =================================================================
+
+    document.getElementById('btn-crear-sala').onclick = async () => {
+        if (!nombreJugador) return alert('Ingresa tu nombre');
+        let cod = generarCodigoSala();
+        await db.ref('salas/' + cod).set({
+            estado: 'esperando',
+            hostId: miId,
+            jugadores: { [miId]: { id: miId, nombre: nombreJugador, esHost: true, rol: 'Tripulante', eliminado: false } },
+            configuracion: configuracionActual
+        });
+        configurarEscuchadorSala(cod);
+    };
+
+    document.getElementById('form-unirse-sala').onsubmit = async (e) => {
+        e.preventDefault();
+        const cod = document.getElementById('input-codigo').value.toUpperCase();
+        const snap = await db.ref('salas/' + cod).once('value');
+        if (!snap.exists()) return alert('No existe');
+        await db.ref(`salas/${cod}/jugadores/${miId}`).set({ id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante', eliminado: false });
+        configurarEscuchadorSala(cod);
+    };
+
+    document.getElementById('btn-iniciar-juego').onclick = async () => {
+        const tema = configuracionActual.temaSeleccionado;
+        const palabras = PALABRAS_POR_TEMA[tema];
+        const elegida = palabras[Math.floor(Math.random() * palabras.length)];
+        const roles = asignarRoles(jugadoresActuales, configuracionActual);
+
+        const updates = {};
+        roles.forEach(j => {
+            updates[`jugadores/${j.id}`] = { ...j, palabraSecreta: j.rol === 'Impostor' ? 'NINGUNA' : elegida, tema: tema };
+        });
+        updates.estado = 'revelacion';
+        updates['configuracion/palabra'] = elegida;
+        await db.ref('salas/' + codigoSalaActual).update(updates);
+    };
+
+    document.getElementById('btn-enviar-adivinanza').onclick = async () => {
+        const intento = document.getElementById('input-adivinar-palabra').value.trim();
+        const ok = await mostrarModal("🎯 ADIVINAR", `¿Es "${intento.toUpperCase()}"?`, true);
+        if (!ok) return;
+
+        const snap = await db.ref('salas/' + codigoSalaActual).once('value');
+        if (normalizarPalabra(intento) === normalizarPalabra(snap.val().configuracion.palabra)) {
+            await db.ref('salas/' + codigoSalaActual).update({ estado: 'finalizado', ultimoResultado: { ganador: 'Impostores', motivo: `Adivinó: ${intento.toUpperCase()}` } });
+        } else {
+            await mostrarModal("❌ FALLO", "Incorrecto", false, "#ff4560");
+        }
+    };
+
+    // ==========================================
+    // FUNCIÓN PARA REINICIAR Y VOLVER AL LOBBY
+    // ==========================================
+    const btnReiniciar = document.getElementById('btn-reiniciar-partida-final');
+
+    if (btnReiniciar) {
+        btnReiniciar.onclick = async () => {
+            // 1. Confirmación para el Host
+            const confirmar = await mostrarModal("🔄 REINICIAR", "¿Quieres volver al lobby con los mismos jugadores?", true);
+
+            if (confirmar) {
+                const updates = {};
+
+                // 2. Limpiamos roles y palabras de cada jugador para la nueva partida
+                jugadoresActuales.forEach(jugador => {
+                    updates[`jugadores/${jugador.id}/rol`] = 'Tripulante';
+                    updates[`jugadores/${jugador.id}/palabraSecreta`] = null;
+                    updates[`jugadores/${jugador.id}/tema`] = null;
+                });
+
+                // 3. Cambiamos el estado de la sala a 'esperando' y borramos el resultado anterior
+                updates['estado'] = 'esperando';
+                updates['ultimoResultado'] = null;
+
+                // 4. Ejecutamos la actualización en Firebase
+                try {
+                    await db.ref('salas/' + codigoSalaActual).update(updates);
+                } catch (error) {
+                    console.error("Error al reiniciar:", error);
+                }
+            }
+        };
+    }
+
+    // =================================================================
+    // 6. ESCUCHADOR DE FIREBASE
+    // =================================================================
     function configurarEscuchadorSala(cod) {
         codigoSalaActual = cod;
+        document.getElementById('codigo-lobby-display').textContent = cod;
         db.ref('salas/' + cod).on('value', snap => {
-            if (!snap.exists()) { window.location.reload(); return; }
+            if (!snap.exists()) return window.location.reload();
             const sala = snap.val();
-            const lista = Object.keys(sala.jugadores || {}).map(k => ({ ...sala.jugadores[k], id: k }));
-            jugadoresActuales = lista;
+            const jugArray = Object.keys(sala.jugadores || {}).map(k => ({ ...sala.jugadores[k], id: k }));
+            jugadoresActuales = jugArray;
 
-            const yo = lista.find(j => j.id === miId);
-            if (!yo) return;
+            const yo = jugArray.find(j => j.id === miId);
+            if (!yo) return window.location.reload();
 
             miRolActual = yo.rol;
             miPalabraSecreta = yo.palabraSecreta;
             miTemaActual = yo.tema;
 
-            if (sala.estado === 'esperando') {
-                actualizarLobby(lista, sala.hostId === miId);
-                cambiarVista('vista-lobby');
-            } else if (sala.estado === 'revelacion') {
-                manejarRevelacion();
-            } else if (sala.estado === 'enJuego') {
-                manejarInicioDiscusion();
-            } else if (sala.estado === 'finalizado') {
-                manejarFinDeJuego(sala);
-            }
+            if (sala.estado === 'esperando') { actualizarListaJugadores(jugArray); cambiarVista('vista-lobby'); }
+            else if (sala.estado === 'revelacion') { manejarRevelacion(sala); }
+            else if (sala.estado === 'enJuego') { manejarInicioDiscusion(sala); }
+            else if (sala.estado === 'finalizado') { manejarFinDeJuego(sala); }
         });
     }
 
-    function actualizarLobby(jugadores, soyHost) {
-        const listaUI = document.getElementById('lista-jugadores-host');
-        listaUI.innerHTML = '';
-        jugadores.forEach(j => {
-            const li = document.createElement('li');
-            li.textContent = j.nombre + (j.esHost ? ' (HOST)' : '');
-            if (soyHost && j.id !== miId) {
-                const btn = document.createElement('button');
-                btn.textContent = 'Expulsar';
-                btn.className = 'btn-danger btn-small';
-                btn.onclick = async () => {
-                    if (await mostrarModal("⚠️ EXPULSAR", `¿Echar a ${j.nombre}?`, true, "#ff4560")) {
-                        db.ref(`salas/${codigoSalaActual}/jugadores/${j.id}`).remove();
-                    }
-                };
-                li.appendChild(btn);
-            }
-            listaUI.appendChild(li);
-        });
-
-        const configHost = document.getElementById('configuracion-host');
-        const btnIniciar = document.getElementById('btn-iniciar-juego');
-        
-        if (soyHost) {
-            configHost.style.display = 'block';
-            btnIniciar.style.display = 'block';
-            if (!document.querySelector('input[name="tema-selector"]')) {
-                generarCategoriasUI();
-            }
-        } else {
-            configHost.style.display = 'none';
-            btnIniciar.style.display = 'none';
-        }
-        document.getElementById('codigo-lobby-display').textContent = codigoSalaActual;
-    }
-
-    // --- REVELACIÓN Y ROLES ---
-    function manejarRevelacion() {
+    // Funciones faltantes de manejo de estados (simplificadas)
+    function manejarRevelacion(sala) {
         cambiarVista('vista-revelacion');
-        const rolDisp = document.getElementById('rol-revelacion-display');
-        const palDisp = document.getElementById('palabra-revelacion-display');
-        const temaDisp = document.getElementById('tema-valor-revelacion');
 
-        rolDisp.className = 'texto-rol';
-        palDisp.className = 'palabra-display';
+        const displayRol = document.getElementById('rol-revelacion-display');
+        const displayPalabra = document.getElementById('palabra-revelacion-display');
+        const displayTema = document.getElementById('tema-valor-revelacion');
+
+        // Limpiar clases previas
+        displayRol.className = 'palabra-display';
+        displayPalabra.className = 'palabra-display';
 
         if (miRolActual === 'Impostor') {
-            rolDisp.textContent = "¡TU ERES EL IMPOSTOR!";
-            rolDisp.classList.add('rol-impostor');
-            palDisp.textContent = "????";
-            palDisp.classList.add('rol-impostor');
-            temaDisp.textContent = "???";
-        } else {
-            rolDisp.textContent = "ERES TRIPULANTE";
-            rolDisp.classList.add('rol-tripulante');
-            palDisp.textContent = miPalabraSecreta;
-            palDisp.classList.add('rol-tripulante');
-            temaDisp.textContent = miTemaActual;
+            displayRol.textContent = "¡ERES EL IMPOSTOR!";
+            displayRol.classList.add('rol-impostor');
+
+            displayPalabra.textContent = "????";
+            displayPalabra.classList.add('rol-impostor');
+            displayTema.textContent = "???"; // Misterio total
+        }
+        else if (miRolActual === 'Agente Doble') {
+            displayRol.textContent = "ERES EL AGENTE DOBLE";
+            displayRol.classList.add('rol-agente');
+
+            displayPalabra.textContent = miPalabraSecreta;
+            displayPalabra.classList.add('rol-tripulante'); // La palabra se ve verde/normal
+            displayTema.textContent = miTemaActual;
+        }
+        else {
+            displayRol.textContent = "ERES TRIPULANTE";
+            displayRol.classList.add('rol-tripulante');
+
+            displayPalabra.textContent = miPalabraSecreta;
+            displayPalabra.classList.add('rol-tripulante');
+            displayTema.textContent = miTemaActual;
         }
 
+        // El host controla el paso a la discusión
         const soyHost = jugadoresActuales.find(j => j.id === miId)?.esHost;
         document.getElementById('btn-iniciar-discusion').style.display = soyHost ? 'block' : 'none';
     }
 
-    function manejarInicioDiscusion() {
+    document.getElementById('btn-iniciar-discusion').onclick = () => db.ref(`salas/${codigoSalaActual}`).update({ estado: 'enJuego', rondaEstado: 'discutiendo' });
+
+    function manejarInicioDiscusion(sala) {
         cambiarVista('vista-juego');
-        const palJuego = document.getElementById('palabra-secreta-display');
-        const rolJuego = document.getElementById('rol-juego-display');
-        
+
+        const displayPalabraJuego = document.getElementById('palabra-secreta-display');
+        const displayTemaJuego = document.getElementById('tema-valor');
+        const displayRolJuego = document.getElementById('rol-juego-display');
+
+        // Reset de estilos
+        displayPalabraJuego.className = 'palabra-display';
+
         if (miRolActual === 'Impostor') {
-            rolJuego.textContent = "TU ERES EL IMPOSTOR";
-            rolJuego.className = 'rol-impostor texto-rol';
-            palJuego.textContent = "????";
+            displayRolJuego.textContent = "IMPOSTOR";
+            displayRolJuego.style.color = "var(--color-red)";
+
+            displayPalabraJuego.textContent = "????";
+            displayPalabraJuego.classList.add('rol-impostor');
+            displayTemaJuego.textContent = "???";
+
             document.getElementById('contenedor-adivinanza-impostor').style.display = 'block';
         } else {
-            rolJuego.textContent = "ERES TRIPULANTE";
-            rolJuego.className = 'rol-tripulante texto-rol';
-            palJuego.textContent = miPalabraSecreta;
+            displayRolJuego.textContent = miRolActual === 'Agente Doble' ? "AGENTE DOBLE" : "TRIPULANTE";
+            displayRolJuego.style.color = miRolActual === 'Agente Doble' ? "white" : "var(--color-green)";
+
+            displayPalabraJuego.textContent = miPalabraSecreta;
+            displayPalabraJuego.classList.add('rol-tripulante');
+            displayTemaJuego.textContent = miTemaActual;
+
             document.getElementById('contenedor-adivinanza-impostor').style.display = 'none';
         }
     }
 
     function manejarFinDeJuego(sala) {
         cambiarVista('vista-final');
-        document.getElementById('ganador-display').textContent = `🏆 GANAN LOS ${sala.ultimoResultado?.ganador || '---'}`;
-        const soyHost = sala.hostId === miId;
-        document.getElementById('btn-reiniciar-partida-final').style.display = soyHost ? 'inline-block' : 'none';
-        document.getElementById('btn-finalizar-juego-final').style.display = soyHost ? 'inline-block' : 'none';
+        document.getElementById('ganador-display').textContent = `🏆 Ganan los ${sala.ultimoResultado?.ganador || 'Tripulantes'} 🏆`;
     }
 
-    // --- EVENTOS DE BOTONES ---
     document.getElementById('form-inicio').onsubmit = (e) => {
         e.preventDefault();
         nombreJugador = document.getElementById('input-nombre').value.trim();
@@ -196,93 +404,11 @@ document.addEventListener('DOMContentLoaded', () => {
             cambiarVista('vista-seleccion');
         }
     };
-
-    document.getElementById('btn-crear-sala').onclick = async () => {
-        const cod = Math.random().toString(36).substring(2, 6).toUpperCase();
-        await db.ref('salas/' + cod).set({
-            estado: 'esperando',
-            hostId: miId,
-            configuracion: { temaSeleccionado: 'Animales 🐾' },
-            jugadores: { [miId]: { id: miId, nombre: nombreJugador, esHost: true, rol: 'Tripulante' } }
-        });
-        configurarEscuchadorSala(cod);
-    };
-
-    document.getElementById('form-unirse-sala').onsubmit = async (e) => {
-        e.preventDefault();
-        const cod = document.getElementById('input-codigo').value.toUpperCase();
-        if (!cod) return;
-        const snap = await db.ref('salas/' + cod).once('value');
-        if (!snap.exists()) return alert("Sala no encontrada");
-        await db.ref(`salas/${cod}/jugadores/${miId}`).set({
-            id: miId, nombre: nombreJugador, esHost: false, rol: 'Tripulante'
-        });
-        configurarEscuchadorSala(cod);
-    };
-
-    document.getElementById('btn-iniciar-juego').onclick = async () => {
-        const temaRadio = document.querySelector('input[name="tema-selector"]:checked');
-        const tema = temaRadio ? temaRadio.value : 'Animales 🐾';
-        const palabra = PALABRAS_POR_TEMA[tema][Math.floor(Math.random() * PALABRAS_POR_TEMA[tema].length)];
-
-        let clones = [...jugadoresActuales];
-        const impIdx = Math.floor(Math.random() * clones.length);
-
-        const updates = {};
-        clones.forEach((j, i) => {
-            const rol = i === impIdx ? 'Impostor' : 'Tripulante';
-            updates[`jugadores/${j.id}/rol`] = rol;
-            updates[`jugadores/${j.id}/palabraSecreta`] = rol === 'Impostor' ? '????' : palabra;
-            updates[`jugadores/${j.id}/tema`] = tema;
-        });
-        updates.estado = 'revelacion';
-        updates['configuracion/palabra'] = palabra;
-        await db.ref('salas/' + codigoSalaActual).update(updates);
-    };
-
-    document.getElementById('btn-iniciar-discusion').onclick = () => {
-        db.ref('salas/' + codigoSalaActual).update({ estado: 'enJuego' });
-    };
-
-    document.getElementById('btn-enviar-adivinanza').onclick = async () => {
-        const intento = document.getElementById('input-adivinar-palabra').value.trim();
-        if (!intento) return;
-        if (await mostrarModal("🎯 ADIVINAR", `¿Es "${intento.toUpperCase()}"?`, true)) {
-            const snap = await db.ref('salas/' + codigoSalaActual).once('value');
-            if (normalizarPalabra(intento) === normalizarPalabra(snap.val().configuracion.palabra)) {
-                await db.ref('salas/' + codigoSalaActual).update({
-                    estado: 'finalizado',
-                    ultimoResultado: { ganador: 'IMPOSTORES' }
-                });
-            } else {
-                await mostrarModal("❌ INCORRECTO", "Sigue intentando", false, "#ff4560");
-            }
-        }
-    };
-
-    document.getElementById('btn-abandonar').onclick = async () => {
-        if (await mostrarModal("🚪 ABANDONAR", "¿Salir?", true)) {
-            await db.ref(`salas/${codigoSalaActual}/jugadores/${miId}`).remove();
-            window.location.reload();
-        }
-    };
-
-    document.getElementById('btn-reiniciar-partida-final').onclick = async () => {
-        const updates = { estado: 'esperando', ultimoResultado: null };
-        jugadoresActuales.forEach(j => {
-            updates[`jugadores/${j.id}/rol`] = 'Tripulante';
-            updates[`jugadores/${j.id}/palabraSecreta`] = null;
-        });
-        await db.ref('salas/' + codigoSalaActual).update(updates);
-    };
-
-    document.getElementById('btn-finalizar-juego-final').onclick = async () => {
-        if (await mostrarModal("🚪 CERRAR", "¿Cerrar sala?", true, "#ff4560")) {
-            await db.ref('salas/' + codigoSalaActual).remove();
-        }
-    };
 });
 
+// =================================================================
+// 7. FUNCIONES DE UTILIDAD (FUERA DEL DOM PARA ACCESO GLOBAL)
+// =================================================================
 function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A2BE2') {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-personalizado');
@@ -293,12 +419,14 @@ function mostrarModal(titulo, mensaje, esConfirmacion = false, colorBorde = '#8A
         const btnC = document.getElementById('modal-btn-confirmar');
         const btnX = document.getElementById('modal-btn-cancelar');
         btnX.style.display = esConfirmacion ? 'block' : 'none';
+        btnC.textContent = esConfirmacion ? 'Confirmar' : 'Entendido';
         modal.style.display = 'flex';
         btnC.onclick = () => { modal.style.display = 'none'; resolve(true); };
         btnX.onclick = () => { modal.style.display = 'none'; resolve(false); };
     });
 }
 
-function normalizarPalabra(t) {
-    return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/s$/, "");
+function normalizarPalabra(texto) {
+    if (!texto) return "";
+    return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/s$/, "");
 }
