@@ -563,3 +563,9 @@ button:disabled {
 button { padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; margin: 5px; }
 .btn-principal { background: var(--color-primary); color: white; }
 input[type="text"] { width: 100%; padding: 12px; border-radius: 6px; background: #2b2e3c; color: white; border: none; }
+
+.vista .main-icon img {
+    max-width: 100%;
+    height: auto;
+    width: 12rem;
+}
