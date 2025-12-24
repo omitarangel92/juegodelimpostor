@@ -1191,7 +1191,7 @@ document.getElementById('btn-reglas').onclick = () => {
     • Al iniciar, todos verán su ROL y su TEMA.
 
     2️⃣ LOS ROLES (¿Quién eres?):
-    • 🟦 TRIPULANTE: Conoces la palabra exacta. Debes dar pistas claras para que otros tripulantes te crean, pero no tan obvias para que el Impostor no la adivine.
+    • 🟩 TRIPULANTE: Conoces la palabra exacta. Debes dar pistas claras para que otros tripulantes te crean, pero no tan obvias para que el Impostor no la adivine.
     • ⬜ AGENTE DOBLE: Conoces el TEMA, pero NO la palabra (verás ????). Tu misión es fingir que la sabes. Si te confunden con el Impostor, ¡estarás ayudando al equipo rojo!
     • 🟥 IMPOSTOR: No sabes nada. Tu misión es escuchar las pistas de los demás, deducir la palabra y pasar desapercibido.
 
@@ -1210,8 +1210,7 @@ document.getElementById('btn-reglas').onclick = () => {
 
     ⚠️ RECUERDA: 
     Los Tripulantes ganan si atrapan al Impostor. 
-    El Impostor gana si adivina la palabra o si logran expulsar a un inocente.
-    El impostor gana si el número de impostores es igual o mayor al número de tripulantes.
+    El Impostor gana si adivina la palabra o si el número de impostores es igual o mayor al número de tripulantes.
 
     ¿Listo para descubrir al mentiroso?
     `;
