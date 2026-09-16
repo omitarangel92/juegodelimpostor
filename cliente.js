@@ -178,10 +178,28 @@ function normalizarTexto(texto) {
 
 // ================= LLAMADA AL BACKEND DE VERCEL =================
 async function generarContextoIA() {
+    // Plan B ampliado: solo se usa si la IA falla (sin internet, key inválida, etc.)
     const planB = [
         { categoria: "Cosas que un perro destruiría", palabra: "Zapatos" },
         { categoria: "Comida que es un desastre comer en la cama", palabra: "Sopa" },
-        { categoria: "Lo primero que empacas para la playa", palabra: "Toalla" }
+        { categoria: "Lo primero que empacas para la playa", palabra: "Toalla" },
+        { categoria: "Cosas que darías por perdidas en una mudanza", palabra: "Control remoto" },
+        { categoria: "Objetos que todos fingen saber usar", palabra: "Extintor" },
+        { categoria: "Cosas que llevarías a una isla desierta", palabra: "Encendedor" },
+        { categoria: "Lo que más se pierde en un festival", palabra: "Celular" },
+        { categoria: "Cosas incómodas de compartir con un roommate", palabra: "Cepillo de dientes" },
+        { categoria: "Objetos de una oficina embrujada", palabra: "Grapadora" },
+        { categoria: "Cosas que un superhéroe cargaría en su bolso", palabra: "Capa" },
+        { categoria: "Lo primero que revisas al llegar a un hotel", palabra: "Minibar" },
+        { categoria: "Cosas que se rompen el primer día de usarlas", palabra: "Paraguas" },
+        { categoria: "Objetos típicos de un picnic desastroso", palabra: "Hormigas" },
+        { categoria: "Cosas que roba un mapache en la noche", palabra: "Basura" },
+        { categoria: "Lo que nunca falta en una mochila escolar", palabra: "Lápiz" },
+        { categoria: "Cosas que asustan en una casa embrujada", palabra: "Fantasma" },
+        { categoria: "Objetos de un naufragio en una película", palabra: "Cocotero" },
+        { categoria: "Lo primero que se agota en una emergencia", palabra: "Agua" },
+        { categoria: "Cosas que un mago sacaría de su sombrero", palabra: "Conejo" },
+        { categoria: "Objetos comunes en un consultorio dental", palabra: "Jeringa" }
     ];
 
     try {
@@ -203,24 +221,35 @@ async function generarContextoIA() {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
+                // "llama-3.3-70b-versatile" fue descontinuado por Groq (16 ago 2026).
+                // Reemplazo recomendado por Groq: openai/gpt-oss-120b
+                model: "openai/gpt-oss-120b",
                 messages: [
                     { role: "system", content: "Responde ÚNICAMENTE con JSON válido." },
                     { role: "user", content: promptEnvio }
                 ],
                 response_format: { type: "json_object" },
-                temperature: 1.2
+                temperature: 1.2,
+                reasoning_effort: "low" // respuestas más rápidas para un juego en tiempo real
             }) 
         });
 
-        if(!response.ok) throw new Error("Fallo del servidor puente");
+        if(!response.ok) {
+            // Capturamos el cuerpo del error para saber la causa real (modelo caído, key inválida, etc.)
+            const errorBody = await response.text();
+            throw new Error(`Fallo del servidor puente (${response.status}): ${errorBody}`);
+        }
         
         const data = await response.json();
         const jsonObj = JSON.parse(data.choices[0].message.content);
+
+        // Validamos que la IA haya devuelto lo que necesitamos antes de confiar en ello
+        if(!jsonObj.categoria || !jsonObj.palabra) throw new Error("Respuesta de IA incompleta: " + JSON.stringify(jsonObj));
+
         return jsonObj;
 
     } catch (e) {
-        console.warn("Fallo backend, activando Plan B local:", e);
+        console.error("⚠️ Fallo backend IA, activando Plan B local. Motivo:", e.message);
         return planB[Math.floor(Math.random() * planB.length)];
     }
 }
@@ -316,12 +345,21 @@ function actualizarBotonInicioJuego() {
     } else document.getElementById('min-jugadores-aviso').style.display = 'none';
 }
 
+function barajarFisherYates(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
 async function procesarCreacionDeRonda() {
     db.ref(`salas/${codigoSalaActual}`).update({ estado: 'generando_ronda' });
     const usaDoble = document.getElementById('checkbox-agente-doble')?.checked || false;
     const contexto = await generarContextoIA();
 
-    let jugArray = [...jugadoresActuales].sort(() => Math.random() - 0.5);
+    let jugArray = barajarFisherYates(jugadoresActuales);
     
     let numImpostores = 1;
     if(jugArray.length >= 6) numImpostores = 2;
@@ -512,5 +550,4 @@ function manejarJuicioAnimado(sala, esHost) {
     }
     document.getElementById('acciones-finales-host').style.display = esHost ? 'flex' : 'none';
 }
-
 window.abandonarSala = () => window.location.reload();
