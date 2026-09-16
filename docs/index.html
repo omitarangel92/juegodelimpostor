@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,31 +11,27 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
 </head>
-
 <body>
+    <!-- Contenedor de Notificaciones Rápidas -->
+    <div id="toast-container"></div>
 
+    <!-- VISTA INICIO -->
     <div id="vista-inicio" class="vista activa">
-        <div class="main-icon">
-            <img src="./favicon.png" alt="">
-        </div>
+        <div class="main-icon"><img src="./favicon.png" alt="Icono"></div>
         <h1> ¿Quién es el <strong class="h1-impostor">impostor?</strong></h1>
-
         <form id="form-inicio">
             <label for="input-nombre">Tu Nombre:</label>
             <input type="text" id="input-nombre" placeholder="Escribe aquí tu nombre" required maxlength="15">
-            <button type="submit">Siguiente ▶️</button>
+            <button type="submit" class="btn-principal">Siguiente ▶️</button>
         </form>
-        <br><br>
-        <button id="btn-reglas" class="btn-secundario" style="margin-top: 40px; font-size: 0.9rem;">
-            📜 Reglas del Juego
-        </button>
+        <button id="btn-reglas" class="btn-secundario" style="margin-top: 40px; font-size: 0.9rem;">📜 Reglas del Juego</button>
     </div>
 
+    <!-- VISTA SELECCIÓN -->
     <div id="vista-seleccion" class="vista">
         <h1>¡Hola, <span id="nombre-jugador-display"></span>!</h1>
         <div class="opciones-sala">
             <button id="btn-crear-sala" class="btn-principal">✨ Crear Sala (HOST)</button>
-
             <form id="form-unirse-sala">
                 <input type="text" id="input-codigo" placeholder="CÓDIGO (Ej: ABCD)" required maxlength="4">
                 <button type="submit" class="btn-secundario">➡️ Unirse a Sala</button>
@@ -45,145 +40,92 @@
         <button onclick="cambiarVista('vista-inicio')" class="btn-volver">← Volver</button>
     </div>
 
+    <!-- VISTA LOBBY (Modificado con Gemini) -->
     <div id="vista-lobby" class="vista">
         <h1>Sala: <span id="codigo-lobby-display">----</span></h1>
+        <button id="btn-whatsapp" class="btn-secundario" style="background: #25D366; color: white;">🟢 Invitar por WhatsApp</button>
 
-        <div id="configuracion-host" class="configuracion-host">
+        <div id="configuracion-host" class="configuracion-host" style="display: none;">
             <h2>⚙️ Configuración (Solo HOST)</h2>
-
             <div class="opcion-simple">
                 <input type="checkbox" id="checkbox-agente-doble">
-                <label for="checkbox-agente-doble">Incluir Agente Doble (Recomendado para 4+)</label>
+                <label for="checkbox-agente-doble">Incluir Agente Doble</label>
             </div>
-
+            <!-- Nuevo Input para la Inteligencia Artificial -->
             <div class="tema-selector-box">
-                <h4>Seleccionar Categoría:</h4>
-                <p id="aviso-categoria" style="color: var(--color-red); font-weight: bold; display: none;">¡Selecciona 1
-                    categoría!</p>
-                <div id="categorias-container" class="categorias-container">
-                </div>
+                <h4>🧠 Director de Juego (Inteligencia Artificial):</h4>
+                <p style="font-size: 0.8rem; color: #aaa;">La IA inventará categorías absurdas y únicas.</p>
+                <input type="password" id="input-api-key" placeholder="Pega aquí tu API Key de Gemini" style="width: 100%; border: 1px solid var(--color-primary);">
             </div>
-
-            <button id="btn-iniciar-juego" class="btn-principal btn-grande" disabled>
-                🚀 Iniciar Juego
-            </button>
+            <button id="btn-iniciar-juego" class="btn-principal btn-grande" disabled>🚀 Iniciar Juego</button>
             <p id="min-jugadores-aviso" class="aviso-min" style="display: none;"></p>
         </div>
 
         <h2>Jugadores (<span id="contador-jugadores">0</span>):</h2>
-        <ul id="lista-jugadores-host" class="lista-jugadores">
-        </ul>
-
+        <ul id="lista-jugadores-host" class="lista-jugadores"></ul>
         <button onclick="abandonarSala()" class="btn-volver">← Abandonar Sala</button>
     </div>
 
+    <!-- VISTA REVELACIÓN -->
     <div id="vista-revelacion" class="vista">
         <h1>¡Mira tu Rol Secreto!</h1>
-        <div class="caja-rol">
+        <div class="caja-rol" id="card-rol-contenedor">
             <h2 id="rol-revelacion-display">Tu Rol: [ROL]</h2>
-            <p class="etiqueta-pequena">Tema de la Partida:</p>
-            <h3 id="tema-valor-revelacion"></h3>
+            <p class="etiqueta-pequena">Categoría Absurda:</p>
+            <h3 id="tema-valor-revelacion" style="color: var(--color-secondary);"></h3>
             <p id="palabra-revelacion-display" class="palabra-revelacion"></p>
 
-            <button id="btn-iniciar-discusion" class="btn-principal btn-grande"
-                style="margin-top: 30px; display: none;">
-                ▶️ Iniciar Discusión
-            </button>
-            <p class="aviso-espera" style="margin-top: 15px;">Esperando al Host para iniciar la discusión...</p>
+            <button id="btn-iniciar-discusion" class="btn-principal btn-grande" style="margin-top: 30px; display: none;">▶️ Iniciar Discusión</button>
+            <p class="aviso-espera" id="aviso-espera-discusion" style="margin-top: 15px;">Esperando al Host...</p>
         </div>
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
+    <!-- VISTA JUEGO (Turnos y Micrófono) -->
     <div id="vista-juego" class="vista">
-        <h1>🎤 Discusión Abierta</h1>
+        <!-- Panel superior de turnos -->
+        <div id="banner-turnos" class="banner-neon" style="width: 95%; max-width: 450px; text-align: center;">Esperando...</div>
+        <div id="timer-display" style="font-size: 4rem; color: var(--color-red); font-weight: 900; margin: 20px 0;">--s</div>
 
         <div class="info-jugador-juego">
-            <p class="etiqueta-pequena">Tema:</p>
-            <h3 id="tema-valor"></h3>
+            <p class="etiqueta-pequena">Categoría:</p>
+            <h3 id="tema-valor" style="color: var(--color-secondary);"></h3>
             <h2 id="rol-juego-display">Tu Rol: [ROL]</h2>
-            <p id="palabra-secreta-display" class="palabra-revelacion"></p>
+            <p id="palabra-secreta-display" class="palabra-revelacion" style="font-size: 2rem;"></p>
         </div>
 
-        <div id="contenedor-adivinanza-impostor"
-            style="display: none; margin-top: 20px; border: 2px solid var(--color-red); padding: 15px; border-radius: 10px; background-color: rgba(255, 69, 96, 0.1);">
-            <h4 style="color: var(--color-red); margin-bottom: 10px;">🕵️ ¡Adivina la Palabra!</h4>
-            <p style="font-size: 0.9em; margin-bottom: 10px;">Si sabes la palabra secreta de los tripulantes, escríbela
-                aquí para ganar la partida.</p>
-            <textarea id="input-adivinar-palabra" placeholder="Escribe la palabra secreta..."
-                style="width: 100%; padding: 10px; border-radius: 5px; background: var(--color-bg); color: white; border: 1px solid #444; margin-bottom: 10px; font-family: inherit;"></textarea>
-            <button id="btn-enviar-adivinanza" class="btn-danger btn-grande">🎯 Enviar Palabra</button>
+        <!-- Botón de Micrófono para el Impostor (Reemplaza al texto) -->
+        <div id="contenedor-adivinanza-impostor" style="display: none; text-align: center;">
+            <p style="color: var(--color-red); font-weight: bold;">Mantén presionado para adivinar y ganar:</p>
+            <button id="btn-microfono-impostor" class="btn-micro" style="background: var(--color-red); color: white; border-radius: 50%; width: 80px; height: 80px; font-size: 2rem; border: none; box-shadow: 0 0 15px var(--color-red);">🎤</button>
+            <p id="feedback-voz" style="margin-top: 10px; color: #aaa;"></p>
         </div>
 
-        <h3 style="color: var(--color-secondary);">Jugadores Activos (<span id="jugadores-activos-contador">0</span>):
-        </h3>
-        <ul id="lista-jugadores-juego" class="lista-jugadores">
-        </ul>
-
-        <button id="btn-forzar-votacion" class="btn-danger" style="margin-top: 20px; display: none;">
-            🚨 Forzar Votación (HOST)
-        </button>
-        <p class="aviso-espera" style="margin-top: 15px;">Esperando que el Host inicie la votación...</p>
-
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
+        <button id="btn-forzar-votacion" class="btn-danger" style="margin-top: 20px; display: none;">🚨 Forzar Votación (HOST)</button>
     </div>
 
+    <!-- VISTA VOTACIÓN -->
     <div id="vista-votacion" class="vista">
         <h1>🗳️ ¡Vota por el Impostor!</h1>
-
-        <p class="aviso-votacion">
-            Selecciona un jugador para acusar. Si todos votan, la ronda terminará automáticamente.
-        </p>
-
-        <div id="opciones-votacion" class="opciones-votacion-container">
-        </div>
-
-        <p class="estado-voto" id="estado-voto-display" style="display: none;">Tu voto ya fue registrado.</p>
-
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
+        <p class="aviso-votacion">Toca al jugador sospechoso. Votación abierta.</p>
+        <div id="opciones-votacion" class="opciones-votacion-container"></div>
     </div>
 
-    <div id="vista-resultado" class="vista">
-        <h1>✅ Resultados de la Votación</h1>
-        <div id="detalles-votacion-container" class="detalles-votacion-container">
+    <!-- VISTA RESULTADO Y JUICIO (Animación) -->
+    <div id="vista-resultado" class="vista" style="justify-content: center;">
+        <h2 class="h1-impostor">EL PUEBLO HA DECIDIDO...</h2>
+        
+        <div id="contenedor-animacion" style="height: 150px; display: flex; align-items: center; justify-content: center; overflow: hidden; width: 100%; margin: 20px 0;">
+            <div id="jugador-expulsado-anim" class="jugador-vuela" style="font-size: 4rem;">👤</div>
         </div>
 
-        <p id="jugador-eliminado-display" class="aviso-eliminado">
-            [RESULTADO]
-        </p>
+        <h3 id="jugador-eliminado-display" class="aviso-eliminado" style="text-align: center; border: none;">[RESULTADO]</h3>
 
         <div id="acciones-finales-host" style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
-            <button id="btn-reiniciar-partida-resultado" class="btn-secundario btn-grande">
-                ▶️ Continuar (Nueva Discusión)
-            </button>
-            <button id="btn-finalizar-juego-resultado" class="btn-danger btn-grande" style="display: none;">
-                🚪 Finalizar Juego (Cerrar Sala)
-            </button>
+            <button id="btn-reiniciar-partida-resultado" class="btn-secundario btn-grande">🔄 Siguiente Ronda</button>
         </div>
-
-        <button onclick="abandonarSala()" class="btn-volver">← Abandonar</button>
     </div>
 
-    <div id="vista-final" class="vista">
-        <h1 id="ganador-display">🏆 [GANADOR] 🏆</h1>
-        <p>El juego ha terminado. El rol de cada jugador era:</p>
-        <ul id="lista-roles-final" class="lista-jugadores lista-final">
-        </ul>
-
-        <div id="acciones-finales-final-host"
-            style="display: flex; gap: 15px; margin-top: 30px; justify-content: center;">
-            <button id="btn-reiniciar-partida-final" class="btn-secundario btn-grande">
-                🔄 Reiniciar Partida (Ir a Lobby)
-            </button>
-            <button id="btn-finalizar-juego-final" class="btn-danger btn-grande">
-                🚪 Finalizar Juego (Cerrar Sala)
-            </button>
-        </div>
-
-        <button onclick="window.location.reload()" class="btn-principal" style="margin-top: 20px;">
-            Volver a la Pantalla de Inicio
-        </button>
-    </div>
-
+    <!-- Modales -->
     <div id="modal-personalizado" class="modal-overlay" style="display: none;">
         <div class="modal-contenido">
             <h2 id="modal-titulo">Título</h2>
@@ -195,9 +137,6 @@
         </div>
     </div>
 
-
     <script src="cliente.js"></script>
-
 </body>
-
 </html>
