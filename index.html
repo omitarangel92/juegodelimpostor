@@ -14,11 +14,12 @@
 <body>
     <div id="stars"></div><div id="stars2"></div><div id="stars3"></div>
     <div id="toast-container"></div>
+    <button id="btn-mute-audio" class="btn-mute-audio" title="Silenciar / activar música">🔊</button>
 
     <div id="vista-carga" class="vista">
         <div class="glass-panel text-center floating">
             <h2 class="neon-text-primary pulse-text">Generando Misión...</h2>
-            <p style="color: var(--color-secondary);">La IA está creando un contexto nuevo y único en el universo.</p>
+            <p style="color: var(--color-secondary);">La IA está extrayendo información confidencial...</p>
         </div>
     </div>
 
@@ -52,17 +53,37 @@
     <div id="vista-lobby" class="vista">
         <div class="glass-panel text-center">
             <h1>Sala: <span id="codigo-lobby-display" class="pulse-text" style="color: var(--color-primary);">----</span></h1>
-            <button id="btn-whatsapp" class="btn-secundario btn-wsp">🟢 Compartir Código</button>
+            
+            <!-- Botón de compartir nativo -->
+            <button id="btn-whatsapp" class="btn-secundario btn-wsp">🔗 COMPARTIR CÓDIGO</button>
 
             <div id="configuracion-host" class="configuracion-host glass-inner" style="display: none;">
                 <h2>⚙️ Parámetros de Misión</h2>
-                <div class="opcion-simple">
+                
+                <div class="selector-dificultad-wrapper">
+                    <h3 style="color: var(--color-secondary); font-size: 1.1rem; margin-bottom: 10px;">Nivel de Clasificación:</h3>
+                    <div class="cards-dificultad">
+                        <div class="card-dif activa" id="card-familiar" onclick="setDificultad('familiar')">
+                            <div class="dif-icon">🧸</div>
+                            <div class="dif-title">Familiar</div>
+                            <div class="dif-desc">Apto para todos</div>
+                        </div>
+                        <div class="card-dif" id="card-adultos" onclick="setDificultad('adultos')">
+                            <div class="dif-icon">🔞</div>
+                            <div class="dif-title">Adultos +18</div>
+                            <div class="dif-desc">Humor negro y bizarro</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="opcion-simple" style="margin-top: 15px;">
                     <input type="checkbox" id="checkbox-agente-doble">
                     <label for="checkbox-agente-doble">Incluir Agente Blanco</label>
                 </div>
+                
                 <div class="tema-selector-box text-center">
-                    <h4 style="color: var(--color-primary);">🧠 Servidor IA: En Línea</h4>
-                    <p style="font-size: 0.85rem; color: #ccc;">Conectado a la red neuronal Vercel-Groq.</p>
+                    <h4 style="color: var(--color-primary);">🧠 Memoria IA: Activa</h4>
+                    <p style="font-size: 0.85rem; color: #ccc;">La IA no repetirá palabras en esta sala.</p>
                 </div>
                 <button id="btn-iniciar-juego" class="btn-principal btn-grande btn-glow" disabled>🚀 Despegar (Iniciar)</button>
                 <p id="min-jugadores-aviso" class="aviso-min" style="display: none;"></p>
@@ -127,12 +148,14 @@
     <div id="vista-resultado" class="vista" style="justify-content: center;">
         <div class="glass-panel text-center" style="width: 95%; max-width: 600px;">
             <h2 class="h1-impostor text-shadow-red" style="font-size: 2.5rem;">EL ESPACIO HA DECIDIDO</h2>
-            <div id="contenedor-animacion" style="height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 20px 0;">
-                <div id="jugador-expulsado-anim" class="jugador-vuela" style="font-size: 5rem; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));">👤</div>
+            
+            <div id="contenedor-animacion" style="height: auto; margin: 20px 0;">
+                <div id="escaner-terminal" class="terminal-text"><span class="typing-cursor">Procesando veredicto...</span></div>
             </div>
-            <h3 id="jugador-eliminado-display" class="aviso-eliminado glass-inner" style="border: none;">[RESULTADO]</h3>
+            
+            <h3 id="jugador-eliminado-display" class="aviso-eliminado glass-inner" style="border: none; display: none;">[RESULTADO]</h3>
             <div id="acciones-finales-host" style="display: flex; flex-direction: column; gap: 15px; margin-top: 30px; display: none;">
-                <button id="btn-siguiente-ronda" class="btn-principal btn-grande btn-glow">🔄 Siguiente Ronda Rápida</button>
+                <button id="btn-siguiente-ronda" class="btn-principal btn-grande btn-glow">🔄 Siguiente Ronda</button>
                 <button id="btn-volver-lobby" class="btn-secundario">⚙️ Volver al Lobby</button>
             </div>
         </div>
