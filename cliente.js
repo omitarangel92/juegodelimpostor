@@ -13,16 +13,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ================= OFUSCACIÓN DE GROQ API KEY =================
-function getGroqKey() {
-    const p1 = "Z3NrXzVzcHp6Mk";
-    const p2 = "NPVDZ2R0NHSFE0";
-    const p3 = "M3NNV0dkeWIzRl";
-    const p4 = "lVVUxqSng0UnNV";
-    const p5 = "bUVzdm9IQXBzSFNSUnE=";
-    return atob(p1 + p2 + p3 + p4 + p5);
-}
-
 // ================= MODAL Y ALERTAS =================
 function lanzarToast(msg) {
     const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
@@ -53,100 +43,93 @@ document.getElementById('btn-reglas').onclick = (e) => {
     e.preventDefault();
     const reglasTexto = `
         <p>¡Bienvenido a la Nave! Aquí pondrás a prueba tu capacidad de engaño y deducción.</p>
-        
-        <h3 style="color: var(--color-secondary);">🚀 1. Creación de Sala y Configuración</h3>
+        <h3 style="color: var(--color-secondary);">🚀 1. Creación de Sala</h3>
         <ul>
-            <li><b>El Capitán (Host):</b> Crea la sala y comparte el código (o botón de WhatsApp). Solo él controla el inicio del juego y cierre de votaciones.</li>
-            <li><b>El Panel:</b> El Capitán puede activar al <i>Agente Blanco</i> (recomendado para 4 o más jugadores).</li>
-            <li><b>La IA Inteligente:</b> El juego usa Inteligencia Artificial para inventar categorías al azar que NUNCA se repetirán en todo el universo.</li>
+            <li><b>El Capitán (Host):</b> Crea la sala. Controla el inicio del juego y el cierre de votaciones.</li>
+            <li><b>La IA Inteligente:</b> Genera categorías al azar que NUNCA se repetirán.</li>
         </ul>
-
         <h3 style="color: var(--color-primary);">🎭 2. Los Roles de la Nave</h3>
         <ul>
-            <li><b style="color: var(--color-green);">🟩 TRIPULANTE (Inocente):</b>
-                <br>Sabe la <i>Categoría</i> y la <i>Palabra Secreta</i>.
-                <br><b>Misión:</b> Dar una pista corta y cierta.
-                <br><b>Ventaja:</b> Juega sobre seguro. 
-                <br><b>Desventaja:</b> Si la pista es muy obvia, el Impostor ganará. Si es muy rara, dudarán de ti.
-            </li>
-            <li style="margin-top:10px;"><b style="color: var(--color-red);">🟥 IMPOSTOR (Saboteador):</b>
-                <br>Sabe la <i>Categoría</i> pero NO la palabra.
-                <br><b>Misión:</b> Escuchar, fingir y engañar.
-                <br><b>🌟 Poder Especial:</b> Si descubres la palabra secreta, usa tu <b>Micrófono 🎤</b> o escribe la palabra. ¡Si aciertas, ganas el juego automáticamente!
-                <br><b>Desventaja:</b> Juega a ciegas.
-            </li>
-            <li style="margin-top:10px;"><b style="color: var(--color-orange);">⬜ AGENTE BLANCO (Tercero):</b>
-                <br>Sabe la <i>Categoría</i> pero NO la palabra. NO ES el impostor.
-                <br><b>Misión:</b> Sobrevivir a la votación fingiendo saber la palabra para generar caos.
-                <br><b>Ventaja:</b> Distrae a todos salvando al Impostor por accidente. Gana si sobrevive a la votación.
-            </li>
+            <li><b style="color: var(--color-green);">🟩 TRIPULANTE:</b> Sabe la palabra secreta. Misión: Dar una pista cierta pero no muy obvia.</li>
+            <li style="margin-top:10px;"><b style="color: var(--color-red);">🟥 IMPOSTOR:</b> NO sabe la palabra. Misión: Fingir. <b>🌟 Poder Especial:</b> Toca el Micrófono 🎤 para adivinar la palabra secreta y ganar al instante.</li>
+            <li style="margin-top:10px;"><b style="color: var(--color-orange);">⬜ AGENTE BLANCO:</b> NO sabe la palabra y NO ES el impostor. Misión: Sobrevivir a la votación fingiendo.</li>
         </ul>
-
-        <h3 style="color: var(--color-secondary);">⚙️ 3. Distribución de Impostores</h3>
-        <p>El motor asigna impostores matemáticamente para garantizar un juego justo:</p>
-        <ul>
-            <li><b>3 a 5 jugadores:</b> 1 Impostor</li>
-            <li><b>6 a 10 jugadores:</b> 2 Impostores</li>
-            <li><b>11 a 15 jugadores:</b> 3 Impostores</li>
-        </ul>
-
-        <h3 style="color: var(--color-primary);">🗣️ 4. Fases de la Partida</h3>
+        <h3 style="color: var(--color-primary);">🗣️ 3. Fases de la Partida</h3>
         <ol>
-            <li><b>Revelación:</b> Todos leen su pantalla en secreto para conocer su Rol.</li>
-            <li><b>Discusión:</b> El juego dará un turno de 15 segundos a cada jugador. Cuando sea tu turno, di en voz alta UNA SOLA PALABRA o frase relacionada a la palabra secreta.</li>
-            <li><b>Votación:</b> Todos presionan en pantalla a su principal sospechoso. Puedes cambiar el voto hasta que el Capitán presione "Cerrar Votación".</li>
+            <li><b>Discusión:</b> Turnos de 15s para decir UNA SOLA PALABRA relacionada a la secreta.</li>
+            <li><b>Votación:</b> Toca el nombre de tu principal sospechoso. Puedes cambiar el voto hasta que el Capitán lo cierre.</li>
         </ol>
-        <p><i>¡Qué gane el mejor mentiroso!</i></p>
     `;
     mostrarModal("📜 ARCHIVOS CLASIFICADOS", reglasTexto, false);
 };
 
-// ================= MOTOR DE AUDIO ESPACIAL =================
+// ================= MOTOR DE AUDIO ÉPICO (Estilo Interstellar/Halo) =================
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 let audioDesbloqueado = false;
-let ambienceOsc = null, ambienceGain = null;
+let ambienceGain = null;
+let ambienceNodes = []; // Para guardar múltiples osciladores
 
 function initAudio() {
     if(!audioCtx) audioCtx = new AudioContext();
     if(audioCtx.state === 'suspended') audioCtx.resume();
     audioDesbloqueado = true;
 }
-
 document.addEventListener('click', initAudio, { once: true });
 document.addEventListener('touchstart', initAudio, { once: true });
 
 function playSciFiAmbience(tipo) {
     if(!audioDesbloqueado) return;
     stopAmbience();
-    ambienceOsc = audioCtx.createOscillator();
+    
     ambienceGain = audioCtx.createGain();
-    ambienceOsc.connect(ambienceGain);
     ambienceGain.connect(audioCtx.destination);
     
     if (tipo === 'lobby') {
-        ambienceOsc.type = 'sine';
-        ambienceOsc.frequency.setValueAtTime(55, audioCtx.currentTime); 
+        // Acorde masivo de nave espacial (D2 + A2 + D3 con desafinación ligera)
+        const freqs = [73.42, 110.00, 146.83, 147.5]; 
+        freqs.forEach(f => {
+            const osc = audioCtx.createOscillator();
+            osc.type = 'triangle'; // Tono rico en armónicos (estilo órgano/coro)
+            osc.frequency.value = f;
+            osc.connect(ambienceGain);
+            osc.start();
+            ambienceNodes.push(osc);
+        });
+        
+        // Attack lento de 4 segundos
         ambienceGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        ambienceGain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 2);
+        ambienceGain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 4);
+
     } else if (tipo === 'votacion') {
-        ambienceOsc.type = 'triangle';
-        ambienceOsc.frequency.setValueAtTime(110, audioCtx.currentTime);
+        // Pulso de suspenso (Latido)
+        const osc = audioCtx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(110, audioCtx.currentTime);
+        
         const lfo = audioCtx.createOscillator();
-        lfo.type = 'sine'; lfo.frequency.value = 2; 
+        lfo.type = 'sine'; lfo.frequency.value = 2; // 2 latidos por seg
         const lfoGain = audioCtx.createGain();
         lfoGain.gain.value = 0.5;
-        lfo.connect(lfoGain); lfoGain.connect(ambienceGain.gain);
+        
+        lfo.connect(lfoGain); 
+        lfoGain.connect(ambienceGain.gain);
         lfo.start();
+        ambienceNodes.push(osc, lfo);
+
         ambienceGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        osc.start();
     }
-    ambienceOsc.start();
 }
 
 function stopAmbience() {
-    if (ambienceOsc) {
-        ambienceGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
-        setTimeout(() => { if(ambienceOsc) { ambienceOsc.stop(); ambienceOsc.disconnect(); ambienceOsc = null;} }, 1000);
+    if (ambienceGain && ambienceNodes.length > 0) {
+        ambienceGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.5); // Fade out suave de 1.5s
+        setTimeout(() => { 
+            ambienceNodes.forEach(node => { node.stop(); node.disconnect(); });
+            ambienceNodes = [];
+            if(ambienceGain) ambienceGain.disconnect();
+        }, 1500);
     }
 }
 
@@ -169,8 +152,7 @@ function playImpact() {
     osc.start(); osc.stop(audioCtx.currentTime + 0.8);
 }
 
-
-// ================= VARIABLES GLOBALES Y UTILIDADES =================
+// ================= VARIABLES GLOBALES =================
 let nombreJugador = '', codigoSalaActual = '';
 let miId = Date.now().toString(36) + Math.random().toString(36).substring(2);
 let jugadoresActuales = [], miRolActual = '', miPalabraSecreta = '', miTemaActual = '';
@@ -194,57 +176,51 @@ function normalizarTexto(texto) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
 }
 
-// ================= INTELIGENCIA ARTIFICIAL GROQ =================
+// ================= LLAMADA AL BACKEND DE VERCEL =================
 async function generarContextoIA() {
     const planB = [
         { categoria: "Cosas que un perro destruiría", palabra: "Zapatos" },
         { categoria: "Comida que es un desastre comer en la cama", palabra: "Sopa" },
-        { categoria: "Lo primero que empacas para la playa", palabra: "Toalla" },
-        { categoria: "Algo que no debes meter al microondas", palabra: "Tenedor" }
+        { categoria: "Lo primero que empacas para la playa", palabra: "Toalla" }
     ];
 
     try {
-        // Implementación con GROQ (Llama 3 ultrarrápida y creativa)
-        const url = "https://api.groq.com/openai/v1/chat/completions";
-        
-        const temasBase = ["animales exóticos", "comidas del mundo", "objetos de la casa", "situaciones vergonzosas", "lugares de la ciudad", "profesiones", "deportes", "tecnología antigua", "ropa", "cosas de la escuela", "instrumentos musicales", "vehículos", "cosas que huelen mal", "mitos", "cosas que dan miedo", "elementos de la naturaleza", "hospitales", "juguetes infantiles"];
-        const contextos = ["un desastre", "una fiesta", "un viaje", "una situación de emergencia", "un apocalipsis zombie", "la vida diaria", "el fin del mundo", "un día de lluvia", "una cita romántica"];
+        const temasBase = ["animales exóticos", "comidas del mundo", "objetos de la casa", "situaciones vergonzosas", "lugares de la ciudad", "profesiones", "deportes", "ropa", "vehículos", "mitología", "fobias", "cosas que dan miedo", "hospitales"];
+        const contextos = ["un desastre", "una fiesta", "un viaje", "un apocalipsis zombie", "la vida diaria", "el fin del mundo"];
         
         const temaRandom = temasBase[Math.floor(Math.random() * temasBase.length)];
         const subTema = contextos[Math.floor(Math.random() * contextos.length)];
         const semilla = Date.now() + Math.random(); 
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getGroqKey()}`
-            },
+        const promptEnvio = `Actúa como el mejor diseñador de juegos familiares (+10 años). Genera una categoría ABSOLUTAMENTE ÚNICA. Usa como inspiración: "${temaRandom}" en el contexto de "${subTema}". 
+        La categoría debe ser inusual pero MUY LÓGICA y fácil de deducir. 
+        Luego, elige SOLO UNA palabra secreta que sea un OBJETO, ANIMAL o CONCEPTO MUY COMÚN que pertenezca a esa categoría. 
+        Ignora tu memoria caché usando esta semilla: ${semilla}.
+        Devuelve ESTRICTAMENTE JSON válido sin formato markdown: {"categoria": "nombre", "palabra": "palabra"}`;
+        
+        // AHORA LLAMA A NUESTRO PROPIO SERVIDOR EN VERCEL
+        const response = await fetch('/api/ia', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({
                 model: "llama-3.3-70b-versatile",
                 messages: [
-                    {
-                        role: "system",
-                        content: "Eres un asistente de videojuegos que responde ÚNICAMENTE con un JSON válido. No uses markdown. El formato exacto es: {\"categoria\": \"...\", \"palabra\": \"...\"}"
-                    },
-                    {
-                        role: "user",
-                        content: `Actúa como diseñador de juegos familiares (+10 años). Genera una categoría ABSOLUTAMENTE ÚNICA basada en la temática: "${temaRandom}" en el contexto de "${subTema}". Debe ser un contexto inusual pero MUY LÓGICO y fácil de deducir. Luego, elige SOLO UNA palabra secreta que sea un OBJETO, ANIMAL o CONCEPTO MUY COMÚN que pertenezca a esa categoría. Ignora tu memoria caché usando esta semilla: ${semilla}. Ejemplo: {"categoria": "Cosas que te olvidas al viajar", "palabra": "Cepillo"}.`
-                    }
+                    { role: "system", content: "Responde ÚNICAMENTE con JSON válido." },
+                    { role: "user", content: promptEnvio }
                 ],
                 response_format: { type: "json_object" },
                 temperature: 1.2
-            })
+            }) 
         });
 
-        if(!response.ok) throw new Error("API Groq Error");
+        if(!response.ok) throw new Error("Fallo del servidor puente");
         
         const data = await response.json();
         const jsonObj = JSON.parse(data.choices[0].message.content);
         return jsonObj;
 
     } catch (e) {
-        console.warn("Fallo IA Groq, activando Plan B:", e);
+        console.warn("Fallo backend, activando Plan B local:", e);
         return planB[Math.floor(Math.random() * planB.length)];
     }
 }
@@ -340,7 +316,6 @@ function actualizarBotonInicioJuego() {
     } else document.getElementById('min-jugadores-aviso').style.display = 'none';
 }
 
-// INICIO O CAMBIO DE RONDA
 async function procesarCreacionDeRonda() {
     db.ref(`salas/${codigoSalaActual}`).update({ estado: 'generando_ronda' });
     const usaDoble = document.getElementById('checkbox-agente-doble')?.checked || false;
@@ -472,7 +447,7 @@ async function validarPalabraImpostor(intentoTexto) {
     }
 }
 
-// ================= VOTACIÓN =================
+// ================= VOTACIÓN Y JUICIO =================
 function manejarVotacion(sala, esHost) {
     clearInterval(timerInterval); 
     if(!document.getElementById('vista-votacion').classList.contains('activa')) {
@@ -501,7 +476,6 @@ function manejarVotacion(sala, esHost) {
 
 document.getElementById('btn-cerrar-votacion').onclick = () => db.ref(`salas/${codigoSalaActual}`).update({ estado: 'resultado' });
 
-// ================= JUICIO FINAL =================
 function manejarJuicioAnimado(sala, esHost) {
     if(!document.getElementById('vista-resultado').classList.contains('activa')) cambiarVista('vista-resultado');
     stopAmbience(); playImpact();

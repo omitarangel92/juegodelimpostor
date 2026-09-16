@@ -12,22 +12,16 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
 </head>
 <body>
-    <!-- FONDO ESPACIAL PURO CSS -->
-    <div id="stars"></div>
-    <div id="stars2"></div>
-    <div id="stars3"></div>
-
+    <div id="stars"></div><div id="stars2"></div><div id="stars3"></div>
     <div id="toast-container"></div>
 
-    <!-- PANTALLA DE CARGA -->
     <div id="vista-carga" class="vista">
         <div class="glass-panel text-center floating">
             <h2 class="neon-text-primary pulse-text">Generando Misión...</h2>
-            <p style="color: var(--color-secondary);">La IA está creando un contexto completamente nuevo y único en el universo.</p>
+            <p style="color: var(--color-secondary);">La IA está creando un contexto nuevo y único en el universo.</p>
         </div>
     </div>
 
-    <!-- VISTA DE INICIO -->
     <div id="vista-inicio" class="vista activa">
         <div class="glass-panel text-center floating">
             <div class="main-icon"><img src="./favicon.png" alt="Icono"></div>
@@ -40,7 +34,6 @@
         </div>
     </div>
 
-    <!-- VISTA DE SELECCIÓN -->
     <div id="vista-seleccion" class="vista">
         <div class="glass-panel text-center">
             <h1>¡Hola, <span id="nombre-jugador-display" class="neon-text-primary"></span>!</h1>
@@ -56,7 +49,6 @@
         </div>
     </div>
 
-    <!-- VISTA DEL LOBBY -->
     <div id="vista-lobby" class="vista">
         <div class="glass-panel text-center">
             <h1>Sala: <span id="codigo-lobby-display" class="pulse-text" style="color: var(--color-primary);">----</span></h1>
@@ -69,8 +61,8 @@
                     <label for="checkbox-agente-doble">Incluir Agente Blanco</label>
                 </div>
                 <div class="tema-selector-box text-center">
-                    <h4 style="color: var(--color-primary);">🧠 Motor IA Groq: Activado</h4>
-                    <p style="font-size: 0.85rem; color: #ccc;">La IA creará temáticas al azar a la velocidad de la luz. Nunca jugarás la misma partida dos veces.</p>
+                    <h4 style="color: var(--color-primary);">🧠 Servidor IA: En Línea</h4>
+                    <p style="font-size: 0.85rem; color: #ccc;">Conectado a la red neuronal Vercel-Groq.</p>
                 </div>
                 <button id="btn-iniciar-juego" class="btn-principal btn-grande btn-glow" disabled>🚀 Despegar (Iniciar)</button>
                 <p id="min-jugadores-aviso" class="aviso-min" style="display: none;"></p>
@@ -82,7 +74,6 @@
         </div>
     </div>
 
-    <!-- VISTA DE REVELACIÓN -->
     <div id="vista-revelacion" class="vista">
         <div class="caja-rol glass-panel text-center" id="card-rol-contenedor">
             <h1 class="neon-text-primary">Tu Rol Secreto</h1>
@@ -97,7 +88,6 @@
         </div>
     </div>
 
-    <!-- VISTA DE JUEGO (DISCUSIÓN Y TURNOS) -->
     <div id="vista-juego" class="vista">
         <div id="banner-turnos" class="banner-neon glass-panel">Preparando...</div>
         <div id="timer-display" class="pulse-text" style="font-size: 5rem; color: var(--color-red); font-weight: 900; margin: 10px 0; text-shadow: 0 0 20px var(--color-red);">15s</div>
@@ -109,12 +99,10 @@
             <p id="palabra-secreta-display" class="palabra-revelacion" style="font-size: 2.5rem;"></p>
         </div>
 
-        <!-- Panel de Adivinanza Mejorado -->
         <div id="contenedor-adivinanza-impostor" class="glass-inner text-center" style="display: none; border-color: var(--color-red); padding: 15px;">
             <p style="color: var(--color-red); font-weight: bold; margin-bottom: 10px;">¡Saboteo! Adivina la palabra y gana:</p>
             <button id="btn-microfono-impostor" class="btn-micro pulse-red">🎤</button>
             <p id="feedback-voz" style="margin-top: 10px; color: #fff; font-weight: bold; font-size: 0.9rem;"></p>
-            
             <div style="margin-top: 15px; border-top: 1px dashed rgba(239, 68, 68, 0.4); padding-top: 15px;">
                 <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">¿Mucho ruido exterior? Usa el teclado:</p>
                 <div style="display: flex; gap: 10px; justify-content: center;">
@@ -123,23 +111,19 @@
                 </div>
             </div>
         </div>
-
         <button id="btn-forzar-votacion" class="btn-danger" style="margin-top: 20px; display: none;">🚨 Forzar Votación (HOST)</button>
     </div>
 
-    <!-- VISTA DE VOTACIÓN -->
     <div id="vista-votacion" class="vista">
         <div class="glass-panel text-center" style="width: 95%; max-width: 600px;">
             <h1>🗳️ ¡Vota!</h1>
             <p class="aviso-votacion">Toca a un jugador para acusarlo. Puedes cambiar tu voto hasta que el Host cierre la sesión.</p>
             <div id="opciones-votacion" class="opciones-votacion-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px;"></div>
-            
             <button id="btn-cerrar-votacion" class="btn-danger btn-grande pulse-red" style="margin-top: 30px; display: none;">🚨 CERRAR VOTACIÓN Y REVELAR</button>
             <p class="aviso-espera" id="aviso-espera-votacion" style="margin-top: 15px;">Esperando que el Host cierre la votación...</p>
         </div>
     </div>
 
-    <!-- VISTA DE RESULTADOS -->
     <div id="vista-resultado" class="vista" style="justify-content: center;">
         <div class="glass-panel text-center" style="width: 95%; max-width: 600px;">
             <h2 class="h1-impostor text-shadow-red" style="font-size: 2.5rem;">EL ESPACIO HA DECIDIDO</h2>
@@ -147,7 +131,6 @@
                 <div id="jugador-expulsado-anim" class="jugador-vuela" style="font-size: 5rem; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));">👤</div>
             </div>
             <h3 id="jugador-eliminado-display" class="aviso-eliminado glass-inner" style="border: none;">[RESULTADO]</h3>
-            
             <div id="acciones-finales-host" style="display: flex; flex-direction: column; gap: 15px; margin-top: 30px; display: none;">
                 <button id="btn-siguiente-ronda" class="btn-principal btn-grande btn-glow">🔄 Siguiente Ronda Rápida</button>
                 <button id="btn-volver-lobby" class="btn-secundario">⚙️ Volver al Lobby</button>
@@ -155,7 +138,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE REGLAS Y ALERTAS -->
     <div id="modal-personalizado" class="modal-overlay" style="display: none;">
         <div class="modal-contenido glass-panel" style="max-width: 800px; width: 95%; padding: 20px;">
             <h2 id="modal-titulo" style="font-size: 2rem; margin-bottom: 15px; color: var(--color-primary); text-shadow: 0 0 10px var(--color-primary);">Título</h2>
