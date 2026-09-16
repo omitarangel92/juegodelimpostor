@@ -4,13 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego del Impostor 🕵️</title>
-<<<<<<< HEAD
     <link rel="icon" href="favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
-=======
-    <link rel="icon" href="./favicon.png" type="image/png">
-    <link rel="stylesheet" href="./style.css">
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
@@ -21,10 +16,7 @@
     <div id="toast-container"></div>
     <button id="btn-mute-audio" class="btn-mute-audio" title="Silenciar / activar música">🔊</button>
 
-<<<<<<< HEAD
     <!-- ===== VISTA CARGA ===== -->
-=======
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
     <div id="vista-carga" class="vista">
         <div class="glass-panel text-center floating">
             <h2 class="neon-text-primary pulse-text">Generando Misión...</h2>
@@ -32,18 +24,11 @@
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- ===== VISTA INICIO ===== -->
     <div id="vista-inicio" class="vista activa">
         <div class="glass-panel text-center floating">
             <div class="main-icon"><img src="favicon.png" alt="Icono"></div>
             <h1>¿Quién es el <strong class="h1-impostor pulse-text">impostor?</strong></h1>
-=======
-    <div id="vista-inicio" class="vista activa">
-        <div class="glass-panel text-center floating">
-            <div class="main-icon"><img src="./favicon.png" alt="Icono"></div>
-            <h1> ¿Quién es el <strong class="h1-impostor pulse-text">impostor?</strong></h1>
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
             <form id="form-inicio" style="background: transparent; box-shadow: none; padding: 0;">
                 <input type="text" id="input-nombre" placeholder="Escribe aquí tu nombre" required maxlength="15" class="neon-input">
                 <button type="submit" id="btn-entrar-nave" class="btn-principal btn-glow">Entrar a la Nave ▶️</button>
@@ -52,10 +37,7 @@
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- ===== VISTA SELECCIÓN ===== -->
-=======
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
     <div id="vista-seleccion" class="vista">
         <div class="glass-panel text-center">
             <h1>¡Hola, <span id="nombre-jugador-display" class="neon-text-primary"></span>!</h1>
@@ -71,26 +53,14 @@
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- ===== VISTA LOBBY ===== -->
     <div id="vista-lobby" class="vista">
         <div class="glass-panel text-center">
             <h1>Sala: <span id="codigo-lobby-display" class="pulse-text" style="color: var(--color-primary);">----</span></h1>
-=======
-    <div id="vista-lobby" class="vista">
-        <div class="glass-panel text-center">
-            <h1>Sala: <span id="codigo-lobby-display" class="pulse-text" style="color: var(--color-primary);">----</span></h1>
-            
-            <!-- Botón de compartir nativo -->
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
             <button id="btn-whatsapp" class="btn-secundario btn-wsp">🔗 COMPARTIR CÓDIGO</button>
 
             <div id="configuracion-host" class="configuracion-host glass-inner" style="display: none;">
                 <h2>⚙️ Parámetros de Misión</h2>
-<<<<<<< HEAD
-=======
-                
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
                 <div class="selector-dificultad-wrapper">
                     <h3 style="color: var(--color-secondary); font-size: 1.1rem; margin-bottom: 10px;">Nivel de Clasificación:</h3>
                     <div class="cards-dificultad">
@@ -106,18 +76,10 @@
                         </div>
                     </div>
                 </div>
-<<<<<<< HEAD
-=======
-
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
                 <div class="opcion-simple" style="margin-top: 15px;">
                     <input type="checkbox" id="checkbox-agente-doble">
                     <label for="checkbox-agente-doble">Incluir Agente Blanco</label>
                 </div>
-<<<<<<< HEAD
-=======
-                
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
                 <div class="tema-selector-box text-center">
                     <h4 style="color: var(--color-primary);">🧠 Memoria IA: Activa</h4>
                     <p style="font-size: 0.85rem; color: #ccc;">La IA no repetirá palabras en esta sala.</p>
@@ -132,10 +94,7 @@
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- ===== VISTA REVELACIÓN ===== -->
-=======
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
     <div id="vista-revelacion" class="vista">
         <div class="caja-rol glass-panel text-center" id="card-rol-contenedor">
             <h1 class="neon-text-primary">Tu Rol Secreto</h1>
@@ -145,25 +104,16 @@
                 <h3 id="tema-valor-revelacion" style="color: var(--color-secondary); font-size: 1.5rem;"></h3>
             </div>
             <p id="palabra-revelacion-display" class="palabra-revelacion"></p>
-<<<<<<< HEAD
             <div id="aviso-agente-blanco" class="aviso-agente-blanco" style="display: none;"></div>
-=======
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
             <button id="btn-iniciar-discusion" class="btn-principal btn-grande btn-glow" style="margin-top: 30px; display: none;">▶️ Iniciar Discusión</button>
             <p class="aviso-espera" id="aviso-espera-discusion" style="margin-top: 15px;">Aguardando órdenes del Capitán...</p>
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- ===== VISTA JUEGO ===== -->
     <div id="vista-juego" class="vista">
         <div id="banner-turnos" class="banner-neon glass-panel">Preparando...</div>
         <div id="timer-display" class="timer-display pulse-text">15s</div>
-=======
-    <div id="vista-juego" class="vista">
-        <div id="banner-turnos" class="banner-neon glass-panel">Preparando...</div>
-        <div id="timer-display" class="pulse-text" style="font-size: 5rem; color: var(--color-red); font-weight: 900; margin: 10px 0; text-shadow: 0 0 20px var(--color-red);">15s</div>
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
 
         <div class="info-jugador-juego glass-inner text-center">
             <p class="etiqueta-pequena">Categoría:</p>
@@ -172,19 +122,11 @@
             <p id="palabra-secreta-display" class="palabra-revelacion" style="font-size: 2.5rem;"></p>
         </div>
 
-<<<<<<< HEAD
         <div id="contenedor-adivinanza-impostor" class="glass-inner text-center impostor-guess-box" style="display: none;">
             <p style="color: var(--color-red); font-weight: bold; margin-bottom: 10px;">¡Saboteo! Adivina la palabra y gana:</p>
             <button id="btn-microfono-impostor" class="btn-micro pulse-red">🎤</button>
             <p id="feedback-voz" style="margin-top: 10px; color: #fff; font-weight: bold; font-size: 0.9rem;"></p>
             <div class="manual-guess-box">
-=======
-        <div id="contenedor-adivinanza-impostor" class="glass-inner text-center" style="display: none; border-color: var(--color-red); padding: 15px;">
-            <p style="color: var(--color-red); font-weight: bold; margin-bottom: 10px;">¡Saboteo! Adivina la palabra y gana:</p>
-            <button id="btn-microfono-impostor" class="btn-micro pulse-red">🎤</button>
-            <p id="feedback-voz" style="margin-top: 10px; color: #fff; font-weight: bold; font-size: 0.9rem;"></p>
-            <div style="margin-top: 15px; border-top: 1px dashed rgba(239, 68, 68, 0.4); padding-top: 15px;">
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
                 <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">¿Mucho ruido exterior? Usa el teclado:</p>
                 <div style="display: flex; gap: 10px; justify-content: center;">
                     <input type="text" id="input-adivinanza-manual" placeholder="Escribe aquí..." class="neon-input" style="margin: 0; padding: 10px; flex: 1;">
@@ -192,11 +134,9 @@
                 </div>
             </div>
         </div>
-<<<<<<< HEAD
 
         <button id="btn-forzar-votacion" class="btn-danger" style="margin-top: 20px; display: none;">🚨 Forzar Votación (HOST)</button>
 
-        <!-- Overlay eliminado — dentro de vista-juego para que no tape otras vistas -->
         <div id="overlay-eliminado" class="overlay-eliminado" style="display: none;">
             <div class="overlay-eliminado-icono">🔒</div>
             <div class="overlay-eliminado-titulo">ELIMINADO</div>
@@ -205,29 +145,19 @@
     </div>
 
     <!-- ===== VISTA VOTACIÓN ===== -->
-=======
-        <button id="btn-forzar-votacion" class="btn-danger" style="margin-top: 20px; display: none;">🚨 Forzar Votación (HOST)</button>
-    </div>
-
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
     <div id="vista-votacion" class="vista">
         <div class="glass-panel text-center" style="width: 95%; max-width: 600px;">
             <h1>🗳️ ¡Vota!</h1>
             <p class="aviso-votacion">Toca a un jugador para acusarlo. Puedes cambiar tu voto hasta que el Host cierre la sesión.</p>
-<<<<<<< HEAD
             <div id="opciones-votacion" class="opciones-votacion-container"></div>
             <div id="aviso-eliminado-votacion" class="aviso-eliminado-votacion" style="display: none;">
                 🔒 Estás eliminado. No puedes votar en esta ronda.
             </div>
-=======
-            <div id="opciones-votacion" class="opciones-votacion-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px;"></div>
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
             <button id="btn-cerrar-votacion" class="btn-danger btn-grande pulse-red" style="margin-top: 30px; display: none;">🚨 CERRAR VOTACIÓN Y REVELAR</button>
             <p class="aviso-espera" id="aviso-espera-votacion" style="margin-top: 15px;">Esperando que el Host cierre la votación...</p>
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- ===== VISTA INTERMEDIO ===== -->
     <div id="vista-intermedio" class="vista">
         <div class="glass-panel text-center" style="width: 95%; max-width: 600px;">
@@ -251,28 +181,13 @@
             </div>
             <h3 id="jugador-eliminado-display" class="aviso-eliminado glass-inner" style="border: none; display: none;">[RESULTADO]</h3>
             <div id="acciones-finales-host" class="acciones-finales-host" style="display: none;">
-=======
-    <div id="vista-resultado" class="vista" style="justify-content: center;">
-        <div class="glass-panel text-center" style="width: 95%; max-width: 600px;">
-            <h2 class="h1-impostor text-shadow-red" style="font-size: 2.5rem;">EL ESPACIO HA DECIDIDO</h2>
-            
-            <div id="contenedor-animacion" style="height: auto; margin: 20px 0;">
-                <div id="escaner-terminal" class="terminal-text"><span class="typing-cursor">Procesando veredicto...</span></div>
-            </div>
-            
-            <h3 id="jugador-eliminado-display" class="aviso-eliminado glass-inner" style="border: none; display: none;">[RESULTADO]</h3>
-            <div id="acciones-finales-host" style="display: flex; flex-direction: column; gap: 15px; margin-top: 30px; display: none;">
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
                 <button id="btn-siguiente-ronda" class="btn-principal btn-grande btn-glow">🔄 Siguiente Ronda</button>
                 <button id="btn-volver-lobby" class="btn-secundario">⚙️ Volver al Lobby</button>
             </div>
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- ===== MODAL ===== -->
-=======
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
     <div id="modal-personalizado" class="modal-overlay" style="display: none;">
         <div class="modal-contenido glass-panel" style="max-width: 800px; width: 95%; padding: 20px;">
             <h2 id="modal-titulo" style="font-size: 2rem; margin-bottom: 15px; color: var(--color-primary); text-shadow: 0 0 10px var(--color-primary);">Título</h2>
@@ -284,11 +199,7 @@
         </div>
     </div>
 
-<<<<<<< HEAD
     <script src="banco-palabras.js"></script>
     <script src="cliente.js"></script>
-=======
-    <script src="./cliente.js"></script>
->>>>>>> 9da01d4cf98c0de9b4d7692cb4354098ca5535c6
 </body>
 </html>
